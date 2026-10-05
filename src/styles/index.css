@@ -12,6 +12,15 @@
     line-height: var(--line-height-body);
     letter-spacing: var(--tracking-body);
   }
+  /* 原生控制項與 Teleport 浮層共用 body 的字型。 */
+  button,
+  input,
+  textarea,
+  select,
+  option,
+  optgroup {
+    font-family: inherit;
+  }
   h1,
   h2,
   h3 {

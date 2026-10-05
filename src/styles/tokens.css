@@ -1,4 +1,4 @@
-/* 中性骨架：正式品牌、字體與色彩待視覺方向確認。 */
+/* 字型已確認；中性色彩仍為暫定骨架。 */
 :root {
   /* 基礎層 */
   --neutral-0: #ffffff;
@@ -18,6 +18,8 @@
   --space-16: 4rem;
   --font-system:
     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+  --font-portfolio:
+    'Bricolage Grotesque Variable', 'Chiron GoRound TC Variable', var(--font-system);
   --font-size-small: 0.875rem;
   --font-size-body: 1rem;
   --font-size-title: clamp(2rem, 5vw, 3.5rem);
@@ -38,8 +40,8 @@
   --color-action-active: var(--neutral-950);
   --color-on-action: var(--neutral-0);
   --color-focus: var(--neutral-900);
-  --font-body: var(--font-system);
-  --font-heading: var(--font-system);
+  --font-body: var(--font-portfolio);
+  --font-heading: var(--font-portfolio);
   --line-height-body: 1.75;
   --line-height-heading: 1.25;
   --tracking-body: 0.015em;
