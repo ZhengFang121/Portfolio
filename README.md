@@ -70,7 +70,7 @@ skills-lock.json           # skills CLI 產生的來源與 hash
 尚未提供的欄位保持 `null`，畫面以明確占位呈現，不捏造成果、年份或角色。
 共用導覽與頁尾由 `App.vue` 管理；頁面採 lazy import。路由切換更新標題、移動主要內容焦點並恢復捲動位置。
 
-Token 定義色彩、字體、字距、行距、間距、閱讀寬度、圓角與互動時間。現在使用中性色與系統字體，僅供骨架閱讀，
+Token 定義色彩、字體、字距、行距、間距、閱讀寬度、圓角與互動時間。目前色彩仍為中性骨架，字型已確認使用 Bricolage Grotesque＋昭源環方，
 正式品牌設計尚未批准。Tailwind Vite 插件已啟用，以 `@theme inline` 對應專案語意 Token。
 PrimeVue 4 使用 Aura，主色與控制圓角直接參照同一套 Token，CSS layers 保持工具樣式可覆寫。
 `@lucide/vue` 已用於作品導覽圖示；GSAP 已安裝，尚未加入展示動畫，後續須尊重 reduced motion 並清理生命週期資源。
@@ -78,21 +78,34 @@ PrimeVue 4 使用 Aura，主色與控制圓角直接參照同一套 Token，CSS 
 依原始要求保留 `@primevue/themes`；該套件官方標示 deprecated，程式直接匯入相容的 `@primeuix/themes` 2 系列。
 [PrimeVue 主題官方文件](https://primevue.dev/theming/styled/)。不使用舊版主題入口。
 
+## 網站字型
+
+- 英文與數字：Bricolage Grotesque（`@fontsource-variable/bricolage-grotesque`）。
+- 繁體中文：昭源環方 Chiron GoRound TC（`@fontsource-variable/chiron-goround-tc`）。
+- 兩者使用可變字型，於 `src/main.ts` 匯入，採 `font-display: swap`；套件透過 `unicode-range` 分段，瀏覽器依頁面文字載入需要的字型檔。
+- 字型檔經 Vite 打包，由網站自行提供；訪客不必安裝，也不需連線 Google Fonts。
+- `src/styles/tokens.css` 的 `--font-portfolio` 以英文字型在前、中文字型在後；英文與數字優先使用 Bricolage，中文由昭源環方補足。
+- 內文、標題、Tailwind `font-sans` 與表單控制項共用 Token，PrimeVue 與掛載至 body 的浮層繼承全域字型。
+- 兩套字型採 SIL OFL 1.1；套件內保留 LICENSE，發佈時一併保留 `public/fonts/OFL-*.txt` 授權檔。
+- 換電腦執行 `npm ci` 即可還原字型套件，無須另外手動下載。
+
 ## 套件版本
 
 以下為本次實際安裝版本；可用 `npm ls --depth=0` 查閱，完整相依性鎖在 `package-lock.json`。
 
 ### 執行依賴
 
-| 套件               | 實際安裝版本 |
-| ------------------ | ------------ |
-| `@lucide/vue`      | 1.52.0       |
-| `@primeuix/themes` | 2.0.3        |
-| `@primevue/themes` | 4.5.4        |
-| `gsap`             | 3.15.0       |
-| `primevue`         | 4.5.5        |
-| `vue`              | 3.5.43       |
-| `vue-router`       | 5.3.1        |
+| 套件                                       | 實際安裝版本 |
+| ------------------------------------------ | ------------ |
+| `@fontsource-variable/bricolage-grotesque` | 5.3.0        |
+| `@fontsource-variable/chiron-goround-tc`   | 5.3.0        |
+| `@lucide/vue`                              | 1.52.0       |
+| `@primeuix/themes`                         | 2.0.3        |
+| `@primevue/themes`                         | 4.5.4        |
+| `gsap`                                     | 3.15.0       |
+| `primevue`                                 | 4.5.5        |
+| `vue`                                      | 3.5.43       |
+| `vue-router`                               | 5.3.1        |
 
 ### 開發依賴
 
@@ -165,7 +178,7 @@ Skills 是開發指引，不是網站執行依賴。安裝 motion-design 不代�
 
 ## 後續內容與部署待辦
 
-- 確認正式視覺方向、字體與品牌 Token，再規劃動畫；不沿用跑者菲迪品牌或遊戲化介面。
+- 確認正式視覺方向與品牌 Token，再規劃動畫；不沿用跑者菲迪品牌或遊戲化介面。
 - 提供六個作品的名稱、分類、年份、角色、背景、過程、成果與圖片，以及其他平面作品與公開聯絡資料。
 - 補上圖片尺寸、替代文字與適合的格式，非首屏圖片採 lazy loading。
 - 使用 HTML5 history；部署平台須把應用路由導回 `/index.html`，否則直接開啟或重新整理作品頁會失敗。

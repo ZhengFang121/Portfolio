@@ -3,6 +3,8 @@ import PrimeVue from 'primevue/config'
 import App from './App.vue'
 import { router } from './router'
 import { portfolioPreset } from './theme/primevue'
+import '@fontsource-variable/bricolage-grotesque'
+import '@fontsource-variable/chiron-goround-tc'
 import './styles/index.css'
 createApp(App)
   .use(router)
