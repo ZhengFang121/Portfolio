@@ -166,6 +166,10 @@
   .site-content > .site-footer {
     margin-top: var(--content-section-gap);
   }
+  /* 主內容只承接路由與跳至內容的焦點；內部互動元素保留焦點提示。 */
+  #main-content:focus {
+    outline: none;
+  }
   .page-sections {
     display: grid;
     gap: var(--content-section-gap);
