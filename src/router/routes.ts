@@ -5,19 +5,19 @@ export const routes: RouteRecordRaw[] = [
     path: '/',
     name: 'home',
     component: () => import('../views/HomePage.vue'),
-    meta: { title: '首頁' },
+    meta: { title: 'Home' },
   },
   {
     path: '/about',
     name: 'about',
     component: () => import('../views/AboutPage.vue'),
-    meta: { title: '關於 Fang' },
+    meta: { title: 'Profile' },
   },
   {
     path: '/works',
     name: 'works',
     component: () => import('../views/WorksPage.vue'),
-    meta: { title: '主要作品' },
+    meta: { title: 'Works' },
   },
   ...projects.map((project): RouteRecordRaw => ({
     path: `/works/${project.slug}`,

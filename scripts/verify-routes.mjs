@@ -20,7 +20,7 @@ try {
   assert.equal(new Set(projects.map((project) => project.slug)).size, 6)
 
   const cases = [
-    ['/', 'home', "ZhengFang's Portfolio"],
+    ['/', 'home', '平面設計師 與 前端網頁設計學習者'],
     ['/about', 'about', '關於 Fang'],
     ['/works', 'works', '主要作品'],
     ['/graphic-works', 'graphic-works', '其他平面作品'],
@@ -59,7 +59,7 @@ try {
           ? 3
           : 1
     assert.equal(
-      (html.match(/class="content-section stack"/g) ?? []).length,
+      (html.match(/class="[^"]*\bcontent-section\b[^"]*"/g) ?? []).length,
       expectedSections,
       `${path}: 依主要章節分區，卡片不獨立分區`,
     )
@@ -76,9 +76,27 @@ try {
     assert.equal(activeLinks.length, activeImage ? 1 : 0, `${path}: 正確的導覽狀態`)
     if (activeImage) assert.ok(activeLinks[0][1].includes(`${activeImage}-2.png`))
     if (expectedName === 'home' || expectedName === 'works') {
-      assert.ok(html.includes('href="/graphic-works"'), `${path}: 保留其他平面作品入口`)
-      for (const project of projects) {
+      const visibleProjects = expectedName === 'home' ? projects.slice(0, 2) : projects
+      for (const project of visibleProjects) {
         assert.ok(html.includes(`href="/works/${project.slug}"`))
+      }
+      if (expectedName === 'home') {
+        assert.ok(html.includes('href="/about"'), '首頁保留 Profile 導覽')
+        assert.ok(html.includes('href="/works"'), '首頁導向全部主要作品')
+        assert.equal((html.match(/>\s*VIEW MORE\s*<\/a>/g) ?? []).length, 2)
+        assert.ok(html.includes('view-more-button--cream'))
+        assert.ok(html.includes('view-more-button--red'))
+        for (const project of projects.slice(2)) {
+          assert.ok(!html.includes(`href="/works/${project.slug}"`))
+        }
+      } else {
+        assert.ok(html.includes('href="/graphic-works"'), `${path}: 保留其他平面作品入口`)
+      }
+      const cards = [...html.matchAll(/<a\b[^>]*class="[^"]*\bwork-card\b[^"]*"[^>]*>(.*?)<\/a>/gs)]
+      assert.equal(cards.length, visibleProjects.length, `${path}: 每張作品卡片有一個連結`)
+      for (const card of cards) {
+        assert.ok(!card[1].includes('<a '), `${path}: 作品卡片沒有巢狀連結`)
+        assert.ok(!card[1].includes('VIEW MORE'), `${path}: 不加入重複的卡片按鈕`)
       }
     }
     if (expectedName.startsWith('work-')) {

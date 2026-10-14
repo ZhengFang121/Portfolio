@@ -57,9 +57,37 @@
   --motion-easing-feedback: ease-out;
 
   /* 元件層 */
-  --card-background: var(--color-surface);
+  --footer-background: var(--palette-blue);
+  --footer-color: var(--palette-red);
+  --footer-min-height: 4.375rem;
+  --card-surface-background: var(--color-surface);
   --card-padding: var(--space-6);
   --card-radius: var(--radius-panel);
+  --card-color: var(--palette-black);
+  --card-border-color: var(--palette-black);
+  --card-border-width: 1px;
+  --card-shadow: none;
+  --card-subtle-background: var(--color-surface-subtle);
+  --card-action-color: var(--palette-red);
+  --card-action-hover-color: var(--palette-black);
+  --card-focus-color: var(--palette-red);
+  --work-card-cover-ratio: 4 / 3;
+  --view-more-min-height: 3.125rem;
+  --view-more-padding-block: var(--space-2);
+  --view-more-padding-inline: var(--space-12);
+  --view-more-radius: 999px;
+  --view-more-font-size: var(--font-size-subtitle);
+  --view-more-font-weight: 400;
+  --view-more-line-height: 1.5;
+  --view-more-cream-background: var(--palette-yellow);
+  --view-more-cream-color: var(--palette-red);
+  --view-more-red-background: var(--palette-red);
+  --view-more-red-color: var(--palette-yellow);
+  --home-heading-font-size: clamp(2.5rem, 4.5vw, 4rem);
+  --home-heading-color: var(--palette-blue);
+  --home-intro-color: var(--palette-blue);
+  --home-content-gap: var(--space-12);
+  --home-hero-min-height: clamp(22rem, 45.4dvh, 32rem);
 
   /* 固定外框：1440 × 1024 的比例取自 Fang 的桌機設計稿。 */
   --shell-horizontal-gap: clamp(var(--space-4), 3.54vw, var(--space-16));
@@ -72,8 +100,7 @@
     calc(var(--shell-nav-top) + max(44px, var(--shell-nav-height)) + var(--space-6))
   );
   --shell-content-bottom: 4.88dvh;
-  --shell-content-radius: 1.875rem;
-  --content-section-radius: var(--shell-content-radius);
+  --content-section-radius: 1.5rem;
   --content-section-gap: clamp(var(--space-6), 4dvh, var(--space-12));
   --content-section-padding-inline: var(--spacing-gutter);
   --content-section-padding-block: clamp(var(--space-8), 6vw, 6rem);

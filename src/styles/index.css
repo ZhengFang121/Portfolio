@@ -201,7 +201,6 @@
   .content-section .p-button {
     border-color: var(--color-link);
   }
-  .content-section .project-card,
   .content-section .placeholder-media,
   .content-section .placeholder-panel {
     --color-text: var(--palette-black);
@@ -259,10 +258,16 @@
     }
   }
   .site-footer {
-    border-top: 1px solid var(--color-border);
-    padding-block: var(--space-6);
-    font-size: var(--font-size-small);
-    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-block-size: var(--footer-min-height);
+    padding: var(--space-3) var(--spacing-gutter);
+    border-radius: var(--content-section-radius);
+    background: var(--footer-background);
+    color: var(--footer-color);
+    font-size: var(--font-size-body);
+    text-align: center;
   }
   .stack {
     display: grid;
@@ -286,14 +291,6 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
     gap: var(--space-6);
-  }
-  .project-card {
-    display: grid;
-    gap: var(--space-4);
-    border: 1px solid var(--color-border);
-    padding: var(--card-padding);
-    border-radius: var(--card-radius);
-    background: var(--card-background);
   }
   .placeholder-media {
     display: grid;
@@ -367,8 +364,7 @@
       var(--shell-nav-top) + var(--shell-compact-brand-height) + var(--space-4)
     );
     --shell-content-bottom: max(var(--space-4), env(safe-area-inset-bottom));
-    --shell-content-radius: var(--space-6);
-    --content-section-radius: var(--shell-content-radius);
+    --content-section-radius: 1.125rem;
     --content-section-padding-inline: var(--spacing-gutter);
     --intro-image-height: min(61.04dvh, 110vw);
     --spacing-gutter: clamp(var(--space-4), 4vw, var(--space-8));
