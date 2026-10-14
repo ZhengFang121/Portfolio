@@ -3,6 +3,26 @@
 @import './tokens.css';
 
 @layer base {
+  html {
+    min-height: 100%;
+    overflow-x: clip;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+  body,
+  #app {
+    min-height: 100dvh;
+  }
+  /* 入口與轉場期間才鎖住文件，正式內容使用原生頁面捲動。 */
+  html[data-intro-locked],
+  html[data-intro-locked] body {
+    height: 100dvh;
+    overflow: hidden;
+  }
+  ::selection {
+    background: var(--palette-blue);
+    color: var(--palette-black);
+  }
   body {
     margin: 0;
     background: var(--color-background);
@@ -66,9 +86,127 @@
     cursor: not-allowed;
   }
   .app-shell {
+    position: relative;
+    width: 100%;
     min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
+    isolation: isolate;
+  }
+  .app-shell:not([data-content-ready='true']) {
+    height: 100dvh;
+    overflow: clip;
+  }
+  /* 遮住捲到導覽列後方的內容；品牌圖與導覽列位於此白色層上方。 */
+  .app-shell[data-content-ready='true']::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: var(--shell-content-left);
+    right: 0;
+    height: var(--shell-content-top);
+    z-index: 1;
+    background: var(--color-background);
+    pointer-events: none;
+  }
+  .intro-viewport {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100dvh;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .intro-brand {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    height: var(--intro-image-height);
+    aspect-ratio: var(--intro-image-ratio);
+    margin-top: calc(var(--intro-image-height) / -2);
+    margin-left: calc(var(--intro-image-height) * -0.36);
+    pointer-events: none;
+  }
+  .intro-brand img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .brand-anchor {
+    position: absolute;
+    top: 50%;
+    left: var(--shell-brand-center);
+    width: 0;
+    height: 0;
+    pointer-events: none;
+  }
+  .shell-header {
+    position: fixed;
+    z-index: 3;
+    top: var(--shell-nav-top);
+    left: var(--shell-content-left);
+    right: var(--shell-edge);
+  }
+  .shell-reveal {
+    visibility: hidden;
+    opacity: 0;
+  }
+  .app-shell[data-content-ready='true'] .shell-reveal {
+    visibility: visible;
+    opacity: 1;
+  }
+  .site-content {
+    min-width: 0;
+    margin-left: var(--shell-content-left);
+    margin-right: var(--shell-edge);
+    padding-top: var(--shell-content-top);
+    padding-bottom: max(var(--shell-content-bottom), env(safe-area-inset-bottom));
+  }
+  .site-content > .site-footer {
+    margin-top: var(--content-section-gap);
+  }
+  .page-sections {
+    display: grid;
+    gap: var(--content-section-gap);
+    min-width: 0;
+  }
+  .content-section {
+    --color-text: var(--palette-white);
+    --color-text-muted: var(--palette-white);
+    --color-border: var(--palette-white);
+    --color-link: var(--palette-yellow);
+    --color-link-hover: var(--palette-blue);
+    --color-focus: var(--palette-yellow);
+    min-width: 0;
+    padding: var(--content-section-padding-block) var(--content-section-padding-inline);
+    border-radius: var(--content-section-radius);
+    background: var(--content-section-red);
+    color: var(--color-text);
+    scroll-margin-top: calc(var(--shell-content-top) + var(--space-4));
+  }
+  .page-sections > .content-section:nth-child(even) {
+    --color-text: var(--palette-black);
+    --color-text-muted: var(--palette-black);
+    --color-border: var(--palette-black);
+    --color-link: var(--palette-red);
+    --color-link-hover: var(--palette-black);
+    --color-focus: var(--palette-red);
+    background: var(--content-section-yellow);
+  }
+  .content-section .p-button {
+    border-color: var(--color-link);
+  }
+  .content-section .project-card,
+  .content-section .placeholder-media,
+  .content-section .placeholder-panel {
+    --color-text: var(--palette-black);
+    --color-text-muted: var(--palette-black);
+    --color-border: var(--palette-black);
+    --color-link: var(--palette-red);
+    --color-link-hover: var(--palette-black);
+    --color-focus: var(--palette-red);
+    color: var(--color-text);
   }
   .container {
     width: 100%;
@@ -76,45 +214,45 @@
     margin-inline: auto;
     padding-inline: var(--spacing-gutter);
   }
-  .page-content {
-    flex: 1;
-    padding-block: var(--spacing-section);
-  }
-  .site-header {
-    border-bottom: 1px solid var(--color-border);
-  }
-  .header-content {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-4);
-    padding-block: var(--space-4);
-  }
-  .brand-link {
-    font-weight: 600;
-    text-decoration: none;
-    padding-block: var(--space-2);
-  }
   .site-nav {
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-  }
-  .site-nav a {
-    min-height: 44px;
-    display: inline-flex;
     align-items: center;
-    padding: var(--space-2) var(--space-3);
+    justify-content: center;
+    gap: var(--shell-nav-gap);
+  }
+  .nav-image-link {
+    position: relative;
+    display: grid;
+    place-items: center;
+    height: var(--shell-nav-height);
+    min-height: 44px;
+    aspect-ratio: var(--nav-image-ratio);
     border-radius: var(--radius-control);
-    text-decoration: none;
   }
-  .site-nav a:hover,
-  .site-nav a.router-link-active {
-    background: var(--color-surface-subtle);
+  .nav-image-link img {
+    grid-area: 1 / 1;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
-  .site-nav a.router-link-active {
-    text-decoration: underline;
+  .nav-image-selected {
+    visibility: hidden;
+  }
+  .nav-image-link.is-active .nav-image-selected,
+  .nav-image-link:focus-visible .nav-image-selected {
+    visibility: visible;
+  }
+  .nav-image-link.is-active .nav-image-default,
+  .nav-image-link:focus-visible .nav-image-default {
+    visibility: hidden;
+  }
+  @media (hover: hover) {
+    .nav-image-link:hover .nav-image-selected {
+      visibility: visible;
+    }
+    .nav-image-link:hover .nav-image-default {
+      visibility: hidden;
+    }
   }
   .site-footer {
     border-top: 1px solid var(--color-border);
@@ -199,7 +337,7 @@
     margin: var(--space-2) 0 0;
   }
   .skip-link {
-    position: absolute;
+    position: fixed;
     top: var(--space-4);
     left: var(--space-4);
     z-index: 10;
@@ -213,7 +351,60 @@
   }
 }
 
-/* 展示動畫尚未加入，保留 CSS 互動的減少動態保護。 */
+/* 窄螢幕把品牌與導覽放在同一列，內容仍使用全寬獨立捲動區。 */
+@media (max-width: 899px) {
+  .app-shell {
+    --shell-edge: var(--space-4);
+    --shell-content-left: var(--shell-edge);
+    --shell-nav-top: max(var(--space-4), env(safe-area-inset-top));
+    --shell-nav-height: clamp(1.5rem, 6vw, 4.5rem);
+    --shell-nav-gap: clamp(var(--space-1), 1.5vw, var(--space-4));
+    --shell-content-top: calc(
+      var(--shell-nav-top) + var(--shell-compact-brand-height) + var(--space-4)
+    );
+    --shell-content-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+    --shell-content-radius: var(--space-6);
+    --content-section-radius: var(--shell-content-radius);
+    --content-section-padding-inline: var(--spacing-gutter);
+    --intro-image-height: min(61.04dvh, 110vw);
+    --spacing-gutter: clamp(var(--space-4), 4vw, var(--space-8));
+    --spacing-section: var(--space-8);
+  }
+  .brand-anchor {
+    top: var(--shell-nav-top);
+    left: var(--shell-edge);
+    height: var(--shell-compact-brand-height);
+    aspect-ratio: var(--intro-image-ratio);
+    width: auto;
+  }
+  .shell-header {
+    top: calc(var(--shell-nav-top) + var(--shell-compact-brand-height) / 2);
+    left: calc(var(--shell-edge) + var(--shell-compact-brand-height) * 0.72 + var(--space-2));
+    transform: translateY(-50%);
+  }
+  .site-nav {
+    gap: var(--shell-nav-gap);
+  }
+  .nav-image-link {
+    min-width: 0;
+    min-height: 44px;
+    flex: var(--nav-image-weight) 1 0;
+    height: max(44px, var(--shell-nav-height));
+    aspect-ratio: auto;
+  }
+}
+
+@media (max-height: 480px) and (max-width: 899px) {
+  .app-shell {
+    --shell-compact-brand-height: 4rem;
+    --shell-nav-top: max(var(--space-2), env(safe-area-inset-top));
+    --shell-content-top: calc(
+      var(--shell-nav-top) + var(--shell-compact-brand-height) + var(--space-2)
+    );
+  }
+}
+
+/* CSS 互動與 GSAP、APNG 靜態替代共同支援減少動態偏好。 */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

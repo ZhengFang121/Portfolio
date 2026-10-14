@@ -60,6 +60,37 @@
   --card-background: var(--color-surface);
   --card-padding: var(--space-6);
   --card-radius: var(--radius-panel);
+
+  /* 固定外框：1440 × 1024 的比例取自 Fang 的桌機設計稿。 */
+  --shell-horizontal-gap: clamp(var(--space-4), 3.54vw, var(--space-16));
+  --shell-edge: var(--shell-horizontal-gap);
+  --shell-nav-top: 3.52dvh;
+  --shell-nav-height: min(8.79dvh, 6.25vw);
+  --shell-nav-gap: clamp(var(--space-4), 3.4vw, 3.5rem);
+  --shell-content-top: max(
+    16.5dvh,
+    calc(var(--shell-nav-top) + max(44px, var(--shell-nav-height)) + var(--space-6))
+  );
+  --shell-content-bottom: 4.88dvh;
+  --shell-content-radius: 1.875rem;
+  --content-section-radius: var(--shell-content-radius);
+  --content-section-gap: clamp(var(--space-6), 4dvh, var(--space-12));
+  --content-section-padding-inline: var(--spacing-gutter);
+  --content-section-padding-block: clamp(var(--space-8), 6vw, 6rem);
+  --content-section-red: var(--palette-red);
+  --content-section-yellow: var(--palette-yellow);
+  --intro-image-height: min(61.04dvh, 43.4vw);
+  --intro-image-ratio: 18 / 25;
+  --intro-image-width: calc(var(--intro-image-height) * 18 / 25);
+  /* Hello-2 的 346px 畫布中，8 影格聯集的可見範圍是 x=101～344。
+     只補償透明留白，不裁切、縮放圖片；三個視覺間距共用 horizontal-gap。 */
+  --intro-art-left: calc(var(--intro-image-width) * 101 / 346);
+  --intro-art-width: calc(var(--intro-image-width) * 243 / 346);
+  --shell-brand-center: calc(
+    var(--shell-horizontal-gap) + var(--intro-image-width) / 2 - var(--intro-art-left)
+  );
+  --shell-content-left: calc(var(--shell-horizontal-gap) * 2 + var(--intro-art-width));
+  --shell-compact-brand-height: min(clamp(6rem, 18dvh, 9rem), 26vw);
 }
 
 /* 移除 Tailwind 預設色盤，避免工具類別引入其他色彩。 */

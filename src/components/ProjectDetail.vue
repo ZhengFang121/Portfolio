@@ -5,8 +5,8 @@ import type { PortfolioProject } from '../data/projects'
 defineProps<{ project: PortfolioProject }>()
 </script>
 <template>
-  <article class="section-stack">
-    <header class="stack">
+  <article class="page-sections">
+    <header class="content-section stack">
       <RouterLink class="text-link" to="/works"
         ><ArrowLeft :size="18" aria-hidden="true" />返回主要作品</RouterLink
       >
@@ -27,20 +27,20 @@ defineProps<{ project: PortfolioProject }>()
           <dd>{{ project.role ?? '待提供' }}</dd>
         </div>
       </dl>
+      <img
+        v-if="project.cover"
+        class="project-cover"
+        :src="project.cover.src"
+        :alt="project.cover.alt"
+        :width="project.cover.width"
+        :height="project.cover.height"
+      />
+      <div v-else class="placeholder-media">作品主視覺待提供</div>
     </header>
-    <img
-      v-if="project.cover"
-      class="project-cover"
-      :src="project.cover.src"
-      :alt="project.cover.alt"
-      :width="project.cover.width"
-      :height="project.cover.height"
-    />
-    <div v-else class="placeholder-media">作品主視覺待提供</div>
     <section
       v-for="section in project.sections"
       :key="section.id"
-      class="stack"
+      class="content-section stack"
       :aria-labelledby="section.id"
     >
       <h2 :id="section.id">{{ section.title }}</h2>

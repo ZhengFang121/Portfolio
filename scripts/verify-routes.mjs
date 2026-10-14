@@ -46,7 +46,37 @@ try {
     assert.equal((html.match(/<h1(?:\s|>)/g) ?? []).length, 1, `${path}: 一個 h1`)
     assert.ok(html.includes('aria-label="主要導覽"'))
     assert.ok(html.includes('<footer'))
+    assert.ok(html.includes('site-content shell-reveal'), `${path}: 共用文件內容區`)
+    assert.ok(html.includes('class="intro-viewport"'), `${path}: 獨立固定視窗層`)
+    assert.ok(!html.includes('content-scroll'), `${path}: 移除內層捲動容器`)
+    assert.ok(html.indexOf('<footer') > html.indexOf('</main>'), `${path}: Footer 接續主內容`)
+    const project = projects.find((item) => path === `/works/${item.slug}`)
+    const expectedSections = project
+      ? 1 + project.sections.length
+      : expectedName === 'home' || expectedName === 'graphic-works'
+        ? 2
+        : expectedName === 'about'
+          ? 3
+          : 1
+    assert.equal(
+      (html.match(/class="content-section stack"/g) ?? []).length,
+      expectedSections,
+      `${path}: 依主要章節分區，卡片不獨立分區`,
+    )
+    assert.ok(html.includes('data-stage="' + (path === '/' ? 'intro' : 'content') + '"'))
+    const activeImage =
+      path === '/'
+        ? 'home'
+        : path === '/about'
+          ? 'profile'
+          : path.startsWith('/works') || path === '/graphic-works'
+            ? 'works'
+            : null
+    const activeLinks = [...html.matchAll(/<a\b[^>]*class="[^"]*is-active[^"]*"[^>]*>(.*?)<\/a>/gs)]
+    assert.equal(activeLinks.length, activeImage ? 1 : 0, `${path}: 正確的導覽狀態`)
+    if (activeImage) assert.ok(activeLinks[0][1].includes(`${activeImage}-2.png`))
     if (expectedName === 'home' || expectedName === 'works') {
+      assert.ok(html.includes('href="/graphic-works"'), `${path}: 保留其他平面作品入口`)
       for (const project of projects) {
         assert.ok(html.includes(`href="/works/${project.slug}"`))
       }

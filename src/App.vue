@@ -1,22 +1,97 @@
 <script setup lang="ts">
-import { nextTick, watch } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import AppHeader from './components/AppHeader.vue'
 import AppFooter from './components/AppFooter.vue'
+import { useIntro } from './composables/useIntro'
+
 const route = useRoute()
-watch(
-  () => route.path,
-  async () => {
+const shell = ref<HTMLElement | null>(null)
+const viewport = ref<HTMLElement | null>(null)
+const brand = ref<HTMLElement | null>(null)
+const brandAnchor = ref<HTMLElement | null>(null)
+const mainContent = ref<HTMLElement | null>(null)
+const {
+  stage,
+  contentReady,
+  reducedMotion,
+  motionReady,
+  animatedReady,
+  onBrandLoad,
+  onBrandError,
+  showContent,
+} = useIntro(shell, viewport, brand, brandAnchor, route.path === '/')
+const imageBase = `${import.meta.env.BASE_URL}images/intro/`
+
+async function skipToContent() {
+  showContent()
+  await nextTick()
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  mainContent.value?.focus({ preventScroll: true })
+}
+
+watch(contentReady, async (ready, wasReady) => {
+  if (ready && !wasReady) {
     await nextTick()
-    document.querySelector<HTMLElement>('#main-content')?.focus({ preventScroll: true })
+    mainContent.value?.focus({ preventScroll: true })
+  }
+})
+
+watch(
+  () => route.fullPath,
+  async () => {
+    showContent()
+    await nextTick()
+    mainContent.value?.focus({ preventScroll: true })
   },
 )
 </script>
+
 <template>
-  <div class="app-shell">
-    <a class="skip-link" href="#main-content">跳至主要內容</a>
-    <AppHeader />
-    <main id="main-content" class="container page-content" tabindex="-1"><RouterView /></main>
-    <AppFooter />
+  <div ref="shell" class="app-shell" :data-stage="stage" :data-content-ready="contentReady">
+    <a class="skip-link" href="#main-content" @click.prevent="skipToContent">跳至主要內容</a>
+    <p v-if="!contentReady" class="sr-only" role="status">
+      {{
+        stage === 'intro'
+          ? '向下捲動、向上滑動或按向下鍵，展開自我介紹。'
+          : '再次向下捲動、向上滑動或按向下鍵，進入網站。'
+      }}
+    </p>
+
+    <!-- 定位點與圖片分開：桌機動畫只改變圖片的 x，不重新建立 APNG。 -->
+    <div ref="viewport" class="intro-viewport">
+      <div ref="brandAnchor" class="brand-anchor" aria-hidden="true"></div>
+      <div ref="brand" class="intro-brand">
+        <img
+          v-show="!animatedReady || reducedMotion"
+          :src="`${imageBase}${reducedMotion ? 'hello-2-still.png' : 'hello-1.png'}`"
+          alt="你好，我是 Fang，這是我的作品集"
+          width="1800"
+          height="2500"
+          draggable="false"
+        />
+        <img
+          v-if="motionReady && stage !== 'intro' && !reducedMotion"
+          v-show="animatedReady"
+          :src="`${imageBase}hello-2.png`"
+          alt="你好，我是 Fang，這是我的作品集"
+          width="346"
+          height="480"
+          draggable="false"
+          @load="onBrandLoad"
+          @error="onBrandError"
+        />
+      </div>
+    </div>
+
+    <div class="shell-header shell-reveal" :inert="!contentReady">
+      <AppHeader />
+    </div>
+    <div class="site-content shell-reveal" :inert="!contentReady">
+      <main id="main-content" ref="mainContent" tabindex="-1">
+        <RouterView />
+      </main>
+      <AppFooter />
+    </div>
   </div>
 </template>
