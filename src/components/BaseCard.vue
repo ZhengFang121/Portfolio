@@ -16,6 +16,12 @@ withDefaults(
 
 <style scoped>
 .base-card {
+  /* 卡片與 WorkCard 共用的局部契約；不可引用下方覆寫的同名語意，避免循環。 */
+  --card-color: var(--palette-black);
+  --card-border-color: var(--palette-black);
+  --card-action-color: var(--color-action);
+  --card-action-hover-color: var(--color-action-hover);
+  --card-focus-color: var(--palette-red);
   --color-text: var(--card-color);
   --color-text-muted: var(--card-color);
   --color-border: var(--card-border-color);
@@ -24,19 +30,19 @@ withDefaults(
   --color-focus: var(--card-focus-color);
   box-sizing: border-box;
   min-inline-size: 0;
-  padding: var(--card-padding);
-  border: var(--card-border-width) solid var(--card-border-color);
-  border-radius: var(--card-radius);
+  padding: var(--space-6);
+  border: 1px solid var(--card-border-color);
+  border-radius: var(--radius-panel);
   background: var(--card-background);
-  box-shadow: var(--card-shadow);
+  box-shadow: none;
   color: var(--card-color);
 }
 
 .base-card--surface {
-  --card-background: var(--card-surface-background);
+  --card-background: var(--color-surface);
 }
 
 .base-card--subtle {
-  --card-background: var(--card-subtle-background);
+  --card-background: var(--color-surface-subtle);
 }
 </style>

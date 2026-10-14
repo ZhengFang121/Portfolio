@@ -1,6 +1,6 @@
 # ZhengFang's Portfolio
 
-Fang 的作品集專案。目前完成環境與頁面骨架，正式視覺方向與作品內容待確認。
+Fang 的作品集專案。已有固定品牌圖、圖片導覽、原生頁面捲動、首頁兩階段進場與共用作品頁；作品內容仍待確認。
 `package.json` 名稱為 `zhengfang-portfolio`；Vue 3＋TypeScript＋Vite，無 Pinia、後端、資料庫或登入。
 
 ## 啟動
@@ -11,7 +11,7 @@ Vite／Vue 插件需要 Node `^20.19.0 || >=22.12.0`，ESLint 10 需要 `^20.19.
 本次已核對 lockfile 中 162 個宣告 Node engines 的項目，皆與目前 Node 相容。
 
 ```bash
-cd "/Users/zhengfang/Documents/Portfolio/ZhengFang's Portfolio"
+cd "/Users/zhengfang/Documents/Portfolio/Portfolio"
 npm run dev
 ```
 
@@ -22,7 +22,7 @@ npm run dev
 npm run type-check
 npm run lint
 npm run build
-npm run verify:routes
+npm run verify
 npm run format:check
 npm run preview
 ```
@@ -58,10 +58,12 @@ src/
   router/                  # 路由、頁面標題與捲動恢復
   components/              # 導覽、頁尾、作品列表、共用介紹版型
   views/                   # 首頁、介紹、作品、平面作品與 404
-  styles/tokens.css        # 基礎 → 語意 → 元件 Token
-  styles/index.css         # Tailwind、基本樣式與響應式版面
+  styles/tokens.css        # 七個分類內的基礎 → 語意 → 共用元件 Token
+  styles/index.css         # Tailwind、基本樣式、固定外框與共用響應式版面
   theme/primevue.ts        # Aura preset 與語意 Token 對應
 scripts/verify-routes.mjs   # 不需瀏覽器的路由與 HTML 渲染檢查
+scripts/verify-intro.mjs    # 兩階段輸入、定位與生命週期檢查
+docs/design-token-migration.md # Token 前後對照與本次驗證範圍
 .agents/skills/             # 六個專案動畫 Skills
 skills-lock.json           # skills CLI 產生的來源與 hash
 ```
@@ -71,11 +73,18 @@ skills-lock.json           # skills CLI 產生的來源與 hash
 共用導覽與頁尾由 `App.vue` 管理；頁面採 lazy import。路由切換更新標題、移動主要內容焦點並恢復捲動位置。
 
 Token 定義色彩、字體、字距、行距、間距、閱讀寬度、圓角與互動時間。介面色盤已確認只使用 `#A71F24`、`#B9DAE8`、`#FBEDB3`、`#000000`、`#FFFFFF`，字型使用 Bricolage Grotesque＋昭源環方，
-完整視覺版型尚未確認。
+後續視覺調整另行確認，本次 Token 整理維持現有外觀。
 白色用於頁面與卡片，黑色用於文字與邊框，紅色用於主要操作與連結，淺藍用於導覽狀態與圖片占位，淡黃用於資訊占位區塊。
 Hover／active 使用黑色，不新增深淺衍生色；作品圖片保留原始色彩。Tailwind Vite 插件已啟用，以 `@theme inline` 對應專案語意 Token。
 PrimeVue 4 使用 Aura，主色與控制圓角直接參照同一套 Token，CSS layers 保持工具樣式可覆寫。
-`@lucide/vue` 已用於作品導覽圖示；GSAP 已安裝，尚未加入展示動畫，後續須尊重 reduced motion 並清理生命週期資源。
+`@lucide/vue` 已用於作品導覽圖示；GSAP 負責首頁兩階段進場，支援 reduced motion 並清理生命週期資源。品牌圖與導覽固定，內容及頁尾隨文件捲動。
+
+全域 Token 依 Colors、Typography、Spacing、Radius、Layout、Motion、Components 排序。
+字級使用 `--font-size-sm/md/lg/xl/2xl`，字型使用 `--font-family-*`，字距使用 `--letter-spacing-*`；實際值及 `clamp()` 保留。
+主要內容與頁尾共用 `--content-section-radius`（桌機 24px、899px 以下 18px），按鈕使用 `--radius-full` 保留膠囊形狀。
+元件／頁面專用設定放回所屬 Vue，不為每個屬性建立全域變數。BaseCard 的局部 `--card-*` 與 AppHeader 動態 `--nav-image-*` 是必要的繼承／狀態契約。
+`--shell-*`、`--intro-*` 保留全域作用域及定位公式；改名時必須同步掃描 CSS、Vue、TypeScript、PrimeVue、Tailwind、動畫與文件。
+完整遷移對照見 [Design Token 整理紀錄](docs/design-token-migration.md)，新增元件與頁面遵循 [AGENTS.md](AGENTS.md)。
 
 依原始要求保留 `@primevue/themes`；該套件官方標示 deprecated，程式直接匯入相容的 `@primeuix/themes` 2 系列。
 [PrimeVue 主題官方文件](https://primevue.dev/theming/styled/)。不使用舊版主題入口。
@@ -86,7 +95,7 @@ PrimeVue 4 使用 Aura，主色與控制圓角直接參照同一套 Token，CSS 
 - 繁體中文：昭源環方 Chiron GoRound TC（`@fontsource-variable/chiron-goround-tc`）。
 - 兩者使用可變字型，於 `src/main.ts` 匯入，採 `font-display: swap`；套件透過 `unicode-range` 分段，瀏覽器依頁面文字載入需要的字型檔。
 - 字型檔經 Vite 打包，由網站自行提供；訪客不必安裝，也不需連線 Google Fonts。
-- `src/styles/tokens.css` 的 `--font-portfolio` 以英文字型在前、中文字型在後；英文與數字優先使用 Bricolage，中文由昭源環方補足。
+- `src/styles/tokens.css` 的 `--font-family-portfolio` 以英文字型在前、中文字型在後；英文與數字優先使用 Bricolage，中文由昭源環方補足。
 - 內文、標題、Tailwind `font-sans` 與表單控制項共用 Token，PrimeVue 與掛載至 body 的浮層繼承全域字型。
 - 兩套字型採 SIL OFL 1.1；套件內保留 LICENSE，發佈時一併保留 `public/fonts/OFL-*.txt` 授權檔。
 - 換電腦執行 `npm ci` 即可還原字型套件，無須另外手動下載。
@@ -176,11 +185,11 @@ Skills 是開發指引，不是網站執行依賴。安裝 motion-design 不代�
 - `type-check`、`lint`、`build`：程式、型別與正式建置驗證。
 - `verify:routes`：Vue Memory Router＋HTML render，檢查 13 個網址，包括六個作品、未知作品、巢狀未知網址、主要導覽、h1 與返回首頁連結。
 - 路由腳本供開發驗證，網站仍是 client SPA，並未啟用 SSR 部署。
-- 本次瀏覽器工具回報 `No browser is available`；桌機／手機真實畫面、點擊、鍵盤流程與螢幕閱讀器尚未驗證。
+- 上述 2026-10-05 紀錄未包含瀏覽器視覺 QA；2026-10-14 Token 重構的本機 Chrome 無頭模式回歸範圍與限制另見 [整理紀錄](docs/design-token-migration.md)。無頭模式不等同於實體手機、Safari 或螢幕閱讀器驗證。
 
 ## 後續內容與部署待辦
 
-- 確認正式視覺方向與品牌 Token，再規劃動畫；不沿用跑者菲迪品牌或遊戲化介面。
+- 後續視覺與動畫擴充需另行確認；維持目前已確認的五色、字型與進場互動，不沿用跑者菲迪品牌或遊戲化介面。
 - 提供六個作品的名稱、分類、年份、角色、背景、過程、成果與圖片，以及其他平面作品與公開聯絡資料。
 - 補上圖片尺寸、替代文字與適合的格式，非首屏圖片採 lazy loading。
 - 使用 HTML5 history；部署平台須把應用路由導回 `/index.html`，否則直接開啟或重新整理作品頁會失敗。

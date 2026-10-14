@@ -27,10 +27,10 @@
     margin: 0;
     background: var(--color-background);
     color: var(--color-text);
-    font-family: var(--font-body);
-    font-size: var(--font-size-body);
+    font-family: var(--font-family-body);
+    font-size: var(--font-size-md);
     line-height: var(--line-height-body);
-    letter-spacing: var(--tracking-body);
+    letter-spacing: var(--letter-spacing-body);
   }
   /* 原生控制項與 Teleport 浮層共用 body 的字型。 */
   button,
@@ -44,20 +44,20 @@
   h1,
   h2,
   h3 {
-    font-family: var(--font-heading);
+    font-family: var(--font-family-heading);
     line-height: var(--line-height-heading);
-    letter-spacing: var(--tracking-heading);
-    font-weight: 600;
+    letter-spacing: var(--letter-spacing-heading);
+    font-weight: var(--font-weight-semibold);
     text-wrap: balance;
   }
   h1 {
-    font-size: var(--font-size-title);
+    font-size: var(--font-size-2xl);
   }
   h2 {
-    font-size: var(--font-size-section);
+    font-size: var(--font-size-xl);
   }
   h3 {
-    font-size: var(--font-size-subtitle);
+    font-size: var(--font-size-lg);
   }
   a {
     color: inherit;
@@ -185,7 +185,7 @@
     min-width: 0;
     padding: var(--content-section-padding-block) var(--content-section-padding-inline);
     border-radius: var(--content-section-radius);
-    background: var(--content-section-red);
+    background: var(--content-section-background);
     color: var(--color-text);
     scroll-margin-top: calc(var(--shell-content-top) + var(--space-4));
   }
@@ -196,7 +196,7 @@
     --color-link: var(--palette-red);
     --color-link-hover: var(--palette-black);
     --color-focus: var(--palette-red);
-    background: var(--content-section-yellow);
+    background: var(--content-section-alternate-background);
   }
   .content-section .p-button {
     border-color: var(--color-link);
@@ -211,71 +211,9 @@
     --color-focus: var(--palette-red);
     color: var(--color-text);
   }
-  .container {
-    width: 100%;
-    max-width: var(--layout-max-width);
-    margin-inline: auto;
-    padding-inline: var(--spacing-gutter);
-  }
-  .site-nav {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--shell-nav-gap);
-  }
-  .nav-image-link {
-    position: relative;
-    display: grid;
-    place-items: center;
-    height: var(--shell-nav-height);
-    min-height: 44px;
-    aspect-ratio: var(--nav-image-ratio);
-    border-radius: var(--radius-control);
-  }
-  .nav-image-link img {
-    grid-area: 1 / 1;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-  .nav-image-selected {
-    visibility: hidden;
-  }
-  .nav-image-link.is-active .nav-image-selected,
-  .nav-image-link:focus-visible .nav-image-selected {
-    visibility: visible;
-  }
-  .nav-image-link.is-active .nav-image-default,
-  .nav-image-link:focus-visible .nav-image-default {
-    visibility: hidden;
-  }
-  @media (hover: hover) {
-    .nav-image-link:hover .nav-image-selected {
-      visibility: visible;
-    }
-    .nav-image-link:hover .nav-image-default {
-      visibility: hidden;
-    }
-  }
-  .site-footer {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-block-size: var(--footer-min-height);
-    padding: var(--space-3) var(--spacing-gutter);
-    border-radius: var(--content-section-radius);
-    background: var(--footer-background);
-    color: var(--footer-color);
-    font-size: var(--font-size-body);
-    text-align: center;
-  }
   .stack {
     display: grid;
     gap: var(--space-6);
-  }
-  .section-stack {
-    display: grid;
-    gap: var(--spacing-section);
   }
   .intro {
     max-width: var(--layout-text-width);
@@ -285,12 +223,7 @@
   }
   .eyebrow {
     color: var(--color-text-muted);
-    font-size: var(--font-size-small);
-  }
-  .project-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
-    gap: var(--space-6);
+    font-size: var(--font-size-sm);
   }
   .placeholder-media {
     display: grid;
@@ -301,11 +234,6 @@
     color: var(--color-text-muted);
     border-radius: var(--radius-control);
     text-align: center;
-  }
-  .project-cover {
-    width: 100%;
-    height: auto;
-    border-radius: var(--radius-panel);
   }
   .placeholder-panel {
     padding: var(--space-6);
@@ -325,18 +253,6 @@
   .text-link:active {
     color: var(--color-link-hover);
   }
-  .project-facts {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-    gap: var(--space-6);
-  }
-  .project-facts dt {
-    color: var(--color-text-muted);
-    font-size: var(--font-size-small);
-  }
-  .project-facts dd {
-    margin: var(--space-2) 0 0;
-  }
   .skip-link {
     position: fixed;
     top: var(--space-4);
@@ -352,7 +268,7 @@
   }
 }
 
-/* 窄螢幕把品牌與導覽放在同一列，內容仍使用全寬獨立捲動區。 */
+/* 窄螢幕把品牌與導覽放在同一列，內容仍使用全頁原生捲動。 */
 @media (max-width: 899px) {
   .app-shell {
     --shell-edge: var(--space-4);
@@ -364,11 +280,10 @@
       var(--shell-nav-top) + var(--shell-compact-brand-height) + var(--space-4)
     );
     --shell-content-bottom: max(var(--space-4), env(safe-area-inset-bottom));
-    --content-section-radius: 1.125rem;
-    --content-section-padding-inline: var(--spacing-gutter);
+    --content-section-radius: var(--radius-lg);
+    --content-section-padding-inline: var(--layout-gutter);
     --intro-image-height: min(61.04dvh, 110vw);
-    --spacing-gutter: clamp(var(--space-4), 4vw, var(--space-8));
-    --spacing-section: var(--space-8);
+    --layout-gutter: clamp(var(--space-4), 4vw, var(--space-8));
   }
   .brand-anchor {
     top: var(--shell-nav-top);
@@ -381,16 +296,6 @@
     top: calc(var(--shell-nav-top) + var(--shell-compact-brand-height) / 2);
     left: calc(var(--shell-edge) + var(--shell-compact-brand-height) * 0.72 + var(--space-2));
     transform: translateY(-50%);
-  }
-  .site-nav {
-    gap: var(--shell-nav-gap);
-  }
-  .nav-image-link {
-    min-width: 0;
-    min-height: 44px;
-    flex: var(--nav-image-weight) 1 0;
-    height: max(44px, var(--shell-nav-height));
-    aspect-ratio: auto;
   }
 }
 

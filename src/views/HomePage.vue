@@ -25,25 +25,25 @@ const featuredProjects = projects.slice(0, 2)
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--home-content-gap);
+  gap: var(--space-12);
   text-align: center;
 }
 
 .home-hero {
-  min-block-size: var(--home-hero-min-height);
+  min-block-size: clamp(22rem, 45.4dvh, 32rem);
   justify-content: center;
 }
 
 .home-heading {
-  color: var(--home-heading-color);
-  font-size: var(--home-heading-font-size);
-  font-weight: 400;
+  color: var(--palette-blue);
+  font-size: clamp(2.5rem, 4.5vw, 4rem);
+  font-weight: var(--font-weight-regular);
 }
 
 .home-intro {
   max-inline-size: var(--layout-text-width);
-  color: var(--home-intro-color);
-  font-size: var(--font-size-subtitle);
+  color: var(--palette-blue);
+  font-size: var(--font-size-lg);
 }
 
 .home-section :deep(.project-grid) {

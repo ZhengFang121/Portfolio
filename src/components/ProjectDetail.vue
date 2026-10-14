@@ -49,3 +49,26 @@ defineProps<{ project: PortfolioProject }>()
     </section>
   </article>
 </template>
+
+<style scoped>
+/* 保留 components layer，維持工具類別的覆寫優先順序。 */
+@layer components {
+  .project-cover {
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius-panel);
+  }
+  .project-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: var(--space-6);
+  }
+  .project-facts dt {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+  .project-facts dd {
+    margin: var(--space-2) 0 0;
+  }
+}
+</style>

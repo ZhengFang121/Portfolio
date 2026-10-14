@@ -57,14 +57,14 @@ withDefaults(defineProps<{ project: PortfolioProject; align?: 'start' | 'center'
 .work-card-cover {
   inline-size: 100%;
   min-inline-size: 0;
-  aspect-ratio: var(--work-card-cover-ratio);
+  aspect-ratio: 4 / 3;
   block-size: auto;
   object-fit: cover;
   border-radius: var(--radius-control);
 }
 
 .work-card-category {
-  font-size: var(--font-size-small);
+  font-size: var(--font-size-sm);
 }
 
 .work-card-action {
