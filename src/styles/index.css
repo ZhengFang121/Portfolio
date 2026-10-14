@@ -60,6 +60,11 @@
 }
 
 @layer components {
+  /* 不以半透明混色呈現停用控制項。 */
+  .p-button:disabled {
+    border-style: dashed;
+    cursor: not-allowed;
+  }
   .app-shell {
     min-height: 100dvh;
     display: flex;
@@ -167,14 +172,19 @@
     padding: var(--space-6);
     border: 1px dashed var(--color-border);
     border-radius: var(--radius-panel);
-    background: var(--color-surface-subtle);
+    background: var(--color-surface-accent);
   }
   .text-link {
+    color: var(--color-link);
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
     min-height: 44px;
     width: fit-content;
+  }
+  .text-link:hover,
+  .text-link:active {
+    color: var(--color-link-hover);
   }
   .project-facts {
     display: grid;

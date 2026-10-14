@@ -70,8 +70,10 @@ skills-lock.json           # skills CLI 產生的來源與 hash
 尚未提供的欄位保持 `null`，畫面以明確占位呈現，不捏造成果、年份或角色。
 共用導覽與頁尾由 `App.vue` 管理；頁面採 lazy import。路由切換更新標題、移動主要內容焦點並恢復捲動位置。
 
-Token 定義色彩、字體、字距、行距、間距、閱讀寬度、圓角與互動時間。目前色彩仍為中性骨架，字型已確認使用 Bricolage Grotesque＋昭源環方，
-正式品牌設計尚未批准。Tailwind Vite 插件已啟用，以 `@theme inline` 對應專案語意 Token。
+Token 定義色彩、字體、字距、行距、間距、閱讀寬度、圓角與互動時間。介面色盤已確認只使用 `#A71F24`、`#B9DAE8`、`#FBEDB3`、`#000000`、`#FFFFFF`，字型使用 Bricolage Grotesque＋昭源環方，
+完整視覺版型尚未確認。
+白色用於頁面與卡片，黑色用於文字與邊框，紅色用於主要操作與連結，淺藍用於導覽狀態與圖片占位，淡黃用於資訊占位區塊。
+Hover／active 使用黑色，不新增深淺衍生色；作品圖片保留原始色彩。Tailwind Vite 插件已啟用，以 `@theme inline` 對應專案語意 Token。
 PrimeVue 4 使用 Aura，主色與控制圓角直接參照同一套 Token，CSS layers 保持工具樣式可覆寫。
 `@lucide/vue` 已用於作品導覽圖示；GSAP 已安裝，尚未加入展示動畫，後續須尊重 reduced motion 並清理生命週期資源。
 

@@ -1,13 +1,11 @@
-/* 字型已確認；中性色彩仍為暫定骨架。 */
+/* 全站介面限用以下五色；作品圖片保留原始色彩。 */
 :root {
   /* 基礎層 */
-  --neutral-0: #ffffff;
-  --neutral-50: #f7f7f8;
-  --neutral-200: #dedee2;
-  --neutral-600: #57575f;
-  --neutral-800: #303036;
-  --neutral-900: #202024;
-  --neutral-950: #101012;
+  --palette-red: #a71f24;
+  --palette-blue: #b9dae8;
+  --palette-yellow: #fbedb3;
+  --palette-black: #000000;
+  --palette-white: #ffffff;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -29,17 +27,20 @@
   --radius-medium: 0.75rem;
 
   /* 語意層：描述用途，之後換風格主要調整這裡。 */
-  --color-background: var(--neutral-0);
-  --color-surface: var(--neutral-0);
-  --color-surface-subtle: var(--neutral-50);
-  --color-text: var(--neutral-900);
-  --color-text-muted: var(--neutral-600);
-  --color-border: var(--neutral-200);
-  --color-action: var(--neutral-900);
-  --color-action-hover: var(--neutral-800);
-  --color-action-active: var(--neutral-950);
-  --color-on-action: var(--neutral-0);
-  --color-focus: var(--neutral-900);
+  --color-background: var(--palette-white);
+  --color-surface: var(--palette-white);
+  --color-surface-subtle: var(--palette-blue);
+  --color-surface-accent: var(--palette-yellow);
+  --color-text: var(--palette-black);
+  --color-text-muted: var(--palette-black);
+  --color-border: var(--palette-black);
+  --color-action: var(--palette-red);
+  --color-action-hover: var(--palette-black);
+  --color-action-active: var(--palette-black);
+  --color-on-action: var(--palette-white);
+  --color-focus: var(--palette-red);
+  --color-link: var(--palette-red);
+  --color-link-hover: var(--palette-black);
   --font-body: var(--font-portfolio);
   --font-heading: var(--font-portfolio);
   --line-height-body: 1.75;
@@ -61,7 +62,14 @@
   --card-radius: var(--radius-panel);
 }
 
+/* 移除 Tailwind 預設色盤，避免工具類別引入其他色彩。 */
 @theme inline {
+  --color-*: initial;
+  --color-brand: var(--palette-red);
+  --color-sky: var(--palette-blue);
+  --color-cream: var(--palette-yellow);
+  --color-black: var(--palette-black);
+  --color-white: var(--palette-white);
   --color-page: var(--color-background);
   --color-ink: var(--color-text);
   --color-muted: var(--color-text-muted);
