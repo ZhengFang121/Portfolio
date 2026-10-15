@@ -49,6 +49,7 @@ TypeScript 使用相容的 6.0 系列，因目前 typescript-eslint 要求 TypeS
 
 保留 `project-01`～`project-05` 的既有 slug，避免作品網址失效；已移除的 `project-06` 顯示 404。
 首頁依 slug 固定顯示跑者菲迪與 APOLLO，不受 Works 列表順序影響。
+首頁與 Works 的卡片一般點擊／Enter 會在目前頁面開啟作品介紹 Modal，網址保持不變；右鍵、修飾鍵與滑鼠中鍵保留原生獨立頁連結操作。
 
 ## 結構與維護
 
@@ -63,6 +64,7 @@ src/
   theme/primevue.ts        # Aura preset 與語意 Token 對應
 scripts/verify-routes.mjs   # 不需瀏覽器的路由與 HTML 渲染檢查
 scripts/verify-intro.mjs    # 兩階段輸入、定位與生命週期檢查
+scripts/verify-project-modal.mjs # Chrome 真實瀏覽器的 Modal 定位與互動檢查
 docs/design-token-migration.md # Token 前後對照與本次驗證範圍
 .agents/skills/             # 六個專案動畫 Skills
 skills-lock.json           # skills CLI 產生的來源與 hash
@@ -73,6 +75,11 @@ skills-lock.json           # skills CLI 產生的來源與 hash
 封面引用 `public/images/projects/` 的既有檔案，尺寸依實際像素設定。
 尚未提供的年份、角色與章節內容保持 `null`，畫面以明確占位呈現，不捏造成果。
 共用導覽與頁尾由 `App.vue` 管理；頁面採 lazy import。路由切換更新標題、移動主要內容焦點並恢復捲動位置。
+
+作品浮層由 `ProjectGrid.vue` 維護一份選取狀態與單一 `ProjectModal.vue`，共用 `ProjectDetail.vue` 的 `mode="modal"` 白底版型。
+PrimeVue Dialog 掛載在 `.app-shell`，直接繼承窄版 `--shell-*`；維持內容區左右定位，以 `100dvh` 計算高度，上下統一保留 24px 或較大的安全區距離，允許覆蓋導覽列。48px 黃底紅色 X 關閉鈕位於內側右上方控制區，不隨介紹內容捲動。
+背景鎖定捲動並設為 `inert`，Modal 內部可獨立捲動；關閉鈕、Esc 或遮罩可關閉，並還原背景、捲動位置與原卡片焦點。
+黑色遮罩依本次互動規格使用 55% 不透明度，只有遮罩背景半透明，介紹面板仍為不透明白底與 6px 藍框。
 
 Token 定義色彩、字體、字距、行距、間距、閱讀寬度、圓角與互動時間。介面色盤已確認只使用 `#A71F24`、`#B9DAE8`、`#FBEDB3`、`#000000`、`#FFFFFF`，字型使用 Bricolage Grotesque＋昭源環方，
 後續視覺調整另行確認，本次 Token 整理維持現有外觀。
@@ -187,6 +194,9 @@ Skills 是開發指引，不是網站執行依賴。安裝 motion-design 不代�
 - `type-check`、`lint`、`build`：程式、型別與正式建置驗證。
 - `verify:routes`：Vue Memory Router＋HTML render，檢查 13 個網址，包括五個作品、已移除的第六個作品、未知作品與巢狀未知網址；確認主要導覽、h1、首頁精選、卡片順序、封面檔案與多個分類標籤。
 - 路由腳本供開發驗證，網站仍是 client SPA，並未啟用 SSR 部署。
+- `verify:routes` 也檢查卡片 Dialog 屬性、五個作品共用 Modal 內容的 H2／H3 與標題關聯，以及保留獨立頁連結。
+- `npm run build` 後執行 `npm run verify:modal`，使用本機 Chrome 無頭模式測試首頁／Works 的 1440、900、899、768、390px 與矮螢幕，涵蓋左右對齊、三種關閉、鍵盤焦點、背景鎖定、內部捲動、修飾鍵、實際中鍵另開獨立頁、模擬觸控捲動、跨斷點 resize、卸載清理與作品直接網址。此檢查獨立於不需瀏覽器的 `npm run verify`。
+- `verify:modal` 預設使用 macOS Google Chrome；其他環境以 `CHROME_BIN` 指定 Chromium 執行檔，無需新增 npm 套件。截圖與報告輸出至已忽略的 `.impeccable/review/project-modal/`。實體手機、Safari、螢幕閱讀器仍需另外檢查。
 - 上述 2026-10-05 紀錄未包含瀏覽器視覺 QA；2026-10-14 Token 重構的本機 Chrome 無頭模式回歸範圍與限制另見 [整理紀錄](docs/design-token-migration.md)。無頭模式不等同於實體手機、Safari 或螢幕閱讀器驗證。
 
 ## 後續內容與部署待辦

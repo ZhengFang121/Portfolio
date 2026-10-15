@@ -1,15 +1,44 @@
 <script setup lang="ts">
+import { ref, shallowRef, useId } from 'vue'
 import WorkCard from './WorkCard.vue'
+import ProjectModal from './ProjectModal.vue'
 import { projects as allProjects, type PortfolioProject } from '../data/projects'
 
 withDefaults(defineProps<{ projects?: readonly PortfolioProject[] }>(), {
   projects: () => allProjects,
 })
+
+const dialogId = `project-modal-${useId()}`
+const selectedProject = shallowRef<PortfolioProject | null>(null)
+const trigger = shallowRef<HTMLElement | null>(null)
+const visible = ref(false)
+
+function openProject(project: PortfolioProject, event: MouseEvent) {
+  if (!(event.currentTarget instanceof HTMLElement)) return
+  trigger.value = event.currentTarget
+  selectedProject.value = project
+  visible.value = true
+}
 </script>
 <template>
   <div class="project-grid">
-    <WorkCard v-for="project in projects" :key="project.slug" :project="project" />
+    <WorkCard
+      v-for="project in projects"
+      :key="project.slug"
+      :project="project"
+      :expanded="visible && selectedProject?.slug === project.slug"
+      :dialog-id="dialogId"
+      @open="openProject(project, $event)"
+    />
   </div>
+  <ProjectModal
+    v-if="selectedProject"
+    :id="dialogId"
+    v-model:visible="visible"
+    :project="selectedProject"
+    :trigger="trigger"
+    @after-hide="selectedProject = null"
+  />
 </template>
 
 <style>

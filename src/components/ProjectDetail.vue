@@ -2,16 +2,32 @@
 import { RouterLink } from 'vue-router'
 import { ArrowLeft } from '@lucide/vue'
 import type { PortfolioProject } from '../data/projects'
-defineProps<{ project: PortfolioProject }>()
+const props = withDefaults(
+  defineProps<{ project: PortfolioProject; mode?: 'page' | 'modal'; titleId?: string }>(),
+  {
+    mode: 'page',
+    titleId: undefined,
+  },
+)
+
+function sectionId(id: string) {
+  return props.mode === 'page' ? id : `${props.project.slug}-modal-${id}`
+}
 </script>
 <template>
-  <article class="page-sections">
-    <header class="content-section stack">
-      <RouterLink class="text-link" to="/works"
+  <article class="page-sections" :class="{ 'project-detail--modal': mode === 'modal' }">
+    <header class="stack" :class="{ 'content-section': mode === 'page' }">
+      <RouterLink v-if="mode === 'page'" class="text-link" to="/works"
         ><ArrowLeft :size="18" aria-hidden="true" />返回主要作品</RouterLink
       >
       <p class="eyebrow">作品內容整理中</p>
-      <h1>{{ project.title }}</h1>
+      <component
+        :is="mode === 'modal' ? 'h2' : 'h1'"
+        :id="titleId"
+        :tabindex="mode === 'modal' ? -1 : undefined"
+        class="project-detail-title"
+        >{{ project.title }}</component
+      >
       <p class="intro muted">{{ project.summary ?? '作品簡介尚未提供，將於內容確認後補上。' }}</p>
       <dl class="project-facts">
         <div>
@@ -40,10 +56,13 @@ defineProps<{ project: PortfolioProject }>()
     <section
       v-for="section in project.sections"
       :key="section.id"
-      class="content-section stack"
-      :aria-labelledby="section.id"
+      class="stack"
+      :class="{ 'content-section': mode === 'page' }"
+      :aria-labelledby="sectionId(section.id)"
     >
-      <h2 :id="section.id">{{ section.title }}</h2>
+      <component :is="mode === 'modal' ? 'h3' : 'h2'" :id="sectionId(section.id)">{{
+        section.title
+      }}</component>
       <p v-if="section.content" class="intro">{{ section.content }}</p>
       <div v-else class="placeholder-panel"><p class="muted">此區內容與圖片待提供。</p></div>
     </section>
@@ -53,6 +72,23 @@ defineProps<{ project: PortfolioProject }>()
 <style scoped>
 /* 保留 components layer，維持工具類別的覆寫優先順序。 */
 @layer components {
+  .project-detail--modal {
+    --color-text: var(--palette-black);
+    --color-text-muted: var(--palette-black);
+    --color-border: var(--palette-black);
+    --color-focus: var(--palette-black);
+    padding: var(--content-section-padding-block) var(--content-section-padding-inline);
+    color: var(--palette-black);
+  }
+  .project-detail--modal .project-detail-title {
+    font-size: var(--font-size-2xl);
+  }
+  .project-detail--modal h3 {
+    font-size: var(--font-size-xl);
+  }
+  .project-detail--modal .placeholder-panel {
+    background: var(--palette-white);
+  }
   .project-cover {
     width: 100%;
     height: auto;

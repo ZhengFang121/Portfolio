@@ -16,6 +16,7 @@ try {
   const { routes } = await server.ssrLoadModule('/src/router/routes.ts')
   const { projects } = await server.ssrLoadModule('/src/data/projects.ts')
   const { default: App } = await server.ssrLoadModule('/src/App.vue')
+  const { default: ProjectDetail } = await server.ssrLoadModule('/src/components/ProjectDetail.vue')
   const { portfolioPreset } = await server.ssrLoadModule('/src/theme/primevue.ts')
   assert.equal(projects.length, 5)
   assert.equal(new Set(projects.map((project) => project.slug)).size, 5)
@@ -26,6 +27,19 @@ try {
   for (const project of projects) {
     assert.ok(project.cover, `${project.slug}: 封面資料完整`)
     await access(new URL(`../public${project.cover.src}`, import.meta.url))
+    const titleId = `verify-${project.slug}-title`
+    const modalContent = await renderToString(
+      createSSRApp(ProjectDetail, { project, mode: 'modal', titleId }),
+    )
+    assert.match(modalContent, new RegExp(`<h2[^>]*id="${titleId}"`))
+    assert.ok(!modalContent.includes('<h1'), `${project.slug}: Modal 不重複頁面 H1`)
+    assert.ok(!modalContent.includes('content-section'), `${project.slug}: Modal 不套紅黃分區`)
+    assert.ok(!modalContent.includes('返回主要作品'), `${project.slug}: Modal 保留在原頁面`)
+    for (const section of project.sections) {
+      const sectionId = `${project.slug}-modal-${section.id}`
+      assert.ok(modalContent.includes(`aria-labelledby="${sectionId}"`))
+      assert.match(modalContent, new RegExp(`<h3[^>]*id="${sectionId}"`))
+    }
   }
 
   const cases = [
@@ -114,6 +128,8 @@ try {
       for (const [index, card] of cards.entries()) {
         const project = visibleProjects[index]
         assert.ok(card[0].includes(`href="/works/${project.slug}"`), `${path}: 卡片順序正確`)
+        assert.ok(card[0].includes('aria-haspopup="dialog"'), `${path}: 宣告開啟 Dialog`)
+        assert.ok(card[0].includes('aria-expanded="false"'), `${path}: 初始 Modal 關閉`)
         assert.ok(card[1].includes(project.title))
         assert.ok(card[1].includes(project.summary))
         assert.ok(card[1].includes(`src="${project.cover.src}"`))

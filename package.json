@@ -13,6 +13,7 @@
     "format:check": "prettier --check .",
     "verify:routes": "node scripts/verify-routes.mjs",
     "verify:intro": "node scripts/verify-intro.mjs",
+    "verify:modal": "node scripts/verify-project-modal.mjs",
     "verify": "npm run verify:routes && npm run verify:intro"
   },
   "dependencies": {

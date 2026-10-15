@@ -3,18 +3,37 @@ import { RouterLink } from 'vue-router'
 import BaseCard from './BaseCard.vue'
 import type { PortfolioProject } from '../data/projects'
 
-defineProps<{ project: PortfolioProject }>()
+defineProps<{ project: PortfolioProject; expanded?: boolean; dialogId?: string }>()
+const emit = defineEmits<{ open: [event: MouseEvent] }>()
+
+function openProject(event: MouseEvent) {
+  // 只攔截一般點擊；修飾鍵、滑鼠中鍵與右鍵仍使用原生作品連結。
+  if (
+    event.defaultPrevented ||
+    event.button !== 0 ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey
+  )
+    return
+  event.preventDefault()
+  emit('open', event)
+}
 </script>
 
 <template>
-  <RouterLink v-slot="{ href, navigate }" :to="`/works/${project.slug}`" custom>
+  <RouterLink v-slot="{ href }" :to="`/works/${project.slug}`" custom>
     <!-- 整張卡片只有一個連結，支援鍵盤、另開分頁及原生連結操作。 -->
     <BaseCard
       as="a"
       :href="href"
       class="work-card"
       :aria-label="`查看作品介紹：${project.title}`"
-      @click="navigate"
+      aria-haspopup="dialog"
+      :aria-expanded="expanded ?? false"
+      :aria-controls="expanded ? dialogId : undefined"
+      @click="openProject"
     >
       <img
         v-if="project.cover"
