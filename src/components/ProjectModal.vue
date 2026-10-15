@@ -181,23 +181,19 @@ body.p-overflow-hidden:has(.project-modal-mask) {
     height: 48px;
     padding: 0;
     border-radius: var(--radius-full);
-    background: var(--palette-blue);
-    color: var(--palette-white);
+    background: var(--palette-yellow);
+    color: var(--palette-blue);
     cursor: pointer;
   }
 
   .project-modal-close:hover,
   .project-modal-close:active {
-    background: var(--palette-red);
-    color: var(--palette-blue);
-  }
-
-  .project-modal-close:active {
-    border-width: 4px;
+    outline: 2px solid var(--palette-blue);
+    outline-offset: 2px;
   }
 
   .project-modal-close:focus-visible {
-    outline: 3px solid var(--palette-yellow);
+    outline: 3px solid var(--palette-blue);
     outline-offset: 4px;
   }
 }

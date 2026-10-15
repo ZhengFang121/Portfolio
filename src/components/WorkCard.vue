@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
 import BaseCard from './BaseCard.vue'
+import ProjectCategories from './ProjectCategories.vue'
 import type { PortfolioProject } from '../data/projects'
 
 defineProps<{ project: PortfolioProject; expanded?: boolean; dialogId?: string }>()
@@ -48,11 +49,11 @@ function openProject(event: MouseEvent) {
       <div v-else class="work-card-cover placeholder-media">作品封面待提供</div>
       <h3>{{ project.title }}</h3>
       <p class="work-card-summary">{{ project.summary ?? '作品簡介待提供。' }}</p>
-      <div v-if="project.categories.length" class="work-card-categories">
-        <span v-for="category in project.categories" :key="category" class="work-card-category">
-          {{ category }}
-        </span>
-      </div>
+      <ProjectCategories
+        v-if="project.categories.length"
+        class="work-card-categories"
+        :categories="project.categories"
+      />
     </BaseCard>
   </RouterLink>
 </template>
@@ -86,27 +87,16 @@ function openProject(event: MouseEvent) {
   border-radius: var(--radius-control);
 }
 
+.work-card h3 {
+  color: var(--palette-black);
+}
+
 .work-card-summary {
   color: var(--palette-blue);
 }
 
 .work-card-categories {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--space-2);
-  inline-size: 100%;
   margin-block-start: auto;
-}
-
-.work-card-category {
-  flex-shrink: 0;
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-full);
-  background: var(--palette-yellow);
-  color: var(--palette-red);
-  font-size: var(--font-size-sm);
-  white-space: nowrap;
 }
 
 @media (hover: hover) {

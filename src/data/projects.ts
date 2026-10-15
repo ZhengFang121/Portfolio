@@ -7,6 +7,7 @@ export interface PortfolioProject {
   slug: string
   title: string
   categories: string[]
+  designYear: string
   year: string | null
   role: string | null
   summary: string | null
@@ -19,6 +20,7 @@ export const projects: PortfolioProject[] = [
     slug: 'project-01',
     title: '跑者菲迪 Pheidi the Runner',
     categories: ['WEB DESIGN', 'ILLUSTRATION'],
+    designYear: '2026',
     year: null,
     role: null,
     summary: '新手跑者養成網站',
@@ -38,6 +40,7 @@ export const projects: PortfolioProject[] = [
     slug: 'project-02',
     title: 'PAPAGO',
     categories: ['LINE BOT', 'ILLUSTRATION'],
+    designYear: '2026',
     year: null,
     role: null,
     summary: '一查即停 尋找路邊停車位機器人',
@@ -57,6 +60,7 @@ export const projects: PortfolioProject[] = [
     slug: 'project-03',
     title: 'APOLLO',
     categories: ['PACKAGING DESIGN', 'ILLUSTRATION'],
+    designYear: '2022 - 2025',
     year: null,
     role: null,
     summary: '品牌視覺設計',
@@ -76,6 +80,7 @@ export const projects: PortfolioProject[] = [
     slug: 'project-04',
     title: 'R4D',
     categories: ['PACKAGING DESIGN', 'ILLUSTRATION'],
+    designYear: '2021 - 2024',
     year: null,
     role: null,
     summary: '品牌視覺設計',
@@ -95,6 +100,7 @@ export const projects: PortfolioProject[] = [
     slug: 'project-05',
     title: '初次見麵',
     categories: ['PRODUCT DESIGN', 'PACKAGING DESIGN', 'ILLUSTRATION'],
+    designYear: '2017',
     year: null,
     role: null,
     summary: '台灣麵食主題肥皂',

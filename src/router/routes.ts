@@ -27,12 +27,6 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: project.title },
   })),
   {
-    path: '/graphic-works',
-    name: 'graphic-works',
-    component: () => import('../views/GraphicWorksPage.vue'),
-    meta: { title: '其他平面作品' },
-  },
-  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('../views/NotFoundPage.vue'),

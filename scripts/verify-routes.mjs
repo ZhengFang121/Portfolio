@@ -24,6 +24,10 @@ try {
     projects.map((project) => project.title),
     ['跑者菲迪 Pheidi the Runner', 'PAPAGO', 'APOLLO', 'R4D', '初次見麵'],
   )
+  assert.deepEqual(
+    projects.map((project) => project.designYear),
+    ['2026', '2026', '2022 - 2025', '2021 - 2024', '2017'],
+  )
   for (const project of projects) {
     assert.ok(project.cover, `${project.slug}: 封面資料完整`)
     await access(new URL(`../public${project.cover.src}`, import.meta.url))
@@ -35,6 +39,17 @@ try {
     assert.ok(!modalContent.includes('<h1'), `${project.slug}: Modal 不重複頁面 H1`)
     assert.ok(!modalContent.includes('content-section'), `${project.slug}: Modal 不套紅黃分區`)
     assert.ok(!modalContent.includes('返回主要作品'), `${project.slug}: Modal 保留在原頁面`)
+    assert.ok(!modalContent.includes('設計年份'))
+    assert.ok(modalContent.includes(`# ${project.designYear}`))
+    for (const removed of ['作品內容整理中', '製作年份', '負責角色', 'project-facts']) {
+      assert.ok(!modalContent.includes(removed), `${project.slug}: 移除 ${removed}`)
+    }
+    assert.deepEqual(
+      [...modalContent.matchAll(/<li\b[^>]*class="project-category"[^>]*>(.*?)<\/li>/gs)].map(
+        (match) => match[1].trim(),
+      ),
+      project.categories,
+    )
     for (const section of project.sections) {
       const sectionId = `${project.slug}-modal-${section.id}`
       assert.ok(modalContent.includes(`aria-labelledby="${sectionId}"`))
@@ -46,7 +61,7 @@ try {
     ['/', 'home', '平面設計師 與 前端網頁設計學習者'],
     ['/about', 'about', '關於 Fang'],
     ['/works', 'works', '主要作品'],
-    ['/graphic-works', 'graphic-works', '其他平面作品'],
+    ['/graphic-works', 'not-found', '找不到這個頁面'],
     ...projects.map((project) => [`/works/${project.slug}`, `work-${project.slug}`, project.title]),
     ['/works/project-06', 'not-found', '找不到這個頁面'],
     ['/works/unknown-project', 'not-found', '找不到這個頁面'],
@@ -70,6 +85,7 @@ try {
     assert.equal((html.match(/<h1(?:\s|>)/g) ?? []).length, 1, `${path}: 一個 h1`)
     assert.ok(html.includes('aria-label="主要導覽"'))
     assert.ok(html.includes('<footer'))
+    assert.ok(!html.includes('href="/graphic-works"'), `${path}: 無已移除頁面的內部連結`)
     assert.ok(html.includes('site-content shell-reveal'), `${path}: 共用文件內容區`)
     assert.ok(html.includes('class="intro-viewport"'), `${path}: 獨立固定視窗層`)
     assert.ok(!html.includes('content-scroll'), `${path}: 移除內層捲動容器`)
@@ -77,7 +93,7 @@ try {
     const project = projects.find((item) => path === `/works/${item.slug}`)
     const expectedSections = project
       ? 1 + project.sections.length
-      : expectedName === 'home' || expectedName === 'graphic-works'
+      : expectedName === 'home'
         ? 2
         : expectedName === 'about'
           ? 3
@@ -93,7 +109,7 @@ try {
         ? 'home'
         : path === '/about'
           ? 'profile'
-          : path.startsWith('/works') || path === '/graphic-works'
+          : path.startsWith('/works')
             ? 'works'
             : null
     const activeLinks = [...html.matchAll(/<a\b[^>]*class="[^"]*is-active[^"]*"[^>]*>(.*?)<\/a>/gs)]
@@ -121,7 +137,6 @@ try {
       } else {
         assert.match(html, /<h1\b[^>]*class="sr-only"[^>]*>主要作品<\/h1>/)
         assert.ok(!html.includes('六個主要作品，名稱與內容待確認。'))
-        assert.ok(html.includes('href="/graphic-works"'), `${path}: 保留其他平面作品入口`)
       }
       const cards = [...html.matchAll(/<a\b[^>]*class="[^"]*\bwork-card\b[^"]*"[^>]*>(.*?)<\/a>/gs)]
       assert.equal(cards.length, visibleProjects.length, `${path}: 每張作品卡片有一個連結`)
@@ -136,7 +151,7 @@ try {
         assert.ok(card[1].includes(`width="${project.cover.width}"`))
         assert.ok(card[1].includes(`height="${project.cover.height}"`))
         const categories = [
-          ...card[1].matchAll(/<span\b[^>]*class="work-card-category"[^>]*>(.*?)<\/span>/gs),
+          ...card[1].matchAll(/<li\b[^>]*class="project-category"[^>]*>(.*?)<\/li>/gs),
         ]
         assert.deepEqual(
           categories.map((match) => match[1].trim()),
@@ -151,7 +166,8 @@ try {
     if (expectedName.startsWith('work-')) {
       assert.ok(html.includes('作品背景'))
       assert.ok(html.includes(`src="${project.cover.src}"`))
-      assert.ok(html.includes(project.categories.join('、')))
+      for (const category of project.categories) assert.ok(html.includes(category))
+      assert.ok(html.includes(`# ${project.designYear}`))
       assert.ok(html.includes('此區內容與圖片待提供。'))
     }
     if (expectedName === 'not-found') {

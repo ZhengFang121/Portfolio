@@ -11,7 +11,7 @@ const items = [
 
 function isActive(path: string) {
   return path === '/works'
-    ? route.path === '/works' || route.path.startsWith('/works/') || route.path === '/graphic-works'
+    ? route.path === '/works' || route.path.startsWith('/works/')
     : route.path === path
 }
 </script>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
 import { ArrowLeft } from '@lucide/vue'
+import ProjectCategories from './ProjectCategories.vue'
 import type { PortfolioProject } from '../data/projects'
 const props = withDefaults(
   defineProps<{ project: PortfolioProject; mode?: 'page' | 'modal'; titleId?: string }>(),
@@ -20,7 +21,7 @@ function sectionId(id: string) {
       <RouterLink v-if="mode === 'page'" class="text-link" to="/works"
         ><ArrowLeft :size="18" aria-hidden="true" />返回主要作品</RouterLink
       >
-      <p class="eyebrow">作品內容整理中</p>
+      <p class="project-design-year"># {{ project.designYear }}</p>
       <component
         :is="mode === 'modal' ? 'h2' : 'h1'"
         :id="titleId"
@@ -28,21 +29,15 @@ function sectionId(id: string) {
         class="project-detail-title"
         >{{ project.title }}</component
       >
-      <p class="intro muted">{{ project.summary ?? '作品簡介尚未提供，將於內容確認後補上。' }}</p>
-      <dl class="project-facts">
-        <div>
-          <dt>作品類型</dt>
-          <dd>{{ project.categories.length ? project.categories.join('、') : '待提供' }}</dd>
-        </div>
-        <div>
-          <dt>製作年份</dt>
-          <dd>{{ project.year ?? '待提供' }}</dd>
-        </div>
-        <div>
-          <dt>負責角色</dt>
-          <dd>{{ project.role ?? '待提供' }}</dd>
-        </div>
-      </dl>
+      <p class="project-detail-summary intro muted">
+        {{ project.summary ?? '作品簡介尚未提供，將於內容確認後補上。' }}
+      </p>
+      <ProjectCategories
+        v-if="project.categories.length"
+        :categories="project.categories"
+        :single-line="mode === 'modal'"
+      />
+      <p v-else class="muted">作品類型待提供</p>
       <img
         v-if="project.cover"
         class="project-cover"
@@ -77,34 +72,63 @@ function sectionId(id: string) {
     --color-text-muted: var(--palette-black);
     --color-border: var(--palette-black);
     --color-focus: var(--palette-black);
-    padding: var(--content-section-padding-block) var(--content-section-padding-inline);
+    /* 原水平留白最大為 space-12，增加至下一級 space-16。 */
+    padding: var(--content-section-padding-block) var(--space-16);
     color: var(--palette-black);
+    text-align: center;
+  }
+  .project-detail--modal .stack {
+    min-inline-size: 0;
+    justify-items: center;
+  }
+  .project-detail--modal .stack > * {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+  }
+  .project-design-year {
+    color: var(--palette-blue);
+    font-size: var(--font-size-sm);
+    text-align: center;
+  }
+  .project-detail--modal .project-detail-summary {
+    color: var(--palette-blue);
   }
   .project-detail--modal .project-detail-title {
+    color: var(--palette-black);
     font-size: var(--font-size-2xl);
   }
   .project-detail--modal h3 {
     font-size: var(--font-size-xl);
   }
   .project-detail--modal .placeholder-panel {
+    width: 100%;
     background: var(--palette-white);
+  }
+  .project-detail--modal :is(img, video, iframe, audio) {
+    display: block;
+    max-inline-size: 100%;
+    margin-inline: auto;
+  }
+  .project-detail--modal :is(img, video) {
+    height: auto;
+    object-fit: contain;
   }
   .project-cover {
     width: 100%;
     height: auto;
     border-radius: var(--radius-panel);
   }
-  .project-facts {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-    gap: var(--space-6);
+  @media (max-width: 899px) {
+    .project-detail--modal {
+      /* 窄版原水平留白最大為 space-8，增加至 space-12。 */
+      padding-inline: var(--space-12);
+    }
   }
-  .project-facts dt {
-    color: var(--color-text-muted);
-    font-size: var(--font-size-sm);
-  }
-  .project-facts dd {
-    margin: var(--space-2) 0 0;
+  @media (max-width: 480px) {
+    .project-detail--modal {
+      /* 手機原為 space-4 左右，使用下一級並保留內容寬度。 */
+      padding-inline: var(--space-6);
+    }
   }
 }
 </style>

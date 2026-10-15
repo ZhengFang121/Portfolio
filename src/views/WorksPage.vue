@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import ProjectGrid from '../components/ProjectGrid.vue'
-import { RouterLink } from 'vue-router'
 </script>
 <template>
   <div class="page-sections">
@@ -8,7 +7,6 @@ import { RouterLink } from 'vue-router'
       <h1 id="works-title" class="sr-only">主要作品</h1>
       <h2 class="sr-only">作品列表</h2>
       <ProjectGrid />
-      <RouterLink class="text-link" to="/graphic-works">查看其他平面作品</RouterLink>
     </section>
   </div>
 </template>

@@ -189,6 +189,83 @@ try {
       '清除背景鎖定',
     )
   }
+  async function checkDetail(index, width) {
+    const detail = await evaluate(`(() => {
+      const root = document.querySelector('.project-detail--modal');
+      const card = document.querySelectorAll('.work-card')[${index}];
+      const categories = root.querySelector('.project-categories');
+      const list = categories.querySelector('ul');
+      const rect = el => { const r=el.getBoundingClientRect(); return {left:r.left,right:r.right,top:r.top,width:r.width,height:r.height} };
+      const pillStyle = el => { const s=getComputedStyle(el); return {background:s.backgroundColor,color:s.color,fontSize:s.fontSize,padding:s.padding,borderRadius:s.borderRadius} };
+      return {
+        text:root.textContent,year:root.querySelector('.project-design-year').textContent,
+        padding:getComputedStyle(root).paddingLeft,
+        root:rect(root),categories:rect(categories),list:rect(list),
+        overflow:categories.scrollWidth>categories.clientWidth,
+        pills:[...root.querySelectorAll('.project-category')].map(el=>({text:el.textContent.trim(),rect:rect(el),style:pillStyle(el)})),
+        cardPills:[...card.querySelectorAll('.project-category')].map(el=>({text:el.textContent.trim(),style:pillStyle(el)})),
+        texts:[...root.querySelectorAll('h2,h3,p')].map(el=>({align:getComputedStyle(el).textAlign,rect:rect(el)})),
+        blue:[...root.querySelectorAll('.project-design-year,.project-detail-summary')].map(el=>getComputedStyle(el).color),
+        titles:[root.querySelector('.project-detail-title'),card.querySelector('h3')].map(el=>getComputedStyle(el).color),
+        media:rect(root.querySelector('img')),ratio:root.querySelector('img').naturalWidth/root.querySelector('img').naturalHeight,
+        sections:[...root.querySelectorAll('header,section')].map(rect),
+        panelOverflow:document.querySelector('.project-modal-panel').scrollWidth>document.querySelector('.project-modal-panel').clientWidth,
+      }
+    })()`)
+    assert.ok(!detail.panelOverflow, `${width}: 介紹內容不水平溢出`)
+    assert.equal(detail.padding, width <= 480 ? '24px' : width <= 899 ? '48px' : '64px')
+    assert.match(
+      detail.year,
+      new RegExp(['2026', '2026', '2022 - 2025', '2021 - 2024', '2017'][index]),
+    )
+    for (const removed of ['作品內容整理中', '設計年份', '製作年份', '負責角色'])
+      assert.ok(!detail.text.includes(removed))
+    assert.ok(detail.blue.every((color) => color === 'rgb(185, 218, 232)'))
+    assert.ok(detail.titles.every((color) => color === 'rgb(0, 0, 0)'))
+    assert.ok(detail.texts.every((text) => text.align === 'center'))
+    for (const element of [
+      ...detail.texts.map((text) => text.rect),
+      detail.media,
+      detail.categories,
+    ])
+      assert.ok(
+        Math.abs(element.left + element.width / 2 - (detail.root.left + detail.root.width / 2)) < 1,
+        '文字與媒體水平置中',
+      )
+    assert.ok(
+      Math.abs(detail.media.width / detail.media.height - detail.ratio) < 0.01,
+      '封面維持原始比例',
+    )
+    assert.deepEqual(
+      detail.pills.map((pill) => ({ text: pill.text, style: pill.style })),
+      detail.cardPills,
+      '卡片與視窗共用膠囊樣式及內容',
+    )
+    assert.ok(
+      detail.pills.every((pill) => Math.abs(pill.rect.top - detail.pills[0].rect.top) < 1),
+      '膠囊維持單行',
+    )
+    if (!detail.overflow) {
+      const first = detail.pills[0].rect,
+        last = detail.pills.at(-1).rect
+      assert.ok(
+        Math.abs(
+          (first.left + last.right) / 2 - (detail.categories.left + detail.categories.width / 2),
+        ) < 1,
+        '膠囊整組置中',
+      )
+    } else {
+      await evaluate(
+        `document.querySelector('.project-detail--modal .project-categories').scrollLeft=10000`,
+      )
+      assert.ok(
+        await evaluate(
+          `(() => {const region=document.querySelector('.project-detail--modal .project-categories'),last=region.querySelector('li:last-child');return region.scrollLeft>0 && last.getBoundingClientRect().right<=region.getBoundingClientRect().right+1})()`,
+        ),
+        '可捲至最後一顆完整膠囊',
+      )
+    }
+  }
   await cdp('Page.enable')
   await cdp('Runtime.enable')
   await cdp('Emulation.setEmulatedMedia', {
@@ -200,6 +277,7 @@ try {
     [899, 900],
     [768, 1024],
     [390, 844],
+    [320, 568],
     [1440, 400],
     [768, 480],
     [390, 480],
@@ -214,6 +292,38 @@ try {
     })
     for (const path of ['/', '/works']) {
       await navigate(path)
+      if (path === '/works') {
+        const layout = await evaluate(`(() => {
+          const grid=document.querySelector('.project-grid'),section=grid.parentElement;
+          const style=getComputedStyle(section);
+          return {count:grid.querySelectorAll('.work-card').length,last:section.lastElementChild===grid,
+            bottomGap:section.getBoundingClientRect().bottom-grid.getBoundingClientRect().bottom,
+            paddingBottom:parseFloat(style.paddingBottom),
+            background:style.backgroundColor,radius:style.borderTopLeftRadius,
+            overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth}
+        })()`)
+        assert.equal(layout.count, 5, '保留五張作品卡片')
+        assert.ok(layout.last, '作品列表後沒有多餘入口或容器')
+        assert.ok(
+          Math.abs(layout.bottomGap - layout.paddingBottom) < 1,
+          '列表底部僅保留原本區塊 Padding',
+        )
+        assert.equal(layout.background, 'rgb(167, 31, 36)')
+        assert.equal(layout.radius, width <= 899 ? '18px' : '24px')
+        assert.ok(!layout.overflow, 'Works 頁面無水平溢出')
+        if ([1440, 768, 390].includes(width) && height > 500) {
+          await evaluate(
+            `document.querySelector('.work-card:last-child').scrollIntoView({block:'end',behavior:'instant'})`,
+          )
+          await evaluate(`document.querySelector('.work-card:last-child img').decode()`)
+          await delay(150)
+          const { data } = await cdp('Page.captureScreenshot', { format: 'png' })
+          await writeFile(
+            join(output, `${width}x${height}-works-bottom.png`),
+            Buffer.from(data, 'base64'),
+          )
+        }
+      }
       const selector = '.work-card'
       await evaluate(
         `document.querySelector('${selector}').scrollIntoView({block:'center',behavior:'instant'}); document.querySelector('${selector}').focus({preventScroll:true})`,
@@ -223,6 +333,10 @@ try {
       await key('Enter')
       await waitFor(`document.querySelector('.project-modal h2')===document.activeElement`)
       await evaluate('document.fonts.ready.then(() => true)')
+      await evaluate(
+        `Promise.all([...document.querySelectorAll('.project-modal img')].map(img=>img.decode()))`,
+      )
+      await checkDetail(0, width)
       const state = await evaluate(geometry)
       assert.equal(await evaluate('location.href'), url, '開啟不改網址')
       for (const edge of ['left', 'right', 'width']) {
@@ -250,7 +364,7 @@ try {
       assert.equal(state.close.height, 48)
       assert.equal(state.close.width, 48)
       assert.equal(state.closeBackground, 'rgb(251, 237, 179)')
-      assert.equal(state.closeColor, 'rgb(167, 31, 36)')
+      assert.equal(state.closeColor, 'rgb(185, 218, 232)')
       assert.equal(state.dialogOverflowY, 'hidden', '外框不產生第二個捲軸')
       assert.ok(
         Math.abs(state.panel.bottom - (state.dialog.bottom - 6)) < 1,
@@ -318,6 +432,30 @@ try {
       await clickAt(2, 2)
       await closed(selector, before)
       report.push({ width, height, path, before, state })
+      if (path === '/works') {
+        for (const index of [1, 2, 3, 4]) {
+          const card = `.work-card:nth-child(${index + 1})`
+          await evaluate(
+            `document.querySelector('${card}').scrollIntoView({block:'center',behavior:'instant'});document.querySelector('${card}').focus({preventScroll:true})`,
+          )
+          const beforeProject = await evaluate(geometry)
+          await key('Enter')
+          await waitFor(`document.querySelector('.project-modal h2')===document.activeElement`)
+          await evaluate(
+            `Promise.all([...document.querySelectorAll('.project-modal img')].map(img=>img.decode()))`,
+          )
+          await checkDetail(index, width)
+          if (index === 4 && [1440, 768, 390].includes(width)) {
+            const { data } = await cdp('Page.captureScreenshot', { format: 'png' })
+            await writeFile(
+              join(output, `${width}x${height}-project-05.png`),
+              Buffer.from(data, 'base64'),
+            )
+          }
+          await key('Escape')
+          await closed(card, beforeProject)
+        }
+      }
     }
     console.log(`PASS ${width}×${height}: 首頁／Works 對齊、白底藍框、三種關閉、焦點與捲動`)
   }
@@ -424,6 +562,7 @@ try {
     ),
   )
   for (const path of [
+    '/graphic-works',
     '/works/project-01',
     '/works/project-02',
     '/works/project-03',
@@ -439,7 +578,12 @@ try {
         `!!document.querySelector('main h1') && !document.querySelector('[role="dialog"]')`,
       ),
     )
-    if (path.includes('project-06') || path.includes('unknown') || path === '/missing-page')
+    if (
+      path.includes('project-06') ||
+      path.includes('unknown') ||
+      path === '/missing-page' ||
+      path === '/graphic-works'
+    )
       assert.equal(
         await evaluate(`document.querySelector('main h1').textContent`),
         '找不到這個頁面',

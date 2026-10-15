@@ -44,7 +44,6 @@ TypeScript 使用相容的 6.0 系列，因目前 typescript-eslint 要求 TypeS
 | `/works/project-03`      | APOLLO                       |
 | `/works/project-04`      | R4D                          |
 | `/works/project-05`      | 初次見麵                     |
-| `/graphic-works`         | 其他平面作品骨架             |
 | 其他網址（包含未知作品） | 404 與返回首頁連結           |
 
 保留 `project-01`～`project-05` 的既有 slug，避免作品網址失效；已移除的 `project-06` 顯示 404。
@@ -58,7 +57,7 @@ src/
   data/projects.ts          # 五個作品的型別、分類陣列與封面資料
   router/                  # 路由、頁面標題與捲動恢復
   components/              # 導覽、頁尾、作品列表、共用介紹版型
-  views/                   # 首頁、介紹、作品、平面作品與 404
+  views/                   # 首頁、介紹、作品與 404
   styles/tokens.css        # 七個分類內的基礎 → 語意 → 共用元件 Token
   styles/index.css         # Tailwind、基本樣式、固定外框與共用響應式版面
   theme/primevue.ts        # Aura preset 與語意 Token 對應
@@ -192,7 +191,7 @@ Skills 是開發指引，不是網站執行依賴。安裝 motion-design 不代�
 - 2026-10-05 實際執行：`type-check`、`lint`、`build`、`verify:routes` 與 `format:check` 全部通過；`npm ls --depth=0` 無相依性錯誤，安裝檢查回報 0 vulnerabilities。
 - 本機 Vite 成功啟動；11 個頁面網址與 5 個入口／Vue／CSS 模組的 HTTP 回應通過。頁面 HTTP 200 僅代表 SPA fallback 正常，404 畫面由下列路由渲染檢查確認，未把 HTTP 200 當成真實 404 狀態碼。
 - `type-check`、`lint`、`build`：程式、型別與正式建置驗證。
-- `verify:routes`：Vue Memory Router＋HTML render，檢查 13 個網址，包括五個作品、已移除的第六個作品、未知作品與巢狀未知網址；確認主要導覽、h1、首頁精選、卡片順序、封面檔案與多個分類標籤。
+- `verify:routes`：Vue Memory Router＋HTML render，檢查 13 個網址，包括五個作品、已移除頁面的 404、未知作品與巢狀未知網址；確認主要導覽、h1、首頁精選、卡片順序、封面檔案與多個分類標籤。
 - 路由腳本供開發驗證，網站仍是 client SPA，並未啟用 SSR 部署。
 - `verify:routes` 也檢查卡片 Dialog 屬性、五個作品共用 Modal 內容的 H2／H3 與標題關聯，以及保留獨立頁連結。
 - `npm run build` 後執行 `npm run verify:modal`，使用本機 Chrome 無頭模式測試首頁／Works 的 1440、900、899、768、390px 與矮螢幕，涵蓋左右對齊、三種關閉、鍵盤焦點、背景鎖定、內部捲動、修飾鍵、實際中鍵另開獨立頁、模擬觸控捲動、跨斷點 resize、卸載清理與作品直接網址。此檢查獨立於不需瀏覽器的 `npm run verify`。
@@ -202,7 +201,7 @@ Skills 是開發指引，不是網站執行依賴。安裝 motion-design 不代�
 ## 後續內容與部署待辦
 
 - 後續視覺與動畫擴充需另行確認；維持目前已確認的五色、字型與進場互動，不沿用跑者菲迪品牌或遊戲化介面。
-- 補齊五個作品的年份、角色、背景、過程、成果與內頁圖片，以及其他平面作品與公開聯絡資料。
+- 補齊五個作品的年份、角色、背景、過程、成果與內頁圖片，以及公開聯絡資料。
 - 依實際使用尺寸評估封面壓縮與響應式圖片，非首屏圖片採 lazy loading。
 - 使用 HTML5 history；部署平台須把應用路由導回 `/index.html`，否則直接開啟或重新整理作品頁會失敗。
   靜態資產遺失應回傳 404，不把所有資產請求一律改成 HTML。
