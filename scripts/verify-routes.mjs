@@ -1,5 +1,6 @@
 // 以 Vue 的記憶體 Router 與 HTML 渲染確認路由；不代表瀏覽器視覺 QA。
 import assert from 'node:assert/strict'
+import { access } from 'node:fs/promises'
 import { createServer } from 'vite'
 import { createSSRApp } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
@@ -16,8 +17,16 @@ try {
   const { projects } = await server.ssrLoadModule('/src/data/projects.ts')
   const { default: App } = await server.ssrLoadModule('/src/App.vue')
   const { portfolioPreset } = await server.ssrLoadModule('/src/theme/primevue.ts')
-  assert.equal(projects.length, 6)
-  assert.equal(new Set(projects.map((project) => project.slug)).size, 6)
+  assert.equal(projects.length, 5)
+  assert.equal(new Set(projects.map((project) => project.slug)).size, 5)
+  assert.deepEqual(
+    projects.map((project) => project.title),
+    ['跑者菲迪 Pheidi the Runner', 'PAPAGO', 'APOLLO', 'R4D', '初次見麵'],
+  )
+  for (const project of projects) {
+    assert.ok(project.cover, `${project.slug}: 封面資料完整`)
+    await access(new URL(`../public${project.cover.src}`, import.meta.url))
+  }
 
   const cases = [
     ['/', 'home', '平面設計師 與 前端網頁設計學習者'],
@@ -25,6 +34,7 @@ try {
     ['/works', 'works', '主要作品'],
     ['/graphic-works', 'graphic-works', '其他平面作品'],
     ...projects.map((project) => [`/works/${project.slug}`, `work-${project.slug}`, project.title]),
+    ['/works/project-06', 'not-found', '找不到這個頁面'],
     ['/works/unknown-project', 'not-found', '找不到這個頁面'],
     ['/missing-page', 'not-found', '找不到這個頁面'],
     ['/missing/nested/page', 'not-found', '找不到這個頁面'],
@@ -76,7 +86,12 @@ try {
     assert.equal(activeLinks.length, activeImage ? 1 : 0, `${path}: 正確的導覽狀態`)
     if (activeImage) assert.ok(activeLinks[0][1].includes(`${activeImage}-2.png`))
     if (expectedName === 'home' || expectedName === 'works') {
-      const visibleProjects = expectedName === 'home' ? projects.slice(0, 2) : projects
+      const visibleProjects =
+        expectedName === 'home'
+          ? ['project-01', 'project-03'].map((slug) =>
+              projects.find((project) => project.slug === slug),
+            )
+          : projects
       for (const project of visibleProjects) {
         assert.ok(html.includes(`href="/works/${project.slug}"`))
       }
@@ -86,22 +101,42 @@ try {
         assert.equal((html.match(/>\s*VIEW MORE\s*<\/a>/g) ?? []).length, 2)
         assert.ok(html.includes('view-more-button--cream'))
         assert.ok(html.includes('view-more-button--red'))
-        for (const project of projects.slice(2)) {
+        for (const project of projects.filter((project) => !visibleProjects.includes(project))) {
           assert.ok(!html.includes(`href="/works/${project.slug}"`))
         }
       } else {
+        assert.match(html, /<h1\b[^>]*class="sr-only"[^>]*>主要作品<\/h1>/)
+        assert.ok(!html.includes('六個主要作品，名稱與內容待確認。'))
         assert.ok(html.includes('href="/graphic-works"'), `${path}: 保留其他平面作品入口`)
       }
       const cards = [...html.matchAll(/<a\b[^>]*class="[^"]*\bwork-card\b[^"]*"[^>]*>(.*?)<\/a>/gs)]
       assert.equal(cards.length, visibleProjects.length, `${path}: 每張作品卡片有一個連結`)
-      for (const card of cards) {
+      for (const [index, card] of cards.entries()) {
+        const project = visibleProjects[index]
+        assert.ok(card[0].includes(`href="/works/${project.slug}"`), `${path}: 卡片順序正確`)
+        assert.ok(card[1].includes(project.title))
+        assert.ok(card[1].includes(project.summary))
+        assert.ok(card[1].includes(`src="${project.cover.src}"`))
+        assert.ok(card[1].includes(`width="${project.cover.width}"`))
+        assert.ok(card[1].includes(`height="${project.cover.height}"`))
+        const categories = [
+          ...card[1].matchAll(/<span\b[^>]*class="work-card-category"[^>]*>(.*?)<\/span>/gs),
+        ]
+        assert.deepEqual(
+          categories.map((match) => match[1].trim()),
+          project.categories,
+        )
+        assert.ok(card[1].indexOf('work-card-categories') > card[1].indexOf('work-card-summary'))
+        assert.ok(!card[1].includes('work-card-action'))
         assert.ok(!card[1].includes('<a '), `${path}: 作品卡片沒有巢狀連結`)
         assert.ok(!card[1].includes('VIEW MORE'), `${path}: 不加入重複的卡片按鈕`)
       }
     }
     if (expectedName.startsWith('work-')) {
       assert.ok(html.includes('作品背景'))
-      assert.ok(html.includes('作品主視覺待提供'))
+      assert.ok(html.includes(`src="${project.cover.src}"`))
+      assert.ok(html.includes(project.categories.join('、')))
+      assert.ok(html.includes('此區內容與圖片待提供。'))
     }
     if (expectedName === 'not-found') {
       assert.ok(html.includes('href="/"'))

@@ -38,23 +38,23 @@ TypeScript 使用相容的 6.0 系列，因目前 typescript-eslint 要求 TypeS
 | ------------------------ | ---------------------------- |
 | `/`                      | 首頁與主要作品入口           |
 | `/about`                 | 個人介紹、經歷與聯絡資訊占位 |
-| `/works`                 | 六個主要作品列表             |
-| `/works/project-01`      | 主要作品 01                  |
-| `/works/project-02`      | 主要作品 02                  |
-| `/works/project-03`      | 主要作品 03                  |
-| `/works/project-04`      | 主要作品 04                  |
-| `/works/project-05`      | 主要作品 05                  |
-| `/works/project-06`      | 主要作品 06                  |
+| `/works`                 | 五個主要作品列表             |
+| `/works/project-01`      | 跑者菲迪 Pheidi the Runner   |
+| `/works/project-02`      | PAPAGO                       |
+| `/works/project-03`      | APOLLO                       |
+| `/works/project-04`      | R4D                          |
+| `/works/project-05`      | 初次見麵                     |
 | `/graphic-works`         | 其他平面作品骨架             |
 | 其他網址（包含未知作品） | 404 與返回首頁連結           |
 
-`project-01` 等為暫定 slug，未猜測實際作品名稱。確認正式名稱後再決定是否更改網址。
+保留 `project-01`～`project-05` 的既有 slug，避免作品網址失效；已移除的 `project-06` 顯示 404。
+首頁依 slug 固定顯示跑者菲迪與 APOLLO，不受 Works 列表順序影響。
 
 ## 結構與維護
 
 ```text
 src/
-  data/projects.ts          # 六個作品的型別與資料
+  data/projects.ts          # 五個作品的型別、分類陣列與封面資料
   router/                  # 路由、頁面標題與捲動恢復
   components/              # 導覽、頁尾、作品列表、共用介紹版型
   views/                   # 首頁、介紹、作品、平面作品與 404
@@ -68,8 +68,10 @@ docs/design-token-migration.md # Token 前後對照與本次驗證範圍
 skills-lock.json           # skills CLI 產生的來源與 hash
 ```
 
-六個作品共用 `ProjectDetail.vue`，修改版型會同步套用至全部作品。作品內容放在 `src/data/projects.ts`，
-尚未提供的欄位保持 `null`，畫面以明確占位呈現，不捏造成果、年份或角色。
+五個作品共用 `ProjectDetail.vue`，修改版型會同步套用至全部作品。作品內容放在 `src/data/projects.ts`，
+`categories` 使用字串陣列，每個類型在共用 `WorkCard.vue` 底部顯示獨立膠囊，沒有類型時使用空陣列。
+封面引用 `public/images/projects/` 的既有檔案，尺寸依實際像素設定。
+尚未提供的年份、角色與章節內容保持 `null`，畫面以明確占位呈現，不捏造成果。
 共用導覽與頁尾由 `App.vue` 管理；頁面採 lazy import。路由切換更新標題、移動主要內容焦點並恢復捲動位置。
 
 Token 定義色彩、字體、字距、行距、間距、閱讀寬度、圓角與互動時間。介面色盤已確認只使用 `#A71F24`、`#B9DAE8`、`#FBEDB3`、`#000000`、`#FFFFFF`，字型使用 Bricolage Grotesque＋昭源環方，
@@ -183,15 +185,15 @@ Skills 是開發指引，不是網站執行依賴。安裝 motion-design 不代�
 - 2026-10-05 實際執行：`type-check`、`lint`、`build`、`verify:routes` 與 `format:check` 全部通過；`npm ls --depth=0` 無相依性錯誤，安裝檢查回報 0 vulnerabilities。
 - 本機 Vite 成功啟動；11 個頁面網址與 5 個入口／Vue／CSS 模組的 HTTP 回應通過。頁面 HTTP 200 僅代表 SPA fallback 正常，404 畫面由下列路由渲染檢查確認，未把 HTTP 200 當成真實 404 狀態碼。
 - `type-check`、`lint`、`build`：程式、型別與正式建置驗證。
-- `verify:routes`：Vue Memory Router＋HTML render，檢查 13 個網址，包括六個作品、未知作品、巢狀未知網址、主要導覽、h1 與返回首頁連結。
+- `verify:routes`：Vue Memory Router＋HTML render，檢查 13 個網址，包括五個作品、已移除的第六個作品、未知作品與巢狀未知網址；確認主要導覽、h1、首頁精選、卡片順序、封面檔案與多個分類標籤。
 - 路由腳本供開發驗證，網站仍是 client SPA，並未啟用 SSR 部署。
 - 上述 2026-10-05 紀錄未包含瀏覽器視覺 QA；2026-10-14 Token 重構的本機 Chrome 無頭模式回歸範圍與限制另見 [整理紀錄](docs/design-token-migration.md)。無頭模式不等同於實體手機、Safari 或螢幕閱讀器驗證。
 
 ## 後續內容與部署待辦
 
 - 後續視覺與動畫擴充需另行確認；維持目前已確認的五色、字型與進場互動，不沿用跑者菲迪品牌或遊戲化介面。
-- 提供六個作品的名稱、分類、年份、角色、背景、過程、成果與圖片，以及其他平面作品與公開聯絡資料。
-- 補上圖片尺寸、替代文字與適合的格式，非首屏圖片採 lazy loading。
+- 補齊五個作品的年份、角色、背景、過程、成果與內頁圖片，以及其他平面作品與公開聯絡資料。
+- 依實際使用尺寸評估封面壓縮與響應式圖片，非首屏圖片採 lazy loading。
 - 使用 HTML5 history；部署平台須把應用路由導回 `/index.html`，否則直接開啟或重新整理作品頁會失敗。
   靜態資產遺失應回傳 404，不把所有資產請求一律改成 HTML。
 - 部署子目錄時調整 Vite `base`，Router 已使用 `import.meta.env.BASE_URL`。

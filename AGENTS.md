@@ -4,7 +4,7 @@
 
 - 使用繁體中文與台灣用語，修改時簡要說明原因，讓前端初學者能理解。
 - 先閱讀相關檔案；保留既有修改，不做無關重構。資訊不足時先詢問，不猜測作品事實。
-- 已有固定品牌圖、圖片導覽、原生頁面捲動、首頁兩階段 GSAP 進場及共用作品頁；維持目前視覺與互動。六個作品名稱、內容與公開聯絡資料仍待確認。
+- 已有固定品牌圖、圖片導覽、原生頁面捲動、首頁兩階段 GSAP 進場及共用作品頁；維持目前視覺與互動。五個作品名稱、簡介、分類與封面已提供，年份、角色、詳細內容與公開聯絡資料仍待確認。
 - 未經授權不要發布、建立遠端儲存庫、commit 或 push；不加入 Pinia、後端、資料庫或登入。
 - 不沿用跑者菲迪的品牌色彩、角色或遊戲化介面。
 
@@ -12,7 +12,7 @@
 
 - Vue 3 Composition API，使用 `<script setup lang="ts">` 與 TypeScript；避免 `any`。
 - 使用 Vite、Vue Router、PrimeVue styled mode、Tailwind CSS v4 與 `@lucide/vue`。
-- `src/data/projects.ts` 是主要作品資料來源；`ProjectDetail.vue` 是六個作品共用的介紹版型。
+- `src/data/projects.ts` 是主要作品資料來源；`ProjectDetail.vue` 是五個作品共用的介紹版型；作品類型使用 `categories: string[]`。
 - 作品路由由資料產生。維持穩定網址；更改 slug 前確認並規劃舊網址轉址。
 - 不捏造作品成果、客戶、年份、個人經歷或聯絡資料；缺資料使用 null 與明確占位。
 
@@ -69,6 +69,6 @@
 - 執行 `npm run type-check`、`npm run lint`、`npm run build`，修正本次變更造成的錯誤。
 - 執行 `npm run verify`，包含 13 個路由／HTML 渲染案例與兩階段進場邏輯；靜態檢查不等於瀏覽器 QA。Token 遷移需提供前後對照並檢查全專案引用；瀏覽器可用時比對 1440、768、390px、899px 斷點前後及矮螢幕。
 - 不格式化第三方 `.agents/skills/`、package-lock.json 或 skills-lock.json。
-- 檢查首頁、六個作品頁、未知作品與 404。瀏覽器可用時檢查桌機與手機，無法使用時明確標示未驗證。
+- 檢查首頁、五個作品頁、已移除的第六個作品、未知作品與 404。瀏覽器可用時檢查桌機與手機，無法使用時明確標示未驗證。
 - 保留 package-lock.json。部署前處理 history fallback、正式網站網址與 SEO；占位階段維持 noindex。
 - 回報固定包含「完成事項」、「修改檔案與原因」、「驗證結果」、「注意事項」。

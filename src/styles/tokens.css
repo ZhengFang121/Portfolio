@@ -39,7 +39,7 @@
   --font-family-heading: var(--font-family-portfolio);
 
   /* Font Size */
-  --font-size-sm: 0.875rem;
+  --font-size-sm: 0.75rem;
   --font-size-md: 1rem;
   --font-size-lg: 1.25rem;
   --font-size-xl: clamp(1.5rem, 3vw, 2rem);

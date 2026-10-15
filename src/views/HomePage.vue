@@ -3,7 +3,10 @@ import ProjectGrid from '../components/ProjectGrid.vue'
 import BaseButton from '../components/BaseButton.vue'
 import { projects } from '../data/projects'
 
-const featuredProjects = projects.slice(0, 2)
+// 依固定 slug 選取並排序，不讓 Works 列表順序影響首頁精選作品。
+const featuredProjects = ['project-01', 'project-03']
+  .map((slug) => projects.find((project) => project.slug === slug))
+  .filter((project) => project !== undefined)
 </script>
 <template>
   <div class="page-sections">
@@ -14,7 +17,7 @@ const featuredProjects = projects.slice(0, 2)
     </section>
     <section class="content-section home-section" aria-labelledby="selected-works">
       <h2 id="selected-works" class="home-heading">Works</h2>
-      <ProjectGrid :projects="featuredProjects" align="center" />
+      <ProjectGrid :projects="featuredProjects" />
       <BaseButton to="/works" variant="red" aria-label="VIEW MORE：全部主要作品" />
     </section>
   </div>

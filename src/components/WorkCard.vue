@@ -1,12 +1,9 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
-import { ArrowUpRight } from '@lucide/vue'
 import BaseCard from './BaseCard.vue'
 import type { PortfolioProject } from '../data/projects'
 
-withDefaults(defineProps<{ project: PortfolioProject; align?: 'start' | 'center' }>(), {
-  align: 'start',
-})
+defineProps<{ project: PortfolioProject }>()
 </script>
 
 <template>
@@ -16,7 +13,6 @@ withDefaults(defineProps<{ project: PortfolioProject; align?: 'start' | 'center'
       as="a"
       :href="href"
       class="work-card"
-      :class="{ 'work-card--center': align === 'center' }"
       :aria-label="`查看作品介紹：${project.title}`"
       @click="navigate"
     >
@@ -32,29 +28,37 @@ withDefaults(defineProps<{ project: PortfolioProject; align?: 'start' | 'center'
       />
       <div v-else class="work-card-cover placeholder-media">作品封面待提供</div>
       <h3>{{ project.title }}</h3>
-      <p v-if="project.category" class="work-card-category">{{ project.category }}</p>
-      <p>{{ project.summary ?? '作品簡介待提供。' }}</p>
-      <span class="work-card-action">
-        查看作品介紹 <ArrowUpRight :size="18" aria-hidden="true" />
-      </span>
+      <p class="work-card-summary">{{ project.summary ?? '作品簡介待提供。' }}</p>
+      <div v-if="project.categories.length" class="work-card-categories">
+        <span v-for="category in project.categories" :key="category" class="work-card-category">
+          {{ category }}
+        </span>
+      </div>
     </BaseCard>
   </RouterLink>
 </template>
 
 <style scoped>
-.work-card {
-  display: grid;
-  align-content: start;
+/* 提高局部選擇器優先序，覆寫 BaseCard 而不改動其他共用卡片。 */
+.work-card.base-card {
+  --card-focus-color: var(--palette-blue);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: var(--space-4);
-  text-decoration: none;
-}
-
-.work-card--center {
-  justify-items: center;
+  border: 0;
+  background: color-mix(in srgb, var(--color-surface) 100%, transparent);
+  box-shadow: inset 0 0 0 0 var(--card-focus-color);
   text-align: center;
+  text-decoration: none;
+  transition:
+    background-color 220ms ease-out,
+    box-shadow 220ms ease-out,
+    transform 220ms ease-out;
 }
 
 .work-card-cover {
+  flex-shrink: 0;
   inline-size: 100%;
   min-inline-size: 0;
   aspect-ratio: 4 / 3;
@@ -63,37 +67,55 @@ withDefaults(defineProps<{ project: PortfolioProject; align?: 'start' | 'center'
   border-radius: var(--radius-control);
 }
 
-.work-card-category {
-  font-size: var(--font-size-sm);
+.work-card-summary {
+  color: var(--palette-blue);
 }
 
-.work-card-action {
-  display: inline-flex;
-  align-items: center;
+.work-card-categories {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-2);
-  min-block-size: 44px;
-  color: var(--card-action-color);
-  text-underline-offset: 0.25em;
+  inline-size: 100%;
+  margin-block-start: auto;
+}
+
+.work-card-category {
+  flex-shrink: 0;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--palette-yellow);
+  color: var(--palette-red);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
 }
 
 @media (hover: hover) {
   .work-card:hover {
-    border-color: var(--card-focus-color);
-  }
-  .work-card:hover .work-card-action {
-    color: var(--card-action-hover-color);
-    text-decoration: underline;
+    box-shadow: inset 0 0 0 6px var(--card-focus-color);
+    transform: scale(1.04);
   }
 }
 
 .work-card:focus-visible {
-  outline: 2px solid var(--card-focus-color);
+  box-shadow: inset 0 0 0 6px var(--card-focus-color);
+  transform: scale(1.04);
+  outline: 6px solid var(--card-focus-color);
   outline-offset: 4px;
 }
 
-.work-card:focus-visible .work-card-action,
-.work-card:active .work-card-action {
-  color: var(--card-action-hover-color);
-  text-decoration: underline;
+.work-card:active {
+  box-shadow: inset 0 0 0 6px var(--card-focus-color);
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .work-card.base-card {
+    transition: none;
+  }
+
+  .work-card:is(:hover, :focus-visible, :active) {
+    transform: none;
+  }
 }
 </style>

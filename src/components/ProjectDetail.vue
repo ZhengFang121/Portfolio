@@ -16,7 +16,7 @@ defineProps<{ project: PortfolioProject }>()
       <dl class="project-facts">
         <div>
           <dt>作品類型</dt>
-          <dd>{{ project.category ?? '待提供' }}</dd>
+          <dd>{{ project.categories.length ? project.categories.join('、') : '待提供' }}</dd>
         </div>
         <div>
           <dt>製作年份</dt>
