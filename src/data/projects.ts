@@ -2,6 +2,8 @@ export interface ProjectSection {
   id: string
   title: string
   content: string | null
+  media?:
+    { type: 'video'; src: string; poster?: string } | { type: 'image'; src: string; alt: string }
 }
 export interface PortfolioProject {
   slug: string
@@ -31,9 +33,54 @@ export const projects: PortfolioProject[] = [
       height: 2480,
     },
     sections: [
-      { id: 'overview', title: '作品背景', content: null },
-      { id: 'process', title: '設計過程', content: null },
-      { id: 'deliverables', title: '作品呈現', content: null },
+      {
+        id: 'intro',
+        title: '序章動畫',
+        content: '序章動畫內文',
+        media: { type: 'video', src: '/videos/projects/pheidi-the-runner/intro.mp4' },
+      },
+      {
+        id: 'login',
+        title: '登入',
+        content: '登入內文',
+        media: { type: 'video', src: '/videos/projects/pheidi-the-runner/login.mp4' },
+      },
+      {
+        id: 'home',
+        title: '首頁',
+        content: '首頁內文',
+        media: { type: 'video', src: '/videos/projects/pheidi-the-runner/home.mp4' },
+      },
+      {
+        id: 'records',
+        title: '新增跑步紀錄',
+        content: '新增跑步紀錄內文',
+        media: { type: 'video', src: '/videos/projects/pheidi-the-runner/records.mp4' },
+      },
+      {
+        id: 'station',
+        title: '足跡驛站',
+        content: '足跡驛站內文',
+        media: { type: 'video', src: '/videos/projects/pheidi-the-runner/station.mp4' },
+      },
+      {
+        id: 'academy',
+        title: '跑者學院',
+        content: '跑者學院內文',
+        media: { type: 'video', src: '/videos/projects/pheidi-the-runner/academy.mp4' },
+      },
+      {
+        id: 'plaza',
+        title: '菲迪廣場',
+        content: '菲迪廣場內文',
+        media: { type: 'video', src: '/videos/projects/pheidi-the-runner/plaza.mp4' },
+      },
+      {
+        id: 'admin',
+        title: '管理者後台',
+        content: '管理者後台內文',
+        media: { type: 'video', src: '/videos/projects/pheidi-the-runner/admin.mp4' },
+      },
     ],
   },
   {

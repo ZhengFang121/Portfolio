@@ -28,6 +28,37 @@ try {
     projects.map((project) => project.designYear),
     ['2026', '2026', '2022 - 2025', '2021 - 2024', '2017'],
   )
+  const pheidiSections = [
+    ['intro', '序章動畫'],
+    ['login', '登入'],
+    ['home', '首頁'],
+    ['records', '新增跑步紀錄'],
+    ['station', '足跡驛站'],
+    ['academy', '跑者學院'],
+    ['plaza', '菲迪廣場'],
+    ['admin', '管理者後台'],
+  ]
+  assert.deepEqual(
+    projects[0].sections,
+    pheidiSections.map(([id, title]) => ({
+      id,
+      title,
+      content: `${title}內文`,
+      media: { type: 'video', src: `/videos/projects/pheidi-the-runner/${id}.mp4` },
+    })),
+    '跑者菲迪八段資料與順序完全符合需求',
+  )
+  for (const project of projects.slice(1)) {
+    assert.deepEqual(
+      project.sections,
+      [
+        { id: 'overview', title: '作品背景', content: null },
+        { id: 'process', title: '設計過程', content: null },
+        { id: 'deliverables', title: '作品呈現', content: null },
+      ],
+      `${project.slug}: 保留原有占位資料`,
+    )
+  }
   for (const project of projects) {
     assert.ok(project.cover, `${project.slug}: 封面資料完整`)
     await access(new URL(`../public${project.cover.src}`, import.meta.url))
@@ -54,8 +85,65 @@ try {
       const sectionId = `${project.slug}-modal-${section.id}`
       assert.ok(modalContent.includes(`aria-labelledby="${sectionId}"`))
       assert.match(modalContent, new RegExp(`<h3[^>]*id="${sectionId}"`))
+      if (section.media) await access(new URL(`../public${section.media.src}`, import.meta.url))
+    }
+    const renderedSections = [...modalContent.matchAll(/<section\b[^>]*>(.*?)<\/section>/gs)]
+    assert.equal(renderedSections.length, project.sections.length)
+    for (const [index, [, html]] of renderedSections.entries()) {
+      const section = project.sections[index]
+      assert.ok(html.includes(section.title))
+      if (!section.content) {
+        assert.ok(html.includes('此區內容與圖片待提供。'))
+        continue
+      }
+      assert.ok(html.indexOf('</h3>') < html.indexOf('<p'))
+      assert.ok(html.includes(section.content))
+      if (section.media?.type === 'video') {
+        assert.ok(html.indexOf('</p>') < html.indexOf('<video'))
+        assert.match(html, /<video\b[^>]*controls[^>]*playsinline[^>]*preload="none"/)
+        assert.ok(html.includes(`data-src="${section.media.src}" type="video/mp4"`))
+        assert.match(html, /<video\b[^>]*muted[^>]*loop/)
+        assert.ok(!/<source\b[^>]*\ssrc=/.test(html), '來源等影片可見時才掛上')
+        assert.ok(html.includes(`aria-label="${project.title}：${section.title}示範影片"`))
+        assert.ok(!/\b(?:autoplay|poster)=?/.test(html))
+      }
     }
   }
+
+  // 測試未來圖片與選用 poster 分支，不改動其他作品的正式資料。
+  const imageHtml = await renderToString(
+    createSSRApp(ProjectDetail, {
+      mode: 'modal',
+      project: {
+        ...projects[1],
+        sections: [
+          {
+            id: 'image',
+            title: '圖片段落',
+            content: '圖片內文',
+            media: { type: 'image', src: projects[1].cover.src, alt: '圖片替代文字' },
+          },
+        ],
+      },
+    }),
+  )
+  assert.match(imageHtml, /<p[^>]*>圖片內文<\/p>.*<img[^>]*alt="圖片替代文字"[^>]*loading="lazy"/s)
+  assert.ok(!imageHtml.includes('<video'))
+  const posterHtml = await renderToString(
+    createSSRApp(ProjectDetail, {
+      mode: 'modal',
+      project: {
+        ...projects[0],
+        sections: [
+          {
+            ...projects[0].sections[0],
+            media: { ...projects[0].sections[0].media, poster: projects[0].cover.src },
+          },
+        ],
+      },
+    }),
+  )
+  assert.ok(posterHtml.includes(`poster="${projects[0].cover.src}"`))
 
   const cases = [
     ['/', 'home', '平面設計師 與 前端網頁設計學習者'],
@@ -164,11 +252,14 @@ try {
       }
     }
     if (expectedName.startsWith('work-')) {
-      assert.ok(html.includes('作品背景'))
+      for (const section of project.sections) assert.ok(html.includes(section.title))
       assert.ok(html.includes(`src="${project.cover.src}"`))
       for (const category of project.categories) assert.ok(html.includes(category))
       assert.ok(html.includes(`# ${project.designYear}`))
-      assert.ok(html.includes('此區內容與圖片待提供。'))
+      assert.equal(
+        html.includes('此區內容與圖片待提供。'),
+        project.sections.some((section) => !section.content),
+      )
     }
     if (expectedName === 'not-found') {
       assert.ok(html.includes('href="/"'))

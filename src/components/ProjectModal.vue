@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount } from 'vue'
+import { nextTick, onBeforeUnmount, useTemplateRef, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import { X } from '@lucide/vue'
 import ProjectDetail from './ProjectDetail.vue'
@@ -12,6 +12,16 @@ const props = defineProps<{
 }>()
 const visible = defineModel<boolean>('visible', { required: true })
 const emit = defineEmits<{ 'after-hide': [] }>()
+const detail = useTemplateRef<InstanceType<typeof ProjectDetail>>('detail')
+
+// Escape、遮罩與關閉鈕都會更新 visible；同步暫停，避免隱藏期間繼續發聲。
+watch(
+  visible,
+  (isVisible) => {
+    if (!isVisible) detail.value?.pauseVideos()
+  },
+  { flush: 'sync' },
+)
 
 let background: { element: HTMLElement; inert: boolean }[] = []
 let scrollPosition: { x: number; y: number } | null = null
@@ -95,7 +105,7 @@ onBeforeUnmount(restoreBackground)
         </button>
       </div>
       <div class="project-modal-panel" tabindex="0" aria-label="作品介紹內容，可捲動">
-        <ProjectDetail :project="project" mode="modal" :title-id="`${id}-title`" />
+        <ProjectDetail ref="detail" :project="project" mode="modal" :title-id="`${id}-title`" />
       </div>
     </template>
   </Dialog>

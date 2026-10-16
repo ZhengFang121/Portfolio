@@ -6,6 +6,7 @@ import { access, mkdir, mkdtemp, readFile, stat, writeFile } from 'node:fs/promi
 import { tmpdir } from 'node:os'
 import { extname, resolve, join } from 'node:path'
 import { spawn } from 'node:child_process'
+import { createReadStream } from 'node:fs'
 
 const binary =
   process.env.CHROME_BIN || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
@@ -22,6 +23,7 @@ const types = {
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.woff2': 'font/woff2',
+  '.mp4': 'video/mp4',
 }
 const server = createServer(async (req, res) => {
   try {
@@ -36,6 +38,21 @@ const server = createServer(async (req, res) => {
       file = join(root, 'index.html')
     }
     res.setHeader('Content-Type', types[extname(file)] || 'application/octet-stream')
+    if (extname(file) === '.mp4') {
+      const { size } = await stat(file)
+      res.setHeader('Accept-Ranges', 'bytes')
+      const range = req.headers.range?.match(/^bytes=(\d+)-(\d*)$/)
+      const start = range ? Number(range[1]) : 0
+      const end = range?.[2] ? Math.min(Number(range[2]), size - 1) : size - 1
+      if (start > end || start >= size) {
+        res.writeHead(416, { 'Content-Range': `bytes */${size}` })
+        return res.end()
+      }
+      res.setHeader('Content-Length', end - start + 1)
+      if (range) res.writeHead(206, { 'Content-Range': `bytes ${start}-${end}/${size}` })
+      createReadStream(file, { start, end }).pipe(res)
+      return
+    }
     res.end(await readFile(file))
   } catch {
     res.statusCode = 500
@@ -167,7 +184,7 @@ try {
         border:getComputedStyle(dialog).borderTop,background:getComputedStyle(dialog).backgroundColor,color:getComputedStyle(panel).color,opacity:getComputedStyle(panel).opacity,mask:getComputedStyle(dialog.parentElement).backgroundColor,
         closeBackground:getComputedStyle(dialog.querySelector('button')).backgroundColor,closeColor:getComputedStyle(dialog.querySelector('button')).color,dialogOverflowY:getComputedStyle(dialog).overflowY,
         headingFocused:document.activeElement===dialog.querySelector('h2'),backgroundInert:[...shell.children].filter(el=>el!==dialog.parentElement).every(el=>el.inert),overflow:getComputedStyle(document.documentElement).overflowY,
-        scrollable:panel.scrollHeight>panel.clientHeight,overflowX:panel.scrollWidth>panel.clientWidth,placeholderBackground:getComputedStyle(dialog.querySelector('.placeholder-panel')).backgroundColor,
+        scrollable:panel.scrollHeight>panel.clientHeight,overflowX:panel.scrollWidth>panel.clientWidth,placeholderBackground:dialog.querySelector('.placeholder-panel') ? getComputedStyle(dialog.querySelector('.placeholder-panel')).backgroundColor : null,
         mount:dialog.parentElement.parentElement.className} : {})}
   })()`
   async function closed(selector, before) {
@@ -187,6 +204,10 @@ try {
         `!document.querySelector('.site-content').inert && !document.body.classList.contains('p-overflow-hidden') && getComputedStyle(document.documentElement).overflowY==='auto'`,
       ),
       '清除背景鎖定',
+    )
+    assert.ok(
+      await evaluate(`!window.playingVideo || window.playingVideo.paused`),
+      '關閉後影片停止播放',
     )
   }
   async function checkDetail(index, width) {
@@ -209,6 +230,18 @@ try {
         titles:[root.querySelector('.project-detail-title'),card.querySelector('h3')].map(el=>getComputedStyle(el).color),
         media:rect(root.querySelector('img')),ratio:root.querySelector('img').naturalWidth/root.querySelector('img').naturalHeight,
         sections:[...root.querySelectorAll('header,section')].map(rect),
+        contentSections:[...root.querySelectorAll('section')].map(section=>({
+          title:section.querySelector('h3').textContent,
+          content:section.querySelector('p').textContent,
+          order:[...section.children].map(el=>el.tagName),
+          gap:getComputedStyle(section).rowGap,
+          media:[...section.querySelectorAll('.project-section-media video,.project-section-media img')].map(el=>({
+            rect:rect(el),fit:getComputedStyle(el).objectFit,
+            src:el.querySelector('source')?.dataset.src,type:el.querySelector('source')?.type,
+            controls:el.controls,inline:el.playsInline,preload:el.preload,autoplay:el.autoplay,loop:el.loop,muted:el.muted,
+            label:el.getAttribute('aria-label'),poster:el.getAttribute('poster'),
+          })),
+        })),
         panelOverflow:document.querySelector('.project-modal-panel').scrollWidth>document.querySelector('.project-modal-panel').clientWidth,
       }
     })()`)
@@ -223,6 +256,42 @@ try {
     assert.ok(detail.blue.every((color) => color === 'rgb(185, 218, 232)'))
     assert.ok(detail.titles.every((color) => color === 'rgb(0, 0, 0)'))
     assert.ok(detail.texts.every((text) => text.align === 'center'))
+    assert.equal(detail.contentSections.length, index === 0 ? 8 : 3)
+    const expected = [
+      ['intro', '序章動畫'],
+      ['login', '登入'],
+      ['home', '首頁'],
+      ['records', '新增跑步紀錄'],
+      ['station', '足跡驛站'],
+      ['academy', '跑者學院'],
+      ['plaza', '菲迪廣場'],
+      ['admin', '管理者後台'],
+    ]
+    for (const [sectionIndex, section] of detail.contentSections.entries()) {
+      assert.equal(section.gap, '24px', '段落內使用 space-6 間距')
+      if (index !== 0) {
+        assert.equal(section.media.length, 0, '其他作品不加入媒體')
+        assert.equal(section.content, '此區內容與圖片待提供。')
+        continue
+      }
+      const [id, title] = expected[sectionIndex]
+      assert.equal(section.title, title)
+      assert.equal(section.content, `${title}內文`)
+      assert.deepEqual(section.order, ['H3', 'P', 'DIV'], '內標題 → 內文 → 媒體')
+      assert.equal(section.media.length, 1)
+      const media = section.media[0]
+      assert.equal(media.src, `/videos/projects/pheidi-the-runner/${id}.mp4`)
+      assert.equal(media.type, 'video/mp4')
+      assert.equal(media.fit, 'contain')
+      assert.ok(media.controls && media.inline && !media.autoplay && media.loop && media.muted)
+      assert.equal(media.preload, 'none')
+      assert.equal(media.poster, null, '沒有自行增加 poster')
+      assert.ok(media.label.includes(title))
+      assert.ok(
+        media.rect.left >= detail.root.left && media.rect.right <= detail.root.right,
+        '影片不溢出',
+      )
+    }
     for (const element of [
       ...detail.texts.map((text) => text.rect),
       detail.media,
@@ -377,7 +446,7 @@ try {
       assert.equal(state.hasH1, false)
       assert.equal(state.border, '6px solid rgb(185, 218, 232)')
       assert.equal(state.background, 'rgb(255, 255, 255)')
-      assert.equal(state.placeholderBackground, 'rgb(255, 255, 255)')
+      assert.equal(state.placeholderBackground, null, '菲迪八段使用提供的內文與影片')
       assert.equal(state.color, 'rgb(0, 0, 0)')
       assert.equal(state.opacity, '1')
       assert.match(state.mask, /0\.55\)/, '遮罩半透明且不影響面板')
@@ -459,6 +528,141 @@ try {
     }
     console.log(`PASS ${width}×${height}: 首頁／Works 對齊、白底藍框、三種關閉、焦點與捲動`)
   }
+  // 真實解碼、播放與跳轉；桌機／手機各跑一輪八支影片。
+  for (const width of [1440, 390]) {
+    await cdp('Emulation.setDeviceMetricsOverride', {
+      width,
+      height: width === 1440 ? 1024 : 844,
+      deviceScaleFactor: 1,
+      mobile: false,
+    })
+    await navigate('/works')
+    await evaluate(
+      `document.querySelector('.work-card').scrollIntoView({block:'center',behavior:'instant'});document.querySelector('.work-card').focus({preventScroll:true})`,
+    )
+    await key('Enter')
+    await waitFor(`document.querySelector('.project-modal h2')===document.activeElement`)
+    assert.equal(
+      await evaluate(
+        `performance.getEntriesByType('resource').filter(entry=>entry.name.includes('.mp4')).length`,
+      ),
+      0,
+      '開啟視窗未下載八支影片',
+    )
+    const playback = []
+    for (let index = 0; index < 8; index++) {
+      await evaluate(`(() => {
+        const video=document.querySelectorAll('.project-modal video')[${index}];
+        video.scrollIntoView({block:'center',behavior:'instant'});
+      })()`)
+      await waitFor(
+        `document.querySelectorAll('.project-modal video')[${index}].querySelector('source').hasAttribute('src')`,
+      )
+      await evaluate(`document.querySelectorAll('.project-modal video')[${index}].play()`)
+      await waitFor(`document.querySelectorAll('.project-modal video')[${index}].currentTime>0.05`)
+      await evaluate(`(() => {
+        const video=document.querySelectorAll('.project-modal video')[${index}];
+        video.pause(); video.currentTime=video.duration/2;
+      })()`)
+      await waitFor(
+        `(() => {const v=document.querySelectorAll('.project-modal video')[${index}];return !v.seeking && Math.abs(v.currentTime-v.duration/2)<0.2})()`,
+      )
+      const state = await evaluate(`(() => {
+        const v=document.querySelectorAll('.project-modal video')[${index}],r=v.getBoundingClientRect(),panel=document.querySelector('.project-modal-panel');
+        return {src:v.currentSrc,duration:v.duration,time:v.currentTime,paused:v.paused,error:v.error?.code,
+          videoWidth:v.videoWidth,videoHeight:v.videoHeight,width:r.width,height:r.height,
+          overflow:panel.scrollWidth>panel.clientWidth,fit:getComputedStyle(v).objectFit};
+      })()`)
+      assert.ok(state.paused && !state.error && state.duration > 0 && state.videoWidth > 0)
+      assert.ok(!state.overflow)
+      assert.equal(state.fit, 'contain')
+      assert.ok(
+        Math.abs(state.width / state.height - state.videoWidth / state.videoHeight) < 0.01,
+        '播放後仍維持原始比例',
+      )
+      playback.push(state)
+      if (index === 0) {
+        // 透過 Chromium 原生控制列操作，補足程式跳轉以外的拖曳驗證。
+        const { root: dom } = await cdp('DOM.getDocument', { depth: -1, pierce: true })
+        function findControl(node, pseudo) {
+          const attributes = node.attributes ?? []
+          if (attributes.some((value, i) => value === 'pseudo' && attributes[i + 1] === pseudo))
+            return node
+          for (const child of [...(node.children ?? []), ...(node.shadowRoots ?? [])]) {
+            const match = findControl(child, pseudo)
+            if (match) return match
+          }
+        }
+        async function controlRect(pseudo) {
+          const node = findControl(dom, pseudo)
+          assert.ok(node, `原生控制項 ${pseudo} 存在`)
+          const { model } = await cdp('DOM.getBoxModel', { nodeId: node.nodeId })
+          const [left, top, right, , , bottom] = model.content
+          return { left, right, y: (top + bottom) / 2 }
+        }
+        const timeline = await controlRect('-webkit-media-controls-timeline')
+        const x = timeline.left + (timeline.right - timeline.left) / 2
+        await cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y: timeline.y })
+        await cdp('Input.dispatchMouseEvent', {
+          type: 'mousePressed',
+          x,
+          y: timeline.y,
+          button: 'left',
+          clickCount: 1,
+        })
+        await cdp('Input.dispatchMouseEvent', {
+          type: 'mouseMoved',
+          x: timeline.left + (timeline.right - timeline.left) * 0.75,
+          y: timeline.y,
+          button: 'left',
+          buttons: 1,
+        })
+        await cdp('Input.dispatchMouseEvent', {
+          type: 'mouseReleased',
+          x: timeline.left + (timeline.right - timeline.left) * 0.75,
+          y: timeline.y,
+          button: 'left',
+          clickCount: 1,
+        })
+        await waitFor(
+          `(() => {const v=document.querySelector('.project-modal video');return !v.seeking && v.currentTime/v.duration>0.65 && v.currentTime/v.duration<0.85})()`,
+        )
+        const playButton = await controlRect('-webkit-media-controls-play-button')
+        await clickAt((playButton.left + playButton.right) / 2, playButton.y)
+        await waitFor(`!document.querySelector('.project-modal video').paused`)
+        await clickAt((playButton.left + playButton.right) / 2, playButton.y)
+        await waitFor(`document.querySelector('.project-modal video').paused`)
+        const { data } = await cdp('Page.captureScreenshot', { format: 'png' })
+        await writeFile(join(output, `${width}-video.png`), Buffer.from(data, 'base64'))
+      }
+    }
+    report.push({ width, playback })
+    for (const method of ['escape', 'button', 'mask']) {
+      if (method !== 'escape') {
+        await key('Enter')
+        await waitFor(`document.querySelector('.project-modal h2')===document.activeElement`)
+      }
+      const before = await evaluate(geometry)
+      await evaluate(
+        `document.querySelector('.project-modal video').scrollIntoView({block:'center',behavior:'instant'})`,
+      )
+      await waitFor(`document.querySelector('.project-modal video source').hasAttribute('src')`)
+      await evaluate(
+        `(async () => { window.playingVideo=document.querySelector('.project-modal video');await window.playingVideo.play() })()`,
+      )
+      await waitFor(`window.playingVideo.currentTime>0.05 && !window.playingVideo.paused`)
+      // 原生控制列可能先消耗 Escape；將焦點移回標題後驗證 Dialog 關閉。
+      await evaluate(`document.querySelector('.project-modal h2').focus({preventScroll:true})`)
+      if (method === 'escape') await key('Escape')
+      else if (method === 'button') await click('.project-modal-close')
+      else await clickAt(2, 2)
+      await closed('.work-card', before)
+      assert.ok(await evaluate('window.playingVideo.paused && !window.playingVideo.isConnected'))
+    }
+    console.log(
+      `PASS ${width}px: 八支 MP4 解碼、播放、暫停、跳轉、原始比例、延後載入與三種關閉後停止`,
+    )
+  }
   await cdp('Emulation.setDeviceMetricsOverride', {
     width: 1440,
     height: 1024,
@@ -467,6 +671,145 @@ try {
   })
   await cdp('Emulation.setEmulatedMedia', {
     features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }],
+  })
+  // 記錄未處理的 Promise 拒絕與 Observer 清理；僅測試環境注入。
+  const { identifier: videoProbe } = await cdp('Page.addScriptToEvaluateOnNewDocument', {
+    source: `
+      window.videoErrors=[]; window.videoObservers=[]; window.playAttempts=0;
+      addEventListener('unhandledrejection',event=>window.videoErrors.push(String(event.reason)));
+      const NativeObserver=window.IntersectionObserver;
+      window.IntersectionObserver=class extends NativeObserver {
+        constructor(...args) {super(...args);this.targets=new Set();window.videoObservers.push(this)}
+        observe(target) {this.targets.add(target);super.observe(target)}
+        disconnect() {this.targets.clear();super.disconnect()}
+      };
+      const nativePlay=HTMLMediaElement.prototype.play;
+      HTMLMediaElement.prototype.play=function() {
+        window.playAttempts++;
+        if(window.blockAutoPlayback) return Promise.reject(new DOMException('測試自動播放遭拒','NotAllowedError'));
+        return nativePlay.call(this);
+      };
+    `,
+  })
+  for (const width of [1440, 390]) {
+    await cdp('Emulation.setDeviceMetricsOverride', {
+      width,
+      height: width === 1440 ? 1024 : 844,
+      deviceScaleFactor: 1,
+      mobile: width === 390,
+    })
+    await navigate('/works')
+    await evaluate(
+      `document.querySelector('.work-card').scrollIntoView({block:'center',behavior:'instant'});document.querySelector('.work-card').focus({preventScroll:true})`,
+    )
+    const before = await evaluate(geometry)
+    await key('Enter')
+    await waitFor(`document.querySelector('.project-modal h2')===document.activeElement`)
+    const video = `document.querySelector('.project-modal video')`
+    const scrollVideo = (index) =>
+      evaluate(
+        `document.querySelectorAll('.project-modal video')[${index}].scrollIntoView({block:'center',behavior:'instant'})`,
+      )
+    await scrollVideo(0)
+    await waitFor(`${video}.currentTime>0.1 && !${video}.paused`)
+    assert.ok(
+      await evaluate(
+        `${video}.muted && ${video}.defaultMuted && ${video}.loop && ${video}.playsInline && ${video}.controls`,
+      ),
+    )
+    assert.ok(
+      await evaluate(`document.querySelectorAll('.project-modal video source[src]').length<8`),
+      '首次可見只掛上附近影片來源',
+    )
+    assert.ok(
+      await evaluate(
+        `!document.querySelectorAll('.project-modal video source')[7].hasAttribute('src')`,
+      ),
+      '遠處影片不載入',
+    )
+
+    await scrollVideo(7)
+    await waitFor(`${video}.paused`)
+    const pausedAt = await evaluate(`${video}.currentTime`)
+    await delay(200)
+    assert.equal(await evaluate(`${video}.currentTime`), pausedAt, '離開視窗可見區後進度停止')
+    await scrollVideo(0)
+    await waitFor(`!${video}.paused && ${video}.currentTime>${pausedAt}`)
+    assert.ok(await evaluate(`${video}.currentTime<${pausedAt}+2`), '重新進入時延續暫停位置')
+    await evaluate(`${video}.currentTime=${video}.duration-0.15`)
+    await waitFor(`${video}.currentTime<1 && !${video}.paused`)
+    await evaluate(`${video}.pause()`)
+    await delay(200)
+    assert.ok(await evaluate(`${video}.paused`), '留在可見範圍時尊重使用者手動暫停')
+
+    for (let index = 1; index < 8; index++) {
+      await scrollVideo(index)
+      await waitFor(
+        `(() => {const v=document.querySelectorAll('.project-modal video')[${index}];return !v.paused && v.currentTime>0.05})()`,
+      )
+      await waitFor(`(() => {
+        const panel=document.querySelector('.project-modal-panel').getBoundingClientRect();
+        return [...document.querySelectorAll('.project-modal video')].every(v=>{
+          const r=v.getBoundingClientRect();return r.bottom>panel.top && r.top<panel.bottom || v.paused;
+        });
+      })()`)
+    }
+    await cdp('Emulation.setEmulatedMedia', {
+      features: [{ name: 'prefers-reduced-motion', value: 'reduce' }],
+    })
+    await waitFor(`[...document.querySelectorAll('.project-modal video')].every(v=>v.paused)`)
+    await evaluate(`document.querySelectorAll('.project-modal video')[7].play()`)
+    await waitFor(`!document.querySelectorAll('.project-modal video')[7].paused`)
+    await evaluate(`document.querySelector('.project-modal-panel').scrollTop=0`)
+    await waitFor(`document.querySelectorAll('.project-modal video')[7].paused`)
+    await scrollVideo(7)
+    await delay(200)
+    assert.ok(
+      await evaluate(`document.querySelectorAll('.project-modal video')[7].paused`),
+      '減少動態環境重新進入時不自動播放',
+    )
+    await cdp('Emulation.setEmulatedMedia', {
+      features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }],
+    })
+    await waitFor(`!document.querySelectorAll('.project-modal video')[7].paused`)
+    await evaluate(
+      `window.closedVideos=[...document.querySelectorAll('.project-modal video')];document.querySelector('.project-modal h2').focus({preventScroll:true})`,
+    )
+    await key('Escape')
+    await closed('.work-card', before)
+    await delay(100)
+    assert.ok(
+      await evaluate(
+        `window.closedVideos.every(v=>v.paused) && window.videoObservers.every(o=>o.targets.size===0)`,
+      ),
+      '關閉後影片全數暫停、Observer 清除',
+    )
+    assert.deepEqual(await evaluate('window.videoErrors'), [])
+
+    // 模擬瀏覽器拒絕自動播放，確保錯誤被處理，原生控制列仍能手動播放。
+    await evaluate(`window.blockAutoPlayback=true;window.playAttempts=0`)
+    await key('Enter')
+    await waitFor(`document.querySelector('.project-modal h2')===document.activeElement`)
+    await scrollVideo(0)
+    await waitFor('window.playAttempts>0')
+    await delay(100)
+    assert.ok(await evaluate(`${video}.paused && ${video}.controls`))
+    assert.deepEqual(await evaluate('window.videoErrors'), [])
+    await evaluate(`window.blockAutoPlayback=false;${video}.play()`)
+    await waitFor(`!${video}.paused && ${video}.currentTime>0.05`)
+    await click('.project-modal-close')
+    await closed('.work-card', before)
+    assert.ok(await evaluate('window.videoObservers.every(o=>o.targets.size===0)'))
+    console.log(
+      `PASS ${width}px: 可見自動播放、靜音循環、離開暫停／返回續播、手動暫停、減少動態、拒播降級與 Observer 清理`,
+    )
+  }
+  await cdp('Page.removeScriptToEvaluateOnNewDocument', { identifier: videoProbe })
+  await cdp('Emulation.setDeviceMetricsOverride', {
+    width: 1440,
+    height: 1024,
+    deviceScaleFactor: 1,
+    mobile: false,
   })
   await navigate('/works')
   let projectFrame
@@ -554,8 +897,16 @@ try {
   await waitFor(`document.querySelector('.project-modal-panel').scrollTop>0`)
   assert.equal(await evaluate('scrollY'), touchScroll, '觸控捲動不帶動背景')
   // 模擬程式導覽造成卸載，確認沒有殘留 inert、捲動鎖或 Escape listener。
+  await evaluate(
+    `document.querySelector('.project-modal video').scrollIntoView({block:'center',behavior:'instant'})`,
+  )
+  await waitFor(`document.querySelector('.project-modal video source').hasAttribute('src')`)
+  await evaluate(
+    `(async () => {window.playingVideo=document.querySelector('.project-modal video');await window.playingVideo.play()})()`,
+  )
   await evaluate(`document.querySelector('.nav-image-link[href="/about"]').click()`)
   await waitFor(`location.pathname==='/about' && !document.querySelector('.project-modal')`)
+  assert.ok(await evaluate('window.playingVideo.paused'), '導覽卸載後影片停止播放')
   assert.ok(
     await evaluate(
       `!document.querySelector('.site-content').inert && !document.body.classList.contains('p-overflow-hidden') && getComputedStyle(document.documentElement).overflowY==='auto'`,
