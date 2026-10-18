@@ -115,12 +115,20 @@ onBeforeUnmount(() => {
 function sectionId(id: string) {
   return props.mode === 'page' ? id : `${props.project.slug}-modal-${id}`
 }
+
+function headingTag(isChild = false) {
+  if (props.mode === 'modal') return isChild ? 'h4' : 'h3'
+  return isChild ? 'h3' : 'h2'
+}
 </script>
 <template>
   <article
     ref="detail"
     class="page-sections"
-    :class="{ 'project-detail--modal': mode === 'modal' }"
+    :class="{
+      'project-detail--modal': mode === 'modal',
+      'project-detail--chapters': project.sections.some((section) => section.items?.length),
+    }"
   >
     <header class="stack" :class="{ 'content-section': mode === 'page' }">
       <RouterLink v-if="mode === 'page'" class="text-link" to="/works"
@@ -157,29 +165,54 @@ function sectionId(id: string) {
       v-for="section in project.sections"
       :key="section.id"
       class="project-section stack"
-      :class="{ 'content-section': mode === 'page' }"
+      :class="{ 'content-section': mode === 'page', 'project-chapter': section.items?.length }"
       :aria-labelledby="sectionId(section.id)"
     >
-      <component :is="mode === 'modal' ? 'h3' : 'h2'" :id="sectionId(section.id)">{{
-        section.title
-      }}</component>
-      <p v-if="section.content" class="intro">{{ section.content }}</p>
-      <div v-else class="placeholder-panel"><p class="muted">此區內容與圖片待提供。</p></div>
-      <div v-if="section.media" class="project-section-media">
-        <video
-          v-if="section.media.type === 'video'"
-          controls
-          playsinline
-          muted
-          loop
-          preload="none"
-          :poster="section.media.poster"
-          :aria-label="`${project.title}：${section.title}示範影片`"
+      <header v-if="section.items?.length" class="project-chapter-heading">
+        <p class="project-chapter-number">{{ section.label }}</p>
+        <component :is="headingTag()" :id="sectionId(section.id)">{{ section.title }}</component>
+        <p class="project-chapter-subtitle">{{ section.subtitle }}</p>
+      </header>
+      <div class="project-section-items">
+        <div
+          v-for="item in section.items ?? [section]"
+          :key="item.id"
+          class="project-section-item stack"
+          :role="section.items?.length ? 'group' : undefined"
+          :aria-labelledby="section.items?.length ? sectionId(item.id) : undefined"
         >
-          <source :data-src="section.media.src" type="video/mp4" />
-          您的瀏覽器不支援影片播放，請<a :href="section.media.src">開啟{{ section.title }}影片</a>。
-        </video>
-        <img v-else :src="section.media.src" :alt="section.media.alt" loading="lazy" />
+          <div class="project-item-text stack">
+            <p v-if="item.label" class="project-item-label">{{ item.label }}</p>
+            <component
+              :is="headingTag(!!section.items?.length)"
+              :id="sectionId(item.id)"
+              class="project-item-title"
+              >{{ item.title }}</component
+            >
+            <p v-if="item.tagline" class="project-item-tagline">{{ item.tagline }}</p>
+            <p v-for="paragraph in item.paragraphs" :key="paragraph">{{ paragraph }}</p>
+            <p v-if="item.content" class="intro">{{ item.content }}</p>
+          </div>
+          <div v-if="!item.content && !item.paragraphs?.length" class="placeholder-panel">
+            <p class="muted">此區內容與圖片待提供。</p>
+          </div>
+          <div v-if="item.media" class="project-section-media">
+            <video
+              v-if="item.media.type === 'video'"
+              controls
+              playsinline
+              muted
+              loop
+              preload="none"
+              :poster="item.media.poster"
+              :aria-label="`${project.title}：${item.title}示範影片`"
+            >
+              <source :data-src="item.media.src" type="video/mp4" />
+              您的瀏覽器不支援影片播放，請<a :href="item.media.src">開啟{{ item.title }}影片</a>。
+            </video>
+            <img v-else :src="item.media.src" :alt="item.media.alt" loading="lazy" />
+          </div>
+        </div>
       </div>
     </section>
   </article>
@@ -192,7 +225,13 @@ function sectionId(id: string) {
     min-inline-size: 0;
     text-align: center;
   }
-  .project-section > .intro {
+  .project-section-items,
+  .project-section-item,
+  .project-item-text {
+    min-inline-size: 0;
+    width: 100%;
+  }
+  .project-item-text > .intro {
     justify-self: center;
   }
   .project-section-media {
@@ -268,6 +307,65 @@ function sectionId(id: string) {
     height: auto;
     border-radius: var(--radius-panel);
   }
+  /* 只有提供子項目的作品啟用章節版型，其他作品保留原本排版。 */
+  .project-detail--chapters {
+    row-gap: var(--space-12);
+  }
+  .project-detail--chapters > .project-chapter {
+    --color-text: var(--palette-black);
+    --color-focus: var(--palette-black);
+    row-gap: var(--space-8);
+    color: var(--palette-black);
+    background: var(--palette-white);
+  }
+  .project-chapter + .project-chapter {
+    padding-block-start: var(--space-12);
+    border-block-start: 1px solid var(--palette-blue);
+  }
+  .project-chapter-heading {
+    display: grid;
+    gap: var(--space-2);
+    text-align: center;
+  }
+  .project-chapter-number {
+    font-size: var(--font-size-sm);
+  }
+  .project-chapter-subtitle {
+    font-size: var(--font-size-md);
+  }
+  .project-chapter .project-section-items {
+    display: grid;
+    gap: var(--space-8);
+  }
+  .project-chapter .project-item-text {
+    gap: var(--space-4);
+    width: min(100%, var(--layout-text-width));
+    margin-inline: auto;
+    text-align: left;
+  }
+  .project-chapter .project-item-text > * {
+    justify-self: stretch;
+  }
+  .project-chapter .project-section-item + .project-section-item {
+    padding-block-start: var(--space-8);
+    border-block-start: 1px solid var(--palette-blue);
+  }
+  .project-item-label {
+    color: var(--palette-red);
+    font-size: var(--font-size-sm);
+  }
+  .project-chapter .project-item-title {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-heading);
+    letter-spacing: var(--letter-spacing-heading);
+    overflow-wrap: anywhere;
+  }
+  .project-item-tagline {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+  }
   @media (max-width: 899px) {
     .project-detail--modal {
       /* 窄版原水平留白最大為 space-8，增加至 space-12。 */
@@ -275,6 +373,19 @@ function sectionId(id: string) {
     }
   }
   @media (max-width: 480px) {
+    .project-detail--chapters {
+      row-gap: var(--space-8);
+    }
+    .project-detail--chapters > .project-chapter,
+    .project-chapter .project-section-items {
+      gap: var(--space-6);
+    }
+    .project-chapter + .project-chapter {
+      padding-block-start: var(--space-8);
+    }
+    .project-chapter .project-section-item + .project-section-item {
+      padding-block-start: var(--space-6);
+    }
     .project-detail--modal {
       /* 手機原為 space-4 左右，使用下一級並保留內容寬度。 */
       padding-inline: var(--space-6);

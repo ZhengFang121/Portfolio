@@ -212,34 +212,48 @@ try {
   }
   async function checkDetail(index, width) {
     const detail = await evaluate(`(() => {
-      const root = document.querySelector('.project-detail--modal');
-      const card = document.querySelectorAll('.work-card')[${index}];
-      const categories = root.querySelector('.project-categories');
-      const list = categories.querySelector('ul');
-      const rect = el => { const r=el.getBoundingClientRect(); return {left:r.left,right:r.right,top:r.top,width:r.width,height:r.height} };
-      const pillStyle = el => { const s=getComputedStyle(el); return {background:s.backgroundColor,color:s.color,fontSize:s.fontSize,padding:s.padding,borderRadius:s.borderRadius} };
+      const root=document.querySelector('.project-detail--modal');
+      const card=document.querySelectorAll('.work-card')[${index}];
+      const categories=root.querySelector('.project-categories'),list=categories.querySelector('ul');
+      const rect=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}};
+      const type=el=>{const s=getComputedStyle(el);return {size:parseFloat(s.fontSize),weight:s.fontWeight,lineHeight:s.lineHeight,color:s.color,align:s.textAlign}};
+      const pillStyle=el=>{const s=getComputedStyle(el);return {background:s.backgroundColor,color:s.color,fontSize:s.fontSize,padding:s.padding,borderRadius:s.borderRadius}};
+      const centeredTexts=[...root.querySelectorAll('h2,h3,p')].filter(el=>!el.closest('.project-chapter'));
       return {
         text:root.textContent,year:root.querySelector('.project-design-year').textContent,
-        padding:getComputedStyle(root).paddingLeft,
-        root:rect(root),categories:rect(categories),list:rect(list),
+        padding:getComputedStyle(root).paddingLeft,root:rect(root),categories:rect(categories),list:rect(list),
         overflow:categories.scrollWidth>categories.clientWidth,
         pills:[...root.querySelectorAll('.project-category')].map(el=>({text:el.textContent.trim(),rect:rect(el),style:pillStyle(el)})),
         cardPills:[...card.querySelectorAll('.project-category')].map(el=>({text:el.textContent.trim(),style:pillStyle(el)})),
-        texts:[...root.querySelectorAll('h2,h3,p')].map(el=>({align:getComputedStyle(el).textAlign,rect:rect(el)})),
+        texts:centeredTexts.map(el=>({align:getComputedStyle(el).textAlign,rect:rect(el)})),
         blue:[...root.querySelectorAll('.project-design-year,.project-detail-summary')].map(el=>getComputedStyle(el).color),
         titles:[root.querySelector('.project-detail-title'),card.querySelector('h3')].map(el=>getComputedStyle(el).color),
         media:rect(root.querySelector('img')),ratio:root.querySelector('img').naturalWidth/root.querySelector('img').naturalHeight,
-        sections:[...root.querySelectorAll('header,section')].map(rect),
-        contentSections:[...root.querySelectorAll('section')].map(section=>({
-          title:section.querySelector('h3').textContent,
-          content:section.querySelector('p').textContent,
-          order:[...section.children].map(el=>el.tagName),
-          gap:getComputedStyle(section).rowGap,
-          media:[...section.querySelectorAll('.project-section-media video,.project-section-media img')].map(el=>({
-            rect:rect(el),fit:getComputedStyle(el).objectFit,
-            src:el.querySelector('source')?.dataset.src,type:el.querySelector('source')?.type,
-            controls:el.controls,inline:el.playsInline,preload:el.preload,autoplay:el.autoplay,loop:el.loop,muted:el.muted,
-            label:el.getAttribute('aria-label'),poster:el.getAttribute('poster'),
+        contentSections:[...root.querySelectorAll(':scope > .project-section')].map(section=>({
+          title:section.querySelector('h3').textContent,content:section.querySelector('p').textContent,
+          media:section.querySelectorAll('.project-section-media').length,
+        })),
+        chapterGap:parseFloat(getComputedStyle(root).rowGap),
+        chapters:[...root.querySelectorAll('.project-chapter')].map(chapter=>({
+          rect:rect(chapter),padding:parseFloat(getComputedStyle(chapter).paddingTop),
+          number:chapter.querySelector('.project-chapter-number').textContent,
+          title:chapter.querySelector('h3').textContent,subtitle:chapter.querySelector('.project-chapter-subtitle').textContent,
+          headingTypes:[...chapter.querySelector('.project-chapter-heading').children].map(type),
+          headingGap:getComputedStyle(chapter.querySelector('.project-chapter-heading')).rowGap,
+          itemGap:parseFloat(getComputedStyle(chapter.querySelector('.project-section-items')).rowGap),
+          items:[...chapter.querySelectorAll('.project-section-item')].map(item=>({
+            rect:rect(item),text:rect(item.querySelector('.project-item-text')),
+            padding:parseFloat(getComputedStyle(item).paddingTop),gap:getComputedStyle(item).rowGap,
+            textGap:getComputedStyle(item.querySelector('.project-item-text')).rowGap,
+            title:item.querySelector('h4').textContent,label:item.querySelector('.project-item-label').textContent,
+            titleType:type(item.querySelector('h4')),labelType:type(item.querySelector('.project-item-label')),
+            children:[...item.querySelector('.project-item-text').children].map(el=>({tag:el.tagName,content:el.textContent.trim(),type:type(el),rect:rect(el)})),
+            media:[...item.querySelectorAll('video')].map(el=>({
+              rect:rect(el),fit:getComputedStyle(el).objectFit,
+              src:el.querySelector('source')?.dataset.src,type:el.querySelector('source')?.type,
+              controls:el.controls,inline:el.playsInline,preload:el.preload,autoplay:el.autoplay,loop:el.loop,muted:el.muted,
+              label:el.getAttribute('aria-label'),poster:el.getAttribute('poster'),
+            })),
           })),
         })),
         panelOverflow:document.querySelector('.project-modal-panel').scrollWidth>document.querySelector('.project-modal-panel').clientWidth,
@@ -256,41 +270,125 @@ try {
     assert.ok(detail.blue.every((color) => color === 'rgb(185, 218, 232)'))
     assert.ok(detail.titles.every((color) => color === 'rgb(0, 0, 0)'))
     assert.ok(detail.texts.every((text) => text.align === 'center'))
-    assert.equal(detail.contentSections.length, index === 0 ? 8 : 3)
-    const expected = [
-      ['intro', '序章動畫'],
-      ['login', '登入'],
-      ['home', '首頁'],
-      ['records', '新增跑步紀錄'],
-      ['station', '足跡驛站'],
-      ['academy', '跑者學院'],
-      ['plaza', '菲迪廣場'],
-      ['admin', '管理者後台'],
-    ]
-    for (const [sectionIndex, section] of detail.contentSections.entries()) {
-      assert.equal(section.gap, '24px', '段落內使用 space-6 間距')
-      if (index !== 0) {
-        assert.equal(section.media.length, 0, '其他作品不加入媒體')
-        assert.equal(section.content, '此區內容與圖片待提供。')
-        continue
-      }
-      const [id, title] = expected[sectionIndex]
-      assert.equal(section.title, title)
-      assert.equal(section.content, `${title}內文`)
-      assert.deepEqual(section.order, ['H3', 'P', 'DIV'], '內標題 → 內文 → 媒體')
-      assert.equal(section.media.length, 1)
-      const media = section.media[0]
-      assert.equal(media.src, `/videos/projects/pheidi-the-runner/${id}.mp4`)
-      assert.equal(media.type, 'video/mp4')
-      assert.equal(media.fit, 'contain')
-      assert.ok(media.controls && media.inline && !media.autoplay && media.loop && media.muted)
-      assert.equal(media.preload, 'none')
-      assert.equal(media.poster, null, '沒有自行增加 poster')
-      assert.ok(media.label.includes(title))
-      assert.ok(
-        media.rect.left >= detail.root.left && media.rect.right <= detail.root.right,
-        '影片不溢出',
+    assert.equal(detail.contentSections.length, index === 0 ? 2 : 3)
+    if (index === 0) {
+      assert.equal(detail.chapters.length, 2)
+      assert.deepEqual(
+        detail.chapters.map((chapter) => [chapter.number, chapter.title, chapter.subtitle]),
+        [
+          ['SECTION 01', '設計理念', 'DESIGN CONCEPT'],
+          ['SECTION 02', '網站介紹', 'WEBSITE OVERVIEW'],
+        ],
       )
+      assert.deepEqual(
+        detail.chapters[0].headingTypes,
+        detail.chapters[1].headingTypes,
+        '兩章標題字級、字重、行距與對齊完全一致',
+      )
+      assert.equal(detail.chapters[0].headingGap, detail.chapters[1].headingGap)
+      assert.ok(detail.chapters[0].headingTypes[0].size < detail.chapters[0].headingTypes[2].size)
+      assert.ok(detail.chapters[0].headingTypes[2].size < detail.chapters[0].headingTypes[1].size)
+      assert.ok(detail.media.bottom <= detail.chapters[0].rect.top, '封面接續設計理念')
+      assert.ok(
+        detail.chapters[0].rect.bottom < detail.chapters[1].rect.top,
+        '設計理念接續網站介紹',
+      )
+      assert.deepEqual(
+        detail.chapters.map((chapter) => chapter.items.length),
+        [3, 8],
+      )
+      const textReference = detail.chapters[0].items[0].text
+      const titleReference = detail.chapters[0].items[0].titleType
+      for (const [chapterIndex, chapter] of detail.chapters.entries()) {
+        assert.ok(Math.abs(chapter.rect.width - detail.media.width) < 1, '章節與封面同寬')
+        assert.ok(Math.abs(chapter.rect.left - detail.media.left) < 1)
+        assert.equal(chapter.itemGap, width <= 480 ? 24 : 32)
+        assert.ok(detail.chapterGap > chapter.itemGap, '主要章節留白大於子項目留白')
+        if (chapterIndex) assert.equal(chapter.padding, detail.chapterGap)
+        for (const [itemIndex, item] of chapter.items.entries()) {
+          assert.ok(Math.abs(item.text.left - textReference.left) < 1, '十一個文字區共用左側起點')
+          assert.ok(Math.abs(item.text.width - textReference.width) < 1, '十一個文字區共用閱讀寬度')
+          assert.ok(item.text.width <= 672, '文字不超過既有 42rem 閱讀寬度')
+          assert.ok(
+            Math.abs(
+              item.text.left + item.text.width / 2 - (chapter.rect.left + chapter.rect.width / 2),
+            ) < 1,
+          )
+          assert.equal(item.gap, '24px')
+          assert.equal(item.textGap, '16px')
+          if (itemIndex) assert.equal(item.padding, chapter.itemGap)
+          assert.deepEqual(item.titleType, titleReference, '核心句與功能標題使用相同樣式')
+          assert.equal(item.titleType.weight, '600')
+          assert.ok(item.titleType.size < chapter.headingTypes[1].size)
+          assert.equal(item.labelType.color, 'rgb(167, 31, 36)')
+          assert.ok(item.labelType.size < item.titleType.size)
+          assert.ok(
+            item.children.every((child) => child.type.align === 'left'),
+            '所有內容文字靠左',
+          )
+          assert.ok(
+            item.children.every(
+              (child) =>
+                child.rect.left >= item.text.left - 1 && child.rect.right <= item.text.right + 1,
+            ),
+            '文字不溢出',
+          )
+          assert.ok(item.children.slice(1).every((child) => child.type.color === 'rgb(0, 0, 0)'))
+          for (const body of item.children.filter(
+            (child) =>
+              child.tag === 'P' &&
+              child.type.weight === '400' &&
+              child.type.color === 'rgb(0, 0, 0)',
+          )) {
+            assert.equal(body.type.size, 16)
+            assert.equal(body.type.lineHeight, '28px')
+          }
+        }
+      }
+      assert.deepEqual(
+        detail.chapters[0].items.map((item) => item.label),
+        ['INSIGHT — 設計洞察', 'CONCEPT — 設計概念', 'VISION — 品牌願景'],
+      )
+      assert.ok(detail.chapters[0].items.every((item) => item.media.length === 0))
+      const expected = [
+        ['intro', '序章動畫', '01 / INTRO ANIMATION'],
+        ['login', '登入', '02 / LOGIN'],
+        ['home', '首頁', '03 / HOME'],
+        ['records', '新增跑步紀錄', '04 / RUNNING RECORD'],
+        ['station', '足跡驛站', '05 / RUNNING STATION'],
+        ['academy', '跑者學院', '06 / RUNNING ACADEMY'],
+        ['plaza', '菲迪廣場', '07 / RUNNER PLAZA'],
+        ['admin', '管理者後台', '08 / ADMIN DASHBOARD'],
+      ]
+      for (const [itemIndex, item] of detail.chapters[1].items.entries()) {
+        const [id, title, label] = expected[itemIndex]
+        assert.equal(item.title, title)
+        assert.equal(item.label, label)
+        assert.deepEqual(
+          item.children.map((child) => child.tag),
+          ['P', 'H4', 'P'],
+          '英文標籤 → 中文標題 → 原有內文',
+        )
+        assert.equal(item.children[2].content, `${title}內文`)
+        assert.equal(item.media.length, 1)
+        const media = item.media[0]
+        assert.equal(media.src, `/videos/projects/pheidi-the-runner/${id}.mp4`)
+        assert.equal(media.type, 'video/mp4')
+        assert.equal(media.fit, 'contain')
+        assert.ok(media.controls && media.inline && !media.autoplay && media.loop && media.muted)
+        assert.equal(media.preload, 'none')
+        assert.equal(media.poster, null)
+        assert.ok(media.label.includes(title))
+        assert.ok(Math.abs(media.rect.width - detail.media.width) < 1, '八支影片與封面共用外層寬度')
+        assert.ok(Math.abs(media.rect.left - detail.media.left) < 1, '影片水平置中且不溢出')
+        assert.ok(media.rect.top >= item.children[2].rect.bottom, '介紹內文接續影片')
+      }
+    } else {
+      assert.equal(detail.chapters.length, 0, '其他作品不套用章節版型')
+      for (const section of detail.contentSections) {
+        assert.equal(section.media, 0)
+        assert.equal(section.content, '此區內容與圖片待提供。')
+      }
     }
     for (const element of [
       ...detail.texts.map((text) => text.rect),
@@ -299,7 +397,7 @@ try {
     ])
       assert.ok(
         Math.abs(element.left + element.width / 2 - (detail.root.left + detail.root.width / 2)) < 1,
-        '文字與媒體水平置中',
+        '原有置中文字與封面保持置中',
       )
     assert.ok(
       Math.abs(detail.media.width / detail.media.height - detail.ratio) < 0.01,
@@ -489,6 +587,23 @@ try {
         await cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 0, y: 0 })
         const { data } = await cdp('Page.captureScreenshot', { format: 'png' })
         await writeFile(join(output, `${width}x${height}.png`), Buffer.from(data, 'base64'))
+        if ([1440, 768, 390].includes(width) && height > 500) {
+          for (const [name, selector] of [
+            ['concept', '.project-chapter:first-of-type'],
+            ['vision', '.project-chapter:first-of-type .project-section-item:last-child'],
+            ['overview', '.project-chapter:nth-of-type(2)'],
+          ]) {
+            await evaluate(
+              `document.querySelector('${selector}').scrollIntoView({block:'start',behavior:'instant'})`,
+            )
+            const { data } = await cdp('Page.captureScreenshot', { format: 'png' })
+            await writeFile(
+              join(output, `${width}x${height}-${name}.png`),
+              Buffer.from(data, 'base64'),
+            )
+          }
+          await evaluate(`document.querySelector('.project-modal-panel').scrollTop=0`)
+        }
       }
       await key('Escape')
       await closed(selector, before)
