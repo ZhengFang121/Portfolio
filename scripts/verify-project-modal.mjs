@@ -148,18 +148,19 @@ try {
     await delay(150)
   }
   async function key(key, modifiers = 0) {
-    const windowsVirtualKeyCode = { Tab: 9, Enter: 13, Escape: 27, PageDown: 34 }[key]
+    const windowsVirtualKeyCode = { Tab: 9, Enter: 13, Escape: 27, PageDown: 34, ' ': 32 }[key]
     await cdp('Input.dispatchKeyEvent', {
       type: 'keyDown',
+      text: key === 'Enter' ? '\r' : key === ' ' ? ' ' : undefined,
       key,
-      code: key,
+      code: key === ' ' ? 'Space' : key,
       windowsVirtualKeyCode,
       modifiers,
     })
     await cdp('Input.dispatchKeyEvent', {
       type: 'keyUp',
       key,
-      code: key,
+      code: key === ' ' ? 'Space' : key,
       windowsVirtualKeyCode,
       modifiers,
     })
@@ -179,7 +180,7 @@ try {
     const rect = el => { const r=el.getBoundingClientRect(); return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height} };
     const shell=document.querySelector('.app-shell'), panel=document.querySelector('.project-modal-panel'), dialog=document.querySelector('.project-modal');
     return {content:rect(document.querySelector('.site-content')),contentTop:parseFloat(getComputedStyle(document.querySelector('.site-content')).paddingTop),nav:rect(document.querySelector('.shell-header')),brand:rect(document.querySelector('.intro-brand')),stage:shell.dataset.stage,scroll:scrollY,
-      ...(dialog ? {dialog:rect(dialog), panel:rect(panel),toolbar:rect(dialog.querySelector('.project-modal-toolbar')),heading:rect(dialog.querySelector('h2')),close:rect(document.querySelector('.project-modal-close')),dialogCount:document.querySelectorAll('[role="dialog"]').length,closeCount:dialog.querySelectorAll('button').length,
+      ...(dialog ? {dialog:rect(dialog), panel:rect(panel),toolbar:rect(dialog.querySelector('.project-modal-toolbar')),heading:rect(dialog.querySelector('h2')),close:rect(document.querySelector('.project-modal-close')),dialogCount:document.querySelectorAll('[role="dialog"]').length,closeCount:dialog.querySelectorAll('.project-modal-close').length,
         labelledBy:dialog.getAttribute('aria-labelledby'),title:dialog.querySelector('h2').id,titleText:dialog.querySelector('h2').textContent,modal:dialog.getAttribute('aria-modal'),hasH1:!!dialog.querySelector('h1'),
         border:getComputedStyle(dialog).borderTop,background:getComputedStyle(dialog).backgroundColor,color:getComputedStyle(panel).color,opacity:getComputedStyle(panel).opacity,mask:getComputedStyle(dialog.parentElement).backgroundColor,
         closeBackground:getComputedStyle(dialog.querySelector('button')).backgroundColor,closeColor:getComputedStyle(dialog.querySelector('button')).color,dialogOverflowY:getComputedStyle(dialog).overflowY,
@@ -218,7 +219,7 @@ try {
       const rect=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}};
       const type=el=>{const s=getComputedStyle(el);return {size:parseFloat(s.fontSize),weight:s.fontWeight,lineHeight:s.lineHeight,color:s.color,align:s.textAlign}};
       const pillStyle=el=>{const s=getComputedStyle(el);return {background:s.backgroundColor,color:s.color,fontSize:s.fontSize,padding:s.padding,borderRadius:s.borderRadius}};
-      const centeredTexts=[...root.querySelectorAll('h2,h3,p')].filter(el=>!el.closest('.project-chapter'));
+      const centeredTexts=[...root.querySelectorAll(':scope > header h2,:scope > header p,.project-chapter-heading > *')];
       return {
         text:root.textContent,year:root.querySelector('.project-design-year').textContent,
         padding:getComputedStyle(root).paddingLeft,root:rect(root),categories:rect(categories),list:rect(list),
@@ -231,11 +232,12 @@ try {
         media:rect(root.querySelector('img')),ratio:root.querySelector('img').naturalWidth/root.querySelector('img').naturalHeight,
         contentSections:[...root.querySelectorAll(':scope > .project-section')].map(section=>({
           title:section.querySelector('h3').textContent,content:section.querySelector('p').textContent,
+          border:getComputedStyle(section).borderTopWidth,
           media:section.querySelectorAll('.project-section-media').length,
         })),
         chapterGap:parseFloat(getComputedStyle(root).rowGap),
         chapters:[...root.querySelectorAll('.project-chapter')].map(chapter=>({
-          rect:rect(chapter),padding:parseFloat(getComputedStyle(chapter).paddingTop),
+          rect:rect(chapter),border:getComputedStyle(chapter).borderTopWidth,padding:parseFloat(getComputedStyle(chapter).paddingTop),
           number:chapter.querySelector('.project-chapter-number').textContent,
           title:chapter.querySelector('h3').textContent,subtitle:chapter.querySelector('.project-chapter-subtitle').textContent,
           headingTypes:[...chapter.querySelector('.project-chapter-heading').children].map(type),
@@ -243,15 +245,16 @@ try {
           itemGap:parseFloat(getComputedStyle(chapter.querySelector('.project-section-items')).rowGap),
           items:[...chapter.querySelectorAll('.project-section-item')].map(item=>({
             rect:rect(item),text:rect(item.querySelector('.project-item-text')),
-            padding:parseFloat(getComputedStyle(item).paddingTop),gap:getComputedStyle(item).rowGap,
+            border:getComputedStyle(item).borderTopWidth,padding:parseFloat(getComputedStyle(item).paddingTop),gap:getComputedStyle(item).rowGap,
             textGap:getComputedStyle(item.querySelector('.project-item-text')).rowGap,
             title:item.querySelector('h4').textContent,label:item.querySelector('.project-item-label').textContent,
             titleType:type(item.querySelector('h4')),labelType:type(item.querySelector('.project-item-label')),
             children:[...item.querySelector('.project-item-text').children].map(el=>({tag:el.tagName,content:el.textContent.trim(),type:type(el),rect:rect(el)})),
             media:[...item.querySelectorAll('video')].map(el=>({
-              rect:rect(el),fit:getComputedStyle(el).objectFit,
+              rect:rect(el),container:rect(el.parentElement),fit:getComputedStyle(el).objectFit,
               src:el.querySelector('source')?.dataset.src,type:el.querySelector('source')?.type,
-              controls:el.controls,inline:el.playsInline,preload:el.preload,autoplay:el.autoplay,loop:el.loop,muted:el.muted,
+              button: (()=>{const b=el.parentElement.querySelector('.project-video-toggle'),r=b.getBoundingClientRect(),s=getComputedStyle(b);return {rect:rect(b),controls:b.getAttribute('aria-controls'),label:b.getAttribute('aria-label'),width:r.width,height:r.height,display:s.display,position:s.position,border:s.borderTopWidth,background:s.backgroundColor,text:b.textContent.trim(),icon:rect(b.querySelector('svg'))}})(),
+              id:el.id,controls:el.controls,inline:el.playsInline,preload:el.preload,autoplay:el.autoplay,loop:el.loop,muted:el.muted,
               label:el.getAttribute('aria-label'),poster:el.getAttribute('poster'),
             })),
           })),
@@ -299,13 +302,14 @@ try {
       )
       const textReference = detail.chapters[0].items[0].text
       const titleReference = detail.chapters[0].items[0].titleType
-      for (const [chapterIndex, chapter] of detail.chapters.entries()) {
+      for (const chapter of detail.chapters) {
         assert.ok(Math.abs(chapter.rect.width - detail.media.width) < 1, '章節與封面同寬')
         assert.ok(Math.abs(chapter.rect.left - detail.media.left) < 1)
-        assert.equal(chapter.itemGap, width <= 480 ? 24 : 32)
+        assert.equal(chapter.itemGap, width <= 480 ? 24 : width <= 899 ? 32 : 48)
         assert.ok(detail.chapterGap > chapter.itemGap, '主要章節留白大於子項目留白')
-        if (chapterIndex) assert.equal(chapter.padding, detail.chapterGap)
-        for (const [itemIndex, item] of chapter.items.entries()) {
+        assert.equal(chapter.padding, 0, '章節間距不再疊加 padding')
+        assert.equal(chapter.border, '0px', '章節無分隔線')
+        for (const item of chapter.items) {
           assert.ok(Math.abs(item.text.left - textReference.left) < 1, '十一個文字區共用左側起點')
           assert.ok(Math.abs(item.text.width - textReference.width) < 1, '十一個文字區共用閱讀寬度')
           assert.ok(item.text.width <= 672, '文字不超過既有 42rem 閱讀寬度')
@@ -314,9 +318,11 @@ try {
               item.text.left + item.text.width / 2 - (chapter.rect.left + chapter.rect.width / 2),
             ) < 1,
           )
-          assert.equal(item.gap, '24px')
-          assert.equal(item.textGap, '16px')
-          if (itemIndex) assert.equal(item.padding, chapter.itemGap)
+          assert.equal(item.gap, width <= 480 ? '16px' : '24px')
+          assert.ok(chapter.itemGap > parseFloat(item.gap), '子段落留白大於段內元素')
+          assert.equal(item.textGap, width <= 480 ? '8px' : '16px')
+          assert.equal(item.padding, 0, '子段落間距不再疊加 padding')
+          assert.equal(item.border, '0px', '子段落無分隔線')
           assert.deepEqual(item.titleType, titleReference, '核心句與功能標題使用相同樣式')
           assert.equal(item.titleType.weight, '600')
           assert.ok(item.titleType.size < chapter.headingTypes[1].size)
@@ -351,41 +357,101 @@ try {
       )
       assert.ok(detail.chapters[0].items.every((item) => item.media.length === 0))
       const expected = [
-        ['intro', '序章動畫', '01 / INTRO ANIMATION'],
-        ['login', '登入', '02 / LOGIN'],
-        ['home', '首頁', '03 / HOME'],
-        ['records', '新增跑步紀錄', '04 / RUNNING RECORD'],
-        ['station', '足跡驛站', '05 / RUNNING STATION'],
-        ['academy', '跑者學院', '06 / RUNNING ACADEMY'],
-        ['plaza', '菲迪廣場', '07 / RUNNER PLAZA'],
-        ['admin', '管理者後台', '08 / ADMIN DASHBOARD'],
+        [
+          'intro',
+          '序章動畫',
+          '01 / INTRO ANIMATION',
+          '透過角色插畫與動態視覺，帶領使用者進入跑者菲迪的世界。以輕鬆活潑的方式建立第一印象，傳達「陪你開始，伴你成長」的品牌精神，讓每一段跑步旅程從充滿期待的序章展開。',
+        ],
+        [
+          'login',
+          '登入',
+          '02 / LOGIN',
+          '透過簡潔直覺的登入與註冊介面，降低新手開始使用網站的門檻。建立專屬的跑者帳號，保存個人的跑步紀錄與成長歷程，從這裡展開屬於自己的跑步旅程。',
+        ],
+        [
+          'home',
+          '首頁',
+          '03 / HOME',
+          '首頁整合跑者階段、成長進度與個人跑步概況，讓使用者快速掌握目前的成果與下一階段目標。搭配菲迪日報的天氣資訊、跑者學院推薦及阿里的貼心提醒，讓每一次回訪都有新的期待與方向。',
+        ],
+        [
+          'records',
+          '新增跑步紀錄',
+          '04 / RUNNING RECORD',
+          '透過直覺化的表單，記錄每一次跑步的時間、距離、地點與心得，並可搭配照片留下當下的回憶。讓原本單純的跑步數據，轉化成看得見的成長足跡，累積屬於自己的跑者旅程。',
+        ],
+        [
+          'station',
+          '足跡驛站',
+          '05 / RUNNING STATION',
+          '以月曆與跑步紀錄呈現個人的運動歷程，方便回顧每一次努力與進步。透過累積紀錄與成長回饋，讓使用者看見自己的堅持，從每一個小小的成就中獲得持續前進的動力。',
+        ],
+        [
+          'academy',
+          '跑者學院',
+          '06 / RUNNING ACADEMY',
+          '針對新手跑者的需求，整理學習、裝備、補給與賽事四大類跑步知識。透過容易理解的文章內容，陪伴使用者逐步建立正確觀念，減少入門時的迷惘，讓每一次出發都更有信心。',
+        ],
+        [
+          'plaza',
+          '菲迪廣場',
+          '07 / RUNNER PLAZA',
+          '打造讓跑者交流與分享的互動空間，透過動態貼文、留言與活動情報，串起彼此的跑步日常。讓使用者不只能記錄自己的成長，也能從其他跑者的經驗與鼓勵中獲得支持，感受一起前進的力量。',
+        ],
+        [
+          'admin',
+          '管理者後台',
+          '08 / ADMIN DASHBOARD',
+          '建立整合式管理介面，協助管理者掌握網站營運概況，並集中管理玩家、跑者學院文章與菲迪廣場內容。透過清楚的數據呈現與分類管理，提升後台操作效率，讓網站內容與社群互動更容易維護。',
+        ],
       ]
       for (const [itemIndex, item] of detail.chapters[1].items.entries()) {
-        const [id, title, label] = expected[itemIndex]
+        const [id, title, label, content] = expected[itemIndex]
         assert.equal(item.title, title)
         assert.equal(item.label, label)
         assert.deepEqual(
           item.children.map((child) => child.tag),
           ['P', 'H4', 'P'],
-          '英文標籤 → 中文標題 → 原有內文',
+          '英文標籤 → 中文標題 → 正式內文',
         )
-        assert.equal(item.children[2].content, `${title}內文`)
+        assert.equal(item.children[2].content, content)
         assert.equal(item.media.length, 1)
         const media = item.media[0]
         assert.equal(media.src, `/videos/projects/pheidi-the-runner/${id}.mp4`)
         assert.equal(media.type, 'video/mp4')
         assert.equal(media.fit, 'contain')
-        assert.ok(media.controls && media.inline && !media.autoplay && media.loop && media.muted)
+        assert.ok(!media.controls && media.inline && !media.autoplay && media.loop && media.muted)
         assert.equal(media.preload, 'none')
         assert.equal(media.poster, null)
         assert.ok(media.label.includes(title))
-        assert.ok(Math.abs(media.rect.width - detail.media.width) < 1, '八支影片與封面共用外層寬度')
-        assert.ok(Math.abs(media.rect.left - detail.media.left) < 1, '影片水平置中且不溢出')
+        assert.ok(Math.abs(media.rect.width - item.text.width) < 1, '八支影片與文字同寬')
+        assert.ok(Math.abs(media.rect.left - item.text.left) < 1, '影片與文字左右邊界一致')
+        assert.equal(media.button.controls, media.id)
+        assert.match(media.button.label, new RegExp(`^(播放|暫停)${title}示範影片$`))
+        assert.ok(media.button.width >= 44 && media.button.height >= 44, '控制按鈕有足夠觸控範圍')
+        assert.notEqual(media.button.display, 'none', '控制按鈕在觸控裝置也可見')
+        assert.equal(media.button.position, 'absolute')
+        assert.ok(Math.abs(media.button.rect.top - media.rect.top - 12) < 1, '按鈕距影片上緣 12px')
+        assert.ok(
+          Math.abs(media.rect.right - media.button.rect.right - 12) < 1,
+          '按鈕距影片右緣 12px',
+        )
+        assert.ok(
+          Math.abs(media.container.height - media.rect.height) < 1,
+          '按鈕不增加影片外側高度',
+        )
+        assert.equal(media.button.border, '0px')
+        assert.equal(media.button.background, 'rgba(0, 0, 0, 0)')
+        assert.equal(media.button.text, '', '不顯示播放或暫停文字')
+        assert.equal(media.button.icon.width, 20)
+        assert.equal(media.button.icon.height, 20)
         assert.ok(media.rect.top >= item.children[2].rect.bottom, '介紹內文接續影片')
       }
     } else {
       assert.equal(detail.chapters.length, 0, '其他作品不套用章節版型')
       for (const section of detail.contentSections) {
+        assert.equal(section.border, '0px')
         assert.equal(section.media, 0)
         assert.equal(section.content, '此區內容與圖片待提供。')
       }
@@ -643,11 +709,11 @@ try {
     }
     console.log(`PASS ${width}×${height}: 首頁／Works 對齊、白底藍框、三種關閉、焦點與捲動`)
   }
-  // 真實解碼、播放與跳轉；桌機／手機各跑一輪八支影片。
-  for (const width of [1440, 390]) {
+  // 真實解碼、播放與跳轉；桌機／平板／手機各跑一輪八支影片。
+  for (const width of [1440, 768, 390]) {
     await cdp('Emulation.setDeviceMetricsOverride', {
       width,
-      height: width === 1440 ? 1024 : 844,
+      height: width === 390 ? 844 : 1024,
       deviceScaleFactor: 1,
       mobile: false,
     })
@@ -697,55 +763,31 @@ try {
       )
       playback.push(state)
       if (index === 0) {
-        // 透過 Chromium 原生控制列操作，補足程式跳轉以外的拖曳驗證。
-        const { root: dom } = await cdp('DOM.getDocument', { depth: -1, pierce: true })
-        function findControl(node, pseudo) {
-          const attributes = node.attributes ?? []
-          if (attributes.some((value, i) => value === 'pseudo' && attributes[i + 1] === pseudo))
-            return node
-          for (const child of [...(node.children ?? []), ...(node.shadowRoots ?? [])]) {
-            const match = findControl(child, pseudo)
-            if (match) return match
-          }
-        }
-        async function controlRect(pseudo) {
-          const node = findControl(dom, pseudo)
-          assert.ok(node, `原生控制項 ${pseudo} 存在`)
-          const { model } = await cdp('DOM.getBoxModel', { nodeId: node.nodeId })
-          const [left, top, right, , , bottom] = model.content
-          return { left, right, y: (top + bottom) / 2 }
-        }
-        const timeline = await controlRect('-webkit-media-controls-timeline')
-        const x = timeline.left + (timeline.right - timeline.left) / 2
-        await cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y: timeline.y })
-        await cdp('Input.dispatchMouseEvent', {
-          type: 'mousePressed',
-          x,
-          y: timeline.y,
-          button: 'left',
-          clickCount: 1,
-        })
-        await cdp('Input.dispatchMouseEvent', {
-          type: 'mouseMoved',
-          x: timeline.left + (timeline.right - timeline.left) * 0.75,
-          y: timeline.y,
-          button: 'left',
-          buttons: 1,
-        })
-        await cdp('Input.dispatchMouseEvent', {
-          type: 'mouseReleased',
-          x: timeline.left + (timeline.right - timeline.left) * 0.75,
-          y: timeline.y,
-          button: 'left',
-          clickCount: 1,
-        })
-        await waitFor(
-          `(() => {const v=document.querySelector('.project-modal video');return !v.seeking && v.currentTime/v.duration>0.65 && v.currentTime/v.duration<0.85})()`,
+        // 自訂按鈕使用真實滑鼠與鍵盤事件，不透過影片 API 代替操作。
+        const toggle = '.project-modal .project-video-toggle'
+        await evaluate(
+          `document.querySelector('${toggle}').scrollIntoView({block:'center',behavior:'instant'})`,
         )
-        const playButton = await controlRect('-webkit-media-controls-play-button')
-        await clickAt((playButton.left + playButton.right) / 2, playButton.y)
+        await click(toggle)
         await waitFor(`!document.querySelector('.project-modal video').paused`)
-        await clickAt((playButton.left + playButton.right) / 2, playButton.y)
+        await waitFor(
+          `document.querySelector('${toggle}').getAttribute('aria-label').startsWith('暫停')`,
+        )
+        await click(toggle)
+        await waitFor(`document.querySelector('.project-modal video').paused`)
+        await waitFor(
+          `document.querySelector('${toggle}').getAttribute('aria-label').startsWith('播放')`,
+        )
+        await evaluate(`document.querySelector('${toggle}').focus()`)
+        await key('Enter')
+        await waitFor(`!document.querySelector('.project-modal video').paused`)
+        assert.ok(
+          await evaluate(
+            `getComputedStyle(document.querySelector('${toggle}')).outlineStyle==='solid'`,
+          ),
+          '鍵盤焦點可見',
+        )
+        await key(' ')
         await waitFor(`document.querySelector('.project-modal video').paused`)
         const { data } = await cdp('Page.captureScreenshot', { format: 'png' })
         await writeFile(join(output, `${width}-video.png`), Buffer.from(data, 'base64'))
@@ -766,7 +808,7 @@ try {
         `(async () => { window.playingVideo=document.querySelector('.project-modal video');await window.playingVideo.play() })()`,
       )
       await waitFor(`window.playingVideo.currentTime>0.05 && !window.playingVideo.paused`)
-      // 原生控制列可能先消耗 Escape；將焦點移回標題後驗證 Dialog 關閉。
+      // 將焦點移回標題後驗證 Dialog 關閉。
       await evaluate(`document.querySelector('.project-modal h2').focus({preventScroll:true})`)
       if (method === 'escape') await key('Escape')
       else if (method === 'button') await click('.project-modal-close')
@@ -806,10 +848,10 @@ try {
       };
     `,
   })
-  for (const width of [1440, 390]) {
+  for (const width of [1440, 768, 390]) {
     await cdp('Emulation.setDeviceMetricsOverride', {
       width,
-      height: width === 1440 ? 1024 : 844,
+      height: width === 390 ? 844 : 1024,
       deviceScaleFactor: 1,
       mobile: width === 390,
     })
@@ -829,7 +871,7 @@ try {
     await waitFor(`${video}.currentTime>0.1 && !${video}.paused`)
     assert.ok(
       await evaluate(
-        `${video}.muted && ${video}.defaultMuted && ${video}.loop && ${video}.playsInline && ${video}.controls`,
+        `${video}.muted && ${video}.defaultMuted && ${video}.loop && ${video}.playsInline && !${video}.controls`,
       ),
     )
     assert.ok(
@@ -853,9 +895,16 @@ try {
     assert.ok(await evaluate(`${video}.currentTime<${pausedAt}+2`), '重新進入時延續暫停位置')
     await evaluate(`${video}.currentTime=${video}.duration-0.15`)
     await waitFor(`${video}.currentTime<1 && !${video}.paused`)
-    await evaluate(`${video}.pause()`)
+    await evaluate(
+      `document.querySelector('.project-video-toggle').scrollIntoView({block:'center',behavior:'instant'})`,
+    )
+    await click('.project-video-toggle')
     await delay(200)
     assert.ok(await evaluate(`${video}.paused`), '留在可見範圍時尊重使用者手動暫停')
+    await scrollVideo(7)
+    await scrollVideo(0)
+    await delay(200)
+    assert.ok(await evaluate(`${video}.paused`), '手動暫停後重新進入也不自動播放')
 
     for (let index = 1; index < 8; index++) {
       await scrollVideo(index)
@@ -873,7 +922,11 @@ try {
       features: [{ name: 'prefers-reduced-motion', value: 'reduce' }],
     })
     await waitFor(`[...document.querySelectorAll('.project-modal video')].every(v=>v.paused)`)
-    await evaluate(`document.querySelectorAll('.project-modal video')[7].play()`)
+    await evaluate(
+      `document.querySelectorAll('.project-video-toggle')[7].scrollIntoView({block:'center',behavior:'instant'})`,
+    )
+    await evaluate(`document.querySelectorAll('.project-video-toggle')[7].focus()`)
+    await key('Enter')
     await waitFor(`!document.querySelectorAll('.project-modal video')[7].paused`)
     await evaluate(`document.querySelector('.project-modal-panel').scrollTop=0`)
     await waitFor(`document.querySelectorAll('.project-modal video')[7].paused`)
@@ -901,22 +954,33 @@ try {
     )
     assert.deepEqual(await evaluate('window.videoErrors'), [])
 
-    // 模擬瀏覽器拒絕自動播放，確保錯誤被處理，原生控制列仍能手動播放。
+    // 模擬瀏覽器拒絕自動播放，再以自訂按鈕手動啟動。
     await evaluate(`window.blockAutoPlayback=true;window.playAttempts=0`)
     await key('Enter')
     await waitFor(`document.querySelector('.project-modal h2')===document.activeElement`)
     await scrollVideo(0)
     await waitFor('window.playAttempts>0')
     await delay(100)
-    assert.ok(await evaluate(`${video}.paused && ${video}.controls`))
+    assert.ok(await evaluate(`${video}.paused && !${video}.controls`))
     assert.deepEqual(await evaluate('window.videoErrors'), [])
-    await evaluate(`window.blockAutoPlayback=false;${video}.play()`)
+    await evaluate(
+      `window.blockAutoPlayback=false;document.querySelector('.project-video-toggle').scrollIntoView({block:'center',behavior:'instant'})`,
+    )
+    if (width === 390) {
+      await cdp('Emulation.setTouchEmulationEnabled', { enabled: true })
+      const point = await evaluate(
+        `(() => {const r=document.querySelector('.project-video-toggle').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`,
+      )
+      await cdp('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] })
+      await cdp('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+      await cdp('Emulation.setTouchEmulationEnabled', { enabled: false })
+    } else await click('.project-video-toggle')
     await waitFor(`!${video}.paused && ${video}.currentTime>0.05`)
     await click('.project-modal-close')
     await closed('.work-card', before)
     assert.ok(await evaluate('window.videoObservers.every(o=>o.targets.size===0)'))
     console.log(
-      `PASS ${width}px: 可見自動播放、靜音循環、離開暫停／返回續播、手動暫停、減少動態、拒播降級與 Observer 清理`,
+      `PASS ${width}px: 可見自動播放、靜音循環、離開暫停／返回續播、自訂按鈕、減少動態、拒播降級與 Observer 清理`,
     )
   }
   await cdp('Page.removeScriptToEvaluateOnNewDocument', { identifier: videoProbe })

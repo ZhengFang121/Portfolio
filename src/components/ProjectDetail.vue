@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
+import { onBeforeUnmount, onMounted, reactive, useTemplateRef, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import { ArrowLeft } from '@lucide/vue'
+import { ArrowLeft, Pause, Play } from '@lucide/vue'
 import ProjectCategories from './ProjectCategories.vue'
-import type { PortfolioProject } from '../data/projects'
+import type { PortfolioProject, ProjectSection } from '../data/projects'
 const props = withDefaults(
   defineProps<{ project: PortfolioProject; mode?: 'page' | 'modal'; titleId?: string }>(),
   {
@@ -17,6 +17,9 @@ let observer: IntersectionObserver | null = null
 let motionPreference: MediaQueryList | null = null
 let videos: HTMLVideoElement[] = []
 const visibleVideos = new Set<HTMLVideoElement>()
+const manuallyPausedVideos = new Set<HTMLVideoElement>()
+// 由原生播放事件同步按鈕，涵蓋自動播放、手動操作及瀏覽器拒播。
+const playingVideos = reactive(new Set<string>())
 let playbackEnabled = false
 
 function loadVideo(video: HTMLVideoElement) {
@@ -29,18 +32,53 @@ function loadVideo(video: HTMLVideoElement) {
 
 function canAutoPlay(video: HTMLVideoElement) {
   return (
-    playbackEnabled && video.isConnected && !motionPreference?.matches && visibleVideos.has(video)
+    playbackEnabled &&
+    video.isConnected &&
+    !motionPreference?.matches &&
+    !manuallyPausedVideos.has(video) &&
+    visibleVideos.has(video)
   )
 }
 
-async function playVideo(video: HTMLVideoElement) {
-  if (!canAutoPlay(video) || !video.paused) return
+async function playVideo(video: HTMLVideoElement, manual = false) {
+  if (!playbackEnabled || !video.isConnected || !video.paused) return
+  if (!manual && !canAutoPlay(video)) return
   try {
     await video.play()
-    // 載入期間可能已捲走或關閉視窗，避免延遲完成的 play() 再啟動影片。
-    if (!canAutoPlay(video)) video.pause()
+    // 載入期間可能已捲走、手動暫停或關閉視窗，避免延遲完成的 play() 再啟動影片。
+    if (
+      !playbackEnabled ||
+      !video.isConnected ||
+      manuallyPausedVideos.has(video) ||
+      (observer && !visibleVideos.has(video)) ||
+      (!manual && motionPreference?.matches)
+    )
+      video.pause()
   } catch {
-    // 自動播放被阻擋或捲動造成播放取消時，仍保留原生控制列供手動播放。
+    // 自動播放遭拒時，仍可透過自訂按鈕再次手動啟動。
+  }
+}
+
+function onPlaybackChange(event: Event) {
+  const video = event.currentTarget
+  if (!(video instanceof HTMLVideoElement)) return
+  if (video.paused || video.ended) playingVideos.delete(video.id)
+  else playingVideos.add(video.id)
+}
+
+function toggleVideo(event: MouseEvent) {
+  const button = event.currentTarget
+  if (!(button instanceof HTMLButtonElement) || !playbackEnabled) return
+  const video = button.parentElement?.querySelector('video')
+  if (!video) return
+  if (!video.paused) {
+    manuallyPausedVideos.add(video)
+    video.pause()
+  } else {
+    manuallyPausedVideos.delete(video)
+    loadVideo(video)
+    // 保持在使用者手勢內呼叫 play()，讓減少動態及拒播環境也能手動播放。
+    void playVideo(video, true)
   }
 }
 
@@ -50,6 +88,8 @@ function pauseVideos() {
   observer = null
   visibleVideos.clear()
   videos.forEach((video) => video.pause())
+  playingVideos.clear()
+  manuallyPausedVideos.clear()
 }
 
 function setupVideos() {
@@ -63,8 +103,7 @@ function setupVideos() {
   })
   if (!videos.length) return
   if (!('IntersectionObserver' in window)) {
-    // 舊瀏覽器只提供手動播放；preload="none" 仍避免一次下載全部影片。
-    videos.forEach(loadVideo)
+    // 不支援 Observer 時只提供按鈕播放，點擊時才載入影片。
     return
   }
   observer = new IntersectionObserver(
@@ -75,7 +114,7 @@ function setupVideos() {
         if (!videos.includes(video)) return
         const isVisible = entry.isIntersecting && entry.intersectionRatio >= 0.01
         if (isVisible) {
-          // 同一次停留不重複播放，讓使用者手動暫停後維持暫停。
+          // 同一次停留不重複嘗試播放；手動暫停狀態另外保留。
           if (visibleVideos.has(video)) return
           visibleVideos.add(video)
           loadVideo(video)
@@ -112,8 +151,14 @@ onBeforeUnmount(() => {
   videos = []
 })
 
-function sectionId(id: string) {
+// 子段落包含所屬章節，允許不同章節使用相同的子段落 id。
+function sectionId(id: string, parentId?: string) {
+  if (parentId) id = `${parentId}-${id}`
   return props.mode === 'page' ? id : `${props.project.slug}-modal-${id}`
+}
+
+function videoId(section: ProjectSection, item: ProjectSection) {
+  return `${sectionId(item.id, section.items?.length ? section.id : undefined)}-video`
 }
 
 function headingTag(isChild = false) {
@@ -124,10 +169,9 @@ function headingTag(isChild = false) {
 <template>
   <article
     ref="detail"
-    class="page-sections"
+    class="project-detail page-sections"
     :class="{
       'project-detail--modal': mode === 'modal',
-      'project-detail--chapters': project.sections.some((section) => section.items?.length),
     }"
   >
     <header class="stack" :class="{ 'content-section': mode === 'page' }">
@@ -168,48 +212,83 @@ function headingTag(isChild = false) {
       :class="{ 'content-section': mode === 'page', 'project-chapter': section.items?.length }"
       :aria-labelledby="sectionId(section.id)"
     >
-      <header v-if="section.items?.length" class="project-chapter-heading">
-        <p class="project-chapter-number">{{ section.label }}</p>
-        <component :is="headingTag()" :id="sectionId(section.id)">{{ section.title }}</component>
-        <p class="project-chapter-subtitle">{{ section.subtitle }}</p>
+      <header class="project-chapter-heading">
+        <p v-if="section.label" class="project-chapter-number">{{ section.label }}</p>
+        <component :is="headingTag()" :id="sectionId(section.id)" class="project-chapter-title">{{
+          section.title
+        }}</component>
+        <p v-if="section.subtitle" class="project-chapter-subtitle">{{ section.subtitle }}</p>
       </header>
       <div class="project-section-items">
         <div
-          v-for="item in section.items ?? [section]"
+          v-for="item in section.items?.length ? section.items : [section]"
           :key="item.id"
           class="project-section-item stack"
           :role="section.items?.length ? 'group' : undefined"
-          :aria-labelledby="section.items?.length ? sectionId(item.id) : undefined"
+          :aria-labelledby="section.items?.length ? sectionId(item.id, section.id) : undefined"
         >
-          <div class="project-item-text stack">
-            <p v-if="item.label" class="project-item-label">{{ item.label }}</p>
+          <div
+            v-if="section.items?.length || item.content || item.paragraphs?.length || item.tagline"
+            class="project-item-text stack"
+          >
+            <p v-if="section.items?.length && item.label" class="project-item-label">
+              {{ item.label }}
+            </p>
             <component
-              :is="headingTag(!!section.items?.length)"
-              :id="sectionId(item.id)"
+              :is="headingTag(true)"
+              v-if="section.items?.length"
+              :id="sectionId(item.id, section.id)"
               class="project-item-title"
               >{{ item.title }}</component
             >
             <p v-if="item.tagline" class="project-item-tagline">{{ item.tagline }}</p>
-            <p v-for="paragraph in item.paragraphs" :key="paragraph">{{ paragraph }}</p>
-            <p v-if="item.content" class="intro">{{ item.content }}</p>
+            <p v-for="paragraph in item.paragraphs" :key="paragraph" class="project-item-body">
+              {{ paragraph }}
+            </p>
+            <p v-if="item.content" class="project-item-body">{{ item.content }}</p>
           </div>
-          <div v-if="!item.content && !item.paragraphs?.length" class="placeholder-panel">
+          <div
+            v-if="!item.content && !item.paragraphs?.length && !item.tagline && !item.media"
+            class="placeholder-panel"
+          >
             <p class="muted">此區內容與圖片待提供。</p>
           </div>
-          <div v-if="item.media" class="project-section-media">
-            <video
-              v-if="item.media.type === 'video'"
-              controls
-              playsinline
-              muted
-              loop
-              preload="none"
-              :poster="item.media.poster"
-              :aria-label="`${project.title}：${item.title}示範影片`"
-            >
-              <source :data-src="item.media.src" type="video/mp4" />
-              您的瀏覽器不支援影片播放，請<a :href="item.media.src">開啟{{ item.title }}影片</a>。
-            </video>
+          <div
+            v-if="item.media"
+            class="project-section-media"
+            :class="{ 'project-section-media--video': item.media.type === 'video' }"
+          >
+            <template v-if="item.media.type === 'video'">
+              <video
+                :id="videoId(section, item)"
+                playsinline
+                muted
+                loop
+                preload="none"
+                :poster="item.media.poster"
+                :aria-label="`${project.title}：${item.title}示範影片`"
+                @play="onPlaybackChange"
+                @pause="onPlaybackChange"
+                @ended="onPlaybackChange"
+              >
+                <source :data-src="item.media.src" type="video/mp4" />
+                您的瀏覽器不支援影片播放，請<a :href="item.media.src">開啟{{ item.title }}影片</a>。
+              </video>
+              <button
+                class="project-video-toggle"
+                type="button"
+                :aria-controls="videoId(section, item)"
+                :aria-label="`${playingVideos.has(videoId(section, item)) ? '暫停' : '播放'}${item.title}示範影片`"
+                @click="toggleVideo"
+              >
+                <Pause
+                  v-if="playingVideos.has(videoId(section, item))"
+                  :size="20"
+                  aria-hidden="true"
+                />
+                <Play v-else :size="20" aria-hidden="true" />
+              </button>
+            </template>
             <img v-else :src="item.media.src" :alt="item.media.alt" loading="lazy" />
           </div>
         </div>
@@ -221,7 +300,12 @@ function headingTag(isChild = false) {
 <style scoped>
 /* 保留 components layer，維持工具類別的覆寫優先順序。 */
 @layer components {
+  /* 主要章節 64px、子段落 48px、段內元素 16–24px；間距只由 gap 管理。 */
+  .project-detail {
+    row-gap: var(--space-16);
+  }
   .project-section {
+    row-gap: var(--space-8);
     min-inline-size: 0;
     text-align: center;
   }
@@ -231,8 +315,27 @@ function headingTag(isChild = false) {
     min-inline-size: 0;
     width: 100%;
   }
-  .project-item-text > .intro {
-    justify-self: center;
+  .project-section-items {
+    display: grid;
+    gap: var(--space-12);
+  }
+  .project-section-item {
+    gap: var(--space-6);
+  }
+  .project-item-text {
+    gap: var(--space-4);
+    width: min(100%, var(--layout-text-width));
+    margin-inline: auto;
+    text-align: left;
+  }
+  .project-item-text > * {
+    justify-self: stretch;
+  }
+  .project-item-body {
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-body);
+    letter-spacing: var(--letter-spacing-body);
   }
   .project-section-media {
     min-inline-size: 0;
@@ -247,13 +350,40 @@ function headingTag(isChild = false) {
     object-fit: contain;
     border-radius: var(--radius-panel);
   }
+  /* 只限制影片；封面與其他作品圖片沿用原本寬度。 */
+  .project-section-media--video {
+    position: relative;
+    width: min(100%, var(--layout-text-width));
+    margin-inline: auto;
+  }
   .project-section-media video {
     border: 0;
-    /* 原生播放器會覆寫外框；僅在影片使用 important，並保留鍵盤實線提示。 */
-    outline: none !important;
   }
-  .project-section-media video:focus-visible {
-    outline: 2px solid var(--color-focus) !important;
+  .project-video-toggle {
+    position: absolute;
+    inset-block-start: var(--space-3);
+    inset-inline-end: var(--space-3);
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--palette-black);
+    cursor: pointer;
+  }
+  .project-video-toggle svg {
+    /* 以細白邊保留深色畫面上的辨識度，不增加按鈕底色。 */
+    filter: drop-shadow(0 0 1px var(--palette-white));
+  }
+  .project-video-toggle:hover,
+  .project-video-toggle:active {
+    color: var(--palette-red);
+  }
+  .project-video-toggle:focus-visible {
+    outline: 2px solid var(--color-focus);
     outline-offset: 4px;
   }
   .project-detail--modal {
@@ -286,9 +416,6 @@ function headingTag(isChild = false) {
     color: var(--palette-black);
     font-size: var(--font-size-2xl);
   }
-  .project-detail--modal h3 {
-    font-size: var(--font-size-xl);
-  }
   .project-detail--modal .placeholder-panel {
     width: 100%;
     background: var(--palette-white);
@@ -307,20 +434,11 @@ function headingTag(isChild = false) {
     height: auto;
     border-radius: var(--radius-panel);
   }
-  /* 只有提供子項目的作品啟用章節版型，其他作品保留原本排版。 */
-  .project-detail--chapters {
-    row-gap: var(--space-12);
-  }
-  .project-detail--chapters > .project-chapter {
+  .project-detail > .project-chapter {
     --color-text: var(--palette-black);
     --color-focus: var(--palette-black);
-    row-gap: var(--space-8);
     color: var(--palette-black);
     background: var(--palette-white);
-  }
-  .project-chapter + .project-chapter {
-    padding-block-start: var(--space-12);
-    border-block-start: 1px solid var(--palette-blue);
   }
   .project-chapter-heading {
     display: grid;
@@ -333,58 +451,51 @@ function headingTag(isChild = false) {
   .project-chapter-subtitle {
     font-size: var(--font-size-md);
   }
-  .project-chapter .project-section-items {
-    display: grid;
-    gap: var(--space-8);
-  }
-  .project-chapter .project-item-text {
-    gap: var(--space-4);
-    width: min(100%, var(--layout-text-width));
-    margin-inline: auto;
-    text-align: left;
-  }
-  .project-chapter .project-item-text > * {
-    justify-self: stretch;
-  }
-  .project-chapter .project-section-item + .project-section-item {
-    padding-block-start: var(--space-8);
-    border-block-start: 1px solid var(--palette-blue);
-  }
   .project-item-label {
     color: var(--palette-red);
     font-size: var(--font-size-sm);
   }
-  .project-chapter .project-item-title {
+  .project-chapter-title,
+  .project-item-title {
     font-family: var(--font-family-heading);
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-xl);
     font-weight: var(--font-weight-semibold);
     line-height: var(--line-height-heading);
     letter-spacing: var(--letter-spacing-heading);
     overflow-wrap: anywhere;
+  }
+  .project-item-title {
+    font-size: var(--font-size-lg);
   }
   .project-item-tagline {
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-semibold);
   }
   @media (max-width: 899px) {
+    .project-detail {
+      row-gap: var(--space-12);
+    }
+    .project-section-items {
+      gap: var(--space-8);
+    }
     .project-detail--modal {
       /* 窄版原水平留白最大為 space-8，增加至 space-12。 */
       padding-inline: var(--space-12);
     }
   }
   @media (max-width: 480px) {
-    .project-detail--chapters {
+    .project-detail {
       row-gap: var(--space-8);
     }
-    .project-detail--chapters > .project-chapter,
-    .project-chapter .project-section-items {
+    .project-section,
+    .project-section-items {
       gap: var(--space-6);
     }
-    .project-chapter + .project-chapter {
-      padding-block-start: var(--space-8);
+    .project-section-item {
+      gap: var(--space-4);
     }
-    .project-chapter .project-section-item + .project-section-item {
-      padding-block-start: var(--space-6);
+    .project-item-text {
+      gap: var(--space-2);
     }
     .project-detail--modal {
       /* 手機原為 space-4 左右，使用下一級並保留內容寬度。 */

@@ -29,22 +29,62 @@ try {
     ['2026', '2026', '2022 - 2025', '2021 - 2024', '2017'],
   )
   const pheidiSections = [
-    ['intro', '序章動畫', '01 / INTRO ANIMATION'],
-    ['login', '登入', '02 / LOGIN'],
-    ['home', '首頁', '03 / HOME'],
-    ['records', '新增跑步紀錄', '04 / RUNNING RECORD'],
-    ['station', '足跡驛站', '05 / RUNNING STATION'],
-    ['academy', '跑者學院', '06 / RUNNING ACADEMY'],
-    ['plaza', '菲迪廣場', '07 / RUNNER PLAZA'],
-    ['admin', '管理者後台', '08 / ADMIN DASHBOARD'],
+    [
+      'intro',
+      '序章動畫',
+      '01 / INTRO ANIMATION',
+      '透過角色插畫與動態視覺，帶領使用者進入跑者菲迪的世界。以輕鬆活潑的方式建立第一印象，傳達「陪你開始，伴你成長」的品牌精神，讓每一段跑步旅程從充滿期待的序章展開。',
+    ],
+    [
+      'login',
+      '登入',
+      '02 / LOGIN',
+      '透過簡潔直覺的登入與註冊介面，降低新手開始使用網站的門檻。建立專屬的跑者帳號，保存個人的跑步紀錄與成長歷程，從這裡展開屬於自己的跑步旅程。',
+    ],
+    [
+      'home',
+      '首頁',
+      '03 / HOME',
+      '首頁整合跑者階段、成長進度與個人跑步概況，讓使用者快速掌握目前的成果與下一階段目標。搭配菲迪日報的天氣資訊、跑者學院推薦及阿里的貼心提醒，讓每一次回訪都有新的期待與方向。',
+    ],
+    [
+      'records',
+      '新增跑步紀錄',
+      '04 / RUNNING RECORD',
+      '透過直覺化的表單，記錄每一次跑步的時間、距離、地點與心得，並可搭配照片留下當下的回憶。讓原本單純的跑步數據，轉化成看得見的成長足跡，累積屬於自己的跑者旅程。',
+    ],
+    [
+      'station',
+      '足跡驛站',
+      '05 / RUNNING STATION',
+      '以月曆與跑步紀錄呈現個人的運動歷程，方便回顧每一次努力與進步。透過累積紀錄與成長回饋，讓使用者看見自己的堅持，從每一個小小的成就中獲得持續前進的動力。',
+    ],
+    [
+      'academy',
+      '跑者學院',
+      '06 / RUNNING ACADEMY',
+      '針對新手跑者的需求，整理學習、裝備、補給與賽事四大類跑步知識。透過容易理解的文章內容，陪伴使用者逐步建立正確觀念，減少入門時的迷惘，讓每一次出發都更有信心。',
+    ],
+    [
+      'plaza',
+      '菲迪廣場',
+      '07 / RUNNER PLAZA',
+      '打造讓跑者交流與分享的互動空間，透過動態貼文、留言與活動情報，串起彼此的跑步日常。讓使用者不只能記錄自己的成長，也能從其他跑者的經驗與鼓勵中獲得支持，感受一起前進的力量。',
+    ],
+    [
+      'admin',
+      '管理者後台',
+      '08 / ADMIN DASHBOARD',
+      '建立整合式管理介面，協助管理者掌握網站營運概況，並集中管理玩家、跑者學院文章與菲迪廣場內容。透過清楚的數據呈現與分類管理，提升後台操作效率，讓網站內容與社群互動更容易維護。',
+    ],
   ]
   assert.deepEqual(
     projects[0].sections[1].items,
-    pheidiSections.map(([id, title, label]) => ({
+    pheidiSections.map(([id, title, label, content]) => ({
       id,
       title,
       label,
-      content: `${title}內文`,
+      content,
       media: { type: 'video', src: `/videos/projects/pheidi-the-runner/${id}.mp4` },
     })),
     '跑者菲迪八段資料與順序完全符合需求',
@@ -117,9 +157,14 @@ try {
       for (const item of section.items ?? [section]) {
         if (item.media) await access(new URL(`../public${item.media.src}`, import.meta.url))
         if (section.items)
-          assert.match(modalContent, new RegExp(`<h4[^>]*id="${project.slug}-modal-${item.id}"`))
+          assert.match(
+            modalContent,
+            new RegExp(`<h4[^>]*id="${project.slug}-modal-${section.id}-${item.id}"`),
+          )
       }
     }
+    const ids = [...modalContent.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1])
+    assert.equal(new Set(ids).size, ids.length, '章節與子段落的標題 ID 唯一')
     const renderedSections = [...modalContent.matchAll(/<section\b[^>]*>(.*?)<\/section>/gs)]
     assert.equal(renderedSections.length, project.sections.length)
     if (project === projects[0]) {
@@ -138,24 +183,33 @@ try {
       assert.ok(
         conceptHtml.indexOf('START・GROW・WITH YOU') < conceptHtml.indexOf('用遊戲化建立期待'),
       )
-    } else assert.ok(!modalContent.includes('project-chapter-heading'), '其他作品沒有章節空區塊')
+    } else {
+      assert.equal((modalContent.match(/class="project-chapter-heading"/g) ?? []).length, 3)
+      assert.ok(!modalContent.includes('project-chapter-number'), '未提供章節編號時不產生空標籤')
+      assert.ok(!modalContent.includes('project-chapter-subtitle'), '未提供副標題時不產生空段落')
+    }
     for (const [index, [, html]] of renderedSections.entries()) {
       const section = project.sections[index]
       assert.ok(html.includes(section.title))
       for (const item of section.items ?? [section]) {
         assert.ok(html.includes(item.title))
-        if (!item.content && !item.paragraphs?.length) {
+        if (!item.content && !item.paragraphs?.length && !item.tagline && !item.media) {
           assert.ok(html.includes('此區內容與圖片待提供。'))
           continue
         }
         if (item.content) assert.ok(html.includes(item.content))
         if (item.media?.type === 'video') {
           assert.ok(
-            html.indexOf(item.label) < html.indexOf(`id="${project.slug}-modal-${item.id}"`),
+            html.indexOf(item.label) <
+              html.indexOf(`id="${project.slug}-modal-${section.id}-${item.id}"`),
           )
           assert.ok(html.indexOf(item.title) < html.indexOf(item.content))
           assert.ok(html.indexOf(item.content) < html.indexOf(`data-src="${item.media.src}"`))
-          assert.match(html, /<video\b[^>]*controls[^>]*playsinline[^>]*preload="none"/)
+          assert.match(html, /<video\b[^>]*playsinline[^>]*preload="none"/)
+          assert.ok(!/<video\b[^>]*\scontrols(?:\s|=|>)/.test(html), '影片不使用原生控制列')
+          const videoId = `${project.slug}-modal-${section.id}-${item.id}-video`
+          assert.ok(html.includes(`aria-controls="${videoId}"`))
+          assert.ok(html.includes(`aria-label="播放${item.title}示範影片"`))
           assert.ok(html.includes(`data-src="${item.media.src}" type="video/mp4"`))
           assert.match(html, /<video\b[^>]*muted[^>]*loop/)
           assert.ok(!/<source\b[^>]*\ssrc=/.test(html), '來源等影片可見時才掛上')
@@ -185,6 +239,47 @@ try {
   )
   assert.match(imageHtml, /<p[^>]*>圖片內文<\/p>.*<img[^>]*alt="圖片替代文字"[^>]*loading="lazy"/s)
   assert.ok(!imageHtml.includes('<video'))
+  // 空陣列仍呈現單層內容；只有媒體時不顯示空文字區或待提供訊息。
+  const mediaOnlyHtml = await renderToString(
+    createSSRApp(ProjectDetail, {
+      mode: 'modal',
+      project: {
+        ...projects[1],
+        sections: [
+          {
+            id: 'image',
+            title: '圖片段落',
+            content: null,
+            items: [],
+            media: { type: 'image', src: projects[1].cover.src, alt: '圖片替代文字' },
+          },
+        ],
+      },
+    }),
+  )
+  assert.ok(mediaOnlyHtml.includes('圖片替代文字'))
+  assert.ok(!mediaOnlyHtml.includes('placeholder-panel'))
+  assert.ok(!mediaOnlyHtml.includes('project-item-text'))
+  const optionalChapterHtml = await renderToString(
+    createSSRApp(ProjectDetail, {
+      mode: 'modal',
+      project: {
+        ...projects[1],
+        sections: ['first', 'second'].map((id) => ({
+          id,
+          title: '測試章節',
+          content: null,
+          items: [{ id: 'shared', title: '測試子段落', content: '測試內文' }],
+        })),
+      },
+    }),
+  )
+  assert.ok(!optionalChapterHtml.includes('project-chapter-number'))
+  assert.ok(!optionalChapterHtml.includes('project-chapter-subtitle'))
+  for (const id of ['first', 'second']) {
+    assert.ok(optionalChapterHtml.includes(`id="project-02-modal-${id}-shared"`))
+    assert.ok(optionalChapterHtml.includes(`aria-labelledby="project-02-modal-${id}-shared"`))
+  }
   const posterHtml = await renderToString(
     createSSRApp(ProjectDetail, {
       mode: 'modal',

@@ -88,56 +88,64 @@ export const projects: PortfolioProject[] = [
             id: 'intro',
             label: '01 / INTRO ANIMATION',
             title: '序章動畫',
-            content: '序章動畫內文',
+            content:
+              '透過角色插畫與動態視覺，帶領使用者進入跑者菲迪的世界。以輕鬆活潑的方式建立第一印象，傳達「陪你開始，伴你成長」的品牌精神，讓每一段跑步旅程從充滿期待的序章展開。',
             media: { type: 'video', src: '/videos/projects/pheidi-the-runner/intro.mp4' },
           },
           {
             id: 'login',
             label: '02 / LOGIN',
             title: '登入',
-            content: '登入內文',
+            content:
+              '透過簡潔直覺的登入與註冊介面，降低新手開始使用網站的門檻。建立專屬的跑者帳號，保存個人的跑步紀錄與成長歷程，從這裡展開屬於自己的跑步旅程。',
             media: { type: 'video', src: '/videos/projects/pheidi-the-runner/login.mp4' },
           },
           {
             id: 'home',
             label: '03 / HOME',
             title: '首頁',
-            content: '首頁內文',
+            content:
+              '首頁整合跑者階段、成長進度與個人跑步概況，讓使用者快速掌握目前的成果與下一階段目標。搭配菲迪日報的天氣資訊、跑者學院推薦及阿里的貼心提醒，讓每一次回訪都有新的期待與方向。',
             media: { type: 'video', src: '/videos/projects/pheidi-the-runner/home.mp4' },
           },
           {
             id: 'records',
             label: '04 / RUNNING RECORD',
             title: '新增跑步紀錄',
-            content: '新增跑步紀錄內文',
+            content:
+              '透過直覺化的表單，記錄每一次跑步的時間、距離、地點與心得，並可搭配照片留下當下的回憶。讓原本單純的跑步數據，轉化成看得見的成長足跡，累積屬於自己的跑者旅程。',
             media: { type: 'video', src: '/videos/projects/pheidi-the-runner/records.mp4' },
           },
           {
             id: 'station',
             label: '05 / RUNNING STATION',
             title: '足跡驛站',
-            content: '足跡驛站內文',
+            content:
+              '以月曆與跑步紀錄呈現個人的運動歷程，方便回顧每一次努力與進步。透過累積紀錄與成長回饋，讓使用者看見自己的堅持，從每一個小小的成就中獲得持續前進的動力。',
             media: { type: 'video', src: '/videos/projects/pheidi-the-runner/station.mp4' },
           },
           {
             id: 'academy',
             label: '06 / RUNNING ACADEMY',
             title: '跑者學院',
-            content: '跑者學院內文',
+            content:
+              '針對新手跑者的需求，整理學習、裝備、補給與賽事四大類跑步知識。透過容易理解的文章內容，陪伴使用者逐步建立正確觀念，減少入門時的迷惘，讓每一次出發都更有信心。',
             media: { type: 'video', src: '/videos/projects/pheidi-the-runner/academy.mp4' },
           },
           {
             id: 'plaza',
             label: '07 / RUNNER PLAZA',
             title: '菲迪廣場',
-            content: '菲迪廣場內文',
+            content:
+              '打造讓跑者交流與分享的互動空間，透過動態貼文、留言與活動情報，串起彼此的跑步日常。讓使用者不只能記錄自己的成長，也能從其他跑者的經驗與鼓勵中獲得支持，感受一起前進的力量。',
             media: { type: 'video', src: '/videos/projects/pheidi-the-runner/plaza.mp4' },
           },
           {
             id: 'admin',
             label: '08 / ADMIN DASHBOARD',
             title: '管理者後台',
-            content: '管理者後台內文',
+            content:
+              '建立整合式管理介面，協助管理者掌握網站營運概況，並集中管理玩家、跑者學院文章與菲迪廣場內容。透過清楚的數據呈現與分類管理，提升後台操作效率，讓網站內容與社群互動更容易維護。',
             media: { type: 'video', src: '/videos/projects/pheidi-the-runner/admin.mp4' },
           },
         ],
