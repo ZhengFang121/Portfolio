@@ -517,6 +517,98 @@ try {
       assert.equal(extras.links, 0)
       assert.ok(!detail.text.includes('07 / SOURCE CODE'))
       assert.ok(!detail.text.includes('GitHub 專案程式碼'))
+    } else if (index === 2 || index === 3) {
+      assert.deepEqual(
+        detail.chapters.map((chapter) => [chapter.number, chapter.title, chapter.subtitle]),
+        [
+          ['SECTION 01', '設計理念', 'DESIGN CONCEPT'],
+          ['SECTION 02', '品牌視覺應用', 'BRAND APPLICATIONS'],
+        ],
+      )
+      assert.deepEqual(
+        detail.chapters.map((chapter) => chapter.items.length),
+        [3, index === 2 ? 5 : 7],
+      )
+      assert.deepEqual(
+        detail.chapters[0].items.map((item) => item.label),
+        ['INSIGHT — 設計洞察', 'CONCEPT — 設計概念', 'GOAL — 設計目標'],
+      )
+      assert.ok(!detail.text.includes('內容準備中'))
+      const gallery = await evaluate(`(() => {
+        const root=document.querySelector('.project-detail--modal');
+        const rect=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}};
+        return {
+          website:!!root.querySelector('.project-website-link'),
+          images:[...root.querySelectorAll('.project-section-media img')].map(img=>({
+            src:img.getAttribute('src').split('/').at(-1),alt:img.alt,loading:img.loading,
+            natural:[img.naturalWidth,img.naturalHeight],size:[img.width,img.height],
+            declared:[Number(img.getAttribute('width')),Number(img.getAttribute('height'))],
+            loaded:img.complete && img.naturalWidth>0,fit:getComputedStyle(img).objectFit,
+            rect:rect(img),container:rect(img.closest('.project-section-item')),
+          })),
+          groups:[...root.querySelectorAll('.project-image-group')].map(group=>({
+            rect:rect(group),columns:getComputedStyle(group).gridTemplateColumns.split(' ').filter(track=>parseFloat(track)>0).length,
+            gap:parseFloat(getComputedStyle(group).gap),children:group.children.length,
+          })),
+          order:[...root.querySelectorAll('.project-section-item')].filter(item=>item.querySelector('.project-image-group'))
+            .every(item=>[...item.children].findIndex(el=>el.classList.contains('project-item-text')) < [...item.children].findIndex(el=>el.classList.contains('project-image-group'))),
+        };
+      })()`)
+      assert.ok(!gallery.website && gallery.order)
+      assert.deepEqual(
+        gallery.images.map((img) => img.src),
+        index === 2
+          ? [
+              'drip-bag.jpg',
+              'drip-bag-light-roast.jpg',
+              'drip-bag-dark-roast.jpg',
+              'drip-bag-box-10pcs.jpg',
+              'bean-card-collection.jpg',
+              'bean-card-01.jpg',
+              'bean-card-03.jpg',
+              'bean-card-05.jpg',
+              'shopping-bag.jpg',
+              'voucher.jpg',
+            ]
+          : [
+              'cake-box-4-inch.jpg',
+              'cake-box-6-inch.jpg',
+              'cake-slice-carrier-box.jpg',
+              'roll-cake-box.jpg',
+              'macaron-gift-box.jpg',
+              'nama-chocolate-box.jpg',
+              'dm.jpg',
+              'shopping-bag.jpg',
+              'sticker.jpg',
+            ],
+      )
+      for (const image of gallery.images) {
+        assert.ok(image.loaded && image.alt)
+        assert.equal(image.loading, 'lazy')
+        assert.equal(image.fit, 'contain')
+        assert.deepEqual(image.declared, image.natural, '宣告尺寸符合實際原圖')
+        assert.ok(
+          Math.abs(image.rect.width / image.rect.height - image.natural[0] / image.natural[1]) <
+            0.01,
+          '保留原始比例',
+        )
+        assert.ok(
+          image.rect.left >= image.container.left - 1 &&
+            image.rect.right <= image.container.right + 1,
+          '圖片不溢出',
+        )
+      }
+      assert.equal(gallery.groups.length, 2)
+      for (const group of gallery.groups) {
+        assert.equal(group.gap, 24)
+        assert.equal(
+          group.columns,
+          Math.min(
+            group.children,
+            Math.max(1, Math.floor((group.rect.width + group.gap + 0.1) / (240 + group.gap))),
+          ),
+        )
+      }
     } else {
       assert.deepEqual(
         detail.chapters.map((chapter) => [chapter.number, chapter.title, chapter.subtitle]),
@@ -781,6 +873,23 @@ try {
             })()`,
           )
           await checkDetail(index, width)
+          if ([2, 3].includes(index) && [1440, 768, 390].includes(width) && height > 500) {
+            const brand = index === 2 ? 'apollo' : 'r4d'
+            const groups = await evaluate(
+              `document.querySelectorAll('.project-image-group').length`,
+            )
+            for (let group = 0; group < groups; group++) {
+              await evaluate(
+                `(() => {const panel=document.querySelector('.project-modal-panel'),group=document.querySelectorAll('.project-image-group')[${group}];panel.scrollTo({top:panel.scrollTop+group.getBoundingClientRect().top-panel.getBoundingClientRect().top,behavior:'instant'})})()`,
+              )
+              await delay(150)
+              const { data } = await cdp('Page.captureScreenshot', { format: 'png' })
+              await writeFile(
+                join(output, `${width}x${height}-${brand}-group-${group + 1}.png`),
+                Buffer.from(data, 'base64'),
+              )
+            }
+          }
           if (index === 1 && [1440, 768, 390].includes(width) && height > 500) {
             for (const [name, id] of [
               ['phone', 'find-parking'],

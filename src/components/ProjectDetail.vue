@@ -185,6 +185,7 @@ function hasItemContent(item: ProjectSection) {
     item.paragraphs?.length ||
     item.tagline ||
     item.media ||
+    item.images?.length ||
     item.flow?.steps.length ||
     item.links?.length ||
     item.note,
@@ -330,6 +331,17 @@ function hasItemContent(item: ProjectSection) {
               loading="lazy"
             />
           </div>
+          <div v-if="item.images?.length" class="project-image-group">
+            <div v-for="image in item.images" :key="image.src" class="project-section-media">
+              <img
+                :src="image.src"
+                :alt="image.alt"
+                :width="image.width"
+                :height="image.height"
+                loading="lazy"
+              />
+            </div>
+          </div>
           <ol
             v-if="item.flow?.steps.length"
             class="project-item-flow"
@@ -413,6 +425,14 @@ function hasItemContent(item: ProjectSection) {
     min-inline-size: 0;
     width: 100%;
     max-inline-size: 100%;
+  }
+  .project-image-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+    align-items: start;
+    gap: var(--space-6);
+    width: 100%;
+    min-inline-size: 0;
   }
   .project-section-media :is(video, img) {
     display: block;

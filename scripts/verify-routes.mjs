@@ -133,7 +133,7 @@ try {
       ),
     )
   }
-  for (const project of projects.slice(2)) {
+  for (const project of projects.slice(4)) {
     assert.equal(project.sections[1].title, '作品介紹')
     assert.equal(project.sections[1].subtitle, 'PROJECT OVERVIEW')
     for (const section of project.sections) {
@@ -142,6 +142,62 @@ try {
       assert.equal(section.items[0].content, null)
       assert.ok(!section.items[0].media && !section.items[0].paragraphs)
     }
+  }
+  const brandImages = [
+    [
+      'drip-bag.jpg',
+      'drip-bag-light-roast.jpg',
+      'drip-bag-dark-roast.jpg',
+      'drip-bag-box-10pcs.jpg',
+      'bean-card-collection.jpg',
+      'bean-card-01.jpg',
+      'bean-card-03.jpg',
+      'bean-card-05.jpg',
+      'shopping-bag.jpg',
+      'voucher.jpg',
+    ],
+    [
+      'cake-box-4-inch.jpg',
+      'cake-box-6-inch.jpg',
+      'cake-slice-carrier-box.jpg',
+      'roll-cake-box.jpg',
+      'macaron-gift-box.jpg',
+      'nama-chocolate-box.jpg',
+      'dm.jpg',
+      'shopping-bag.jpg',
+      'sticker.jpg',
+    ],
+  ]
+  for (const [index, project] of projects.slice(2, 4).entries()) {
+    assert.equal(project.sections[1].title, '品牌視覺應用')
+    assert.equal(project.sections[1].subtitle, 'BRAND APPLICATIONS')
+    assert.deepEqual(
+      project.sections.map((section) => section.items.length),
+      [3, index ? 7 : 5],
+    )
+    assert.deepEqual(
+      project.sections[0].items.map((item) => item.label),
+      ['INSIGHT — 設計洞察', 'CONCEPT — 設計概念', 'GOAL — 設計目標'],
+    )
+    assert.equal(project.sections[0].items[1].paragraphs.length, 2)
+    const ids = project.sections.flatMap((section) => [
+      section.id,
+      ...section.items.map((item) => item.id),
+    ])
+    assert.equal(new Set(ids).size, ids.length, '品牌章節與子段落的資料 ID 唯一')
+    const images = project.sections[1].items.flatMap((item) => [
+      ...(item.media ? [item.media] : []),
+      ...(item.images ?? []),
+    ])
+    assert.deepEqual(
+      images.map((image) => image.src.split('/').at(-1)),
+      brandImages[index],
+    )
+    assert.ok(images.every((image) => image.alt && image.width > 0 && image.height > 0))
+    assert.deepEqual(
+      project.sections[1].items.filter((item) => item.images).map((item) => item.images.length),
+      index ? [2, 2] : [2, 3],
+    )
   }
   const papago = projects[1]
   assert.equal(papago.sections[1].title, '機器人介紹')
@@ -189,6 +245,20 @@ try {
       assert.match(modalContent, new RegExp(`<h3[^>]*id="${sectionId}"`))
       for (const item of section.items ?? [section]) {
         if (item.media) await access(new URL(`../public${item.media.src}`, import.meta.url))
+        for (const image of item.images ?? []) {
+          await access(new URL(`../public${image.src}`, import.meta.url))
+          assert.ok(
+            modalContent.includes(
+              `src="${image.src}" alt="${image.alt}" width="${image.width}" height="${image.height}" loading="lazy"`,
+            ),
+          )
+        }
+        if (item.images?.length && item.media)
+          assert.ok(
+            modalContent.indexOf(`src="${item.media.src}"`) <
+              modalContent.indexOf(`src="${item.images[0].src}"`),
+            '單一媒體先於圖片群組',
+          )
         if (section.items)
           assert.match(
             modalContent,
@@ -219,7 +289,16 @@ try {
     } else {
       assert.equal((modalContent.match(/class="project-chapter-heading"/g) ?? []).length, 2)
       assert.ok(modalContent.includes('SECTION 01') && modalContent.includes('SECTION 02'))
-      assert.equal((modalContent.match(/內容準備中/g) ?? []).length, project === papago ? 0 : 2)
+      assert.equal(
+        (modalContent.match(/內容準備中/g) ?? []).length,
+        project === projects[4] ? 2 : 0,
+      )
+      assert.equal(
+        (modalContent.match(/class="project-image-group"/g) ?? []).length,
+        project.sections
+          .flatMap((section) => section.items ?? [section])
+          .filter((item) => item.images?.length).length,
+      )
       if (project === papago) {
         assert.equal((modalContent.match(/project-section-media--phone/g) ?? []).length, 4)
         assert.equal((modalContent.match(/project-section-media--qr-code/g) ?? []).length, 1)
@@ -244,6 +323,7 @@ try {
           !item.paragraphs?.length &&
           !item.tagline &&
           !item.media &&
+          !item.images?.length &&
           !item.flow &&
           !item.links?.length &&
           !item.note
@@ -343,6 +423,21 @@ try {
   assert.ok(mediaOnlyHtml.includes('圖片替代文字'))
   assert.ok(!mediaOnlyHtml.includes('placeholder-panel'))
   assert.ok(!mediaOnlyHtml.includes('project-item-text'))
+  // 圖片群組單獨存在時是有效內容；空陣列不留下容器或間距。
+  for (const images of [undefined, [], [papago.cover]]) {
+    const html = await renderToString(
+      createSSRApp(ProjectDetail, {
+        mode: 'modal',
+        project: {
+          ...papago,
+          sections: [{ id: 'gallery', title: '圖片群組', content: null, images }],
+        },
+      }),
+    )
+    assert.equal(html.includes('class="project-image-group"'), Boolean(images?.length))
+    assert.equal(html.includes('內容準備中'), !images?.length)
+    assert.equal(html.includes('project-item-text'), !images?.length)
+  }
   const optionalChapterHtml = await renderToString(
     createSSRApp(ProjectDetail, {
       mode: 'modal',
