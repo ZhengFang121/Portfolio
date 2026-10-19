@@ -117,17 +117,49 @@ try {
     expectedConceptParagraphs,
   )
   assert.equal(designConcept.items[2].tagline, 'START・GROW・WITH YOU')
-  for (const project of projects.slice(1)) {
+  for (const project of projects) {
+    assert.equal(project.sections.length, 2, `${project.slug}: 統一新版兩章架構`)
     assert.deepEqual(
-      project.sections,
-      [
-        { id: 'overview', title: '作品背景', content: null },
-        { id: 'process', title: '設計過程', content: null },
-        { id: 'deliverables', title: '作品呈現', content: null },
-      ],
-      `${project.slug}: 保留原有占位資料`,
+      project.sections.map((section) => section.label),
+      ['SECTION 01', 'SECTION 02'],
+    )
+    assert.equal(project.sections[0].title, '設計理念')
+    assert.equal(project.sections[0].subtitle, 'DESIGN CONCEPT')
+    assert.ok(project.sections.every((section) => section.items?.length))
+    assert.ok(
+      project.sections.every(
+        (section) => !['作品背景', '設計過程', '作品呈現'].includes(section.title),
+      ),
     )
   }
+  for (const project of projects.slice(2)) {
+    assert.equal(project.sections[1].title, '作品介紹')
+    assert.equal(project.sections[1].subtitle, 'PROJECT OVERVIEW')
+    for (const section of project.sections) {
+      assert.equal(section.content, null)
+      assert.equal(section.items.length, 1)
+      assert.equal(section.items[0].content, null)
+      assert.ok(!section.items[0].media && !section.items[0].paragraphs)
+    }
+  }
+  const papago = projects[1]
+  assert.equal(papago.sections[1].title, '機器人介紹')
+  assert.equal(papago.sections[1].subtitle, 'LINE BOT OVERVIEW')
+  assert.deepEqual(
+    papago.sections.map((section) => section.items.length),
+    [3, 6],
+  )
+  assert.deepEqual(
+    papago.sections[1].items
+      .filter((item) => item.media)
+      .map((item) => [item.media.src, item.media.variant]),
+    ['find-parking', 'save-parking', 'navigate-to-car', 'line-profile', 'line-qr-code'].map(
+      (name) => [
+        `/images/projects/papago/${name}.png`,
+        name === 'line-qr-code' ? 'qr-code' : 'phone',
+      ],
+    ),
+  )
   for (const project of projects) {
     assert.ok(project.cover, `${project.slug}: 封面資料完整`)
     await access(new URL(`../public${project.cover.src}`, import.meta.url))
@@ -184,17 +216,38 @@ try {
         conceptHtml.indexOf('START・GROW・WITH YOU') < conceptHtml.indexOf('用遊戲化建立期待'),
       )
     } else {
-      assert.equal((modalContent.match(/class="project-chapter-heading"/g) ?? []).length, 3)
-      assert.ok(!modalContent.includes('project-chapter-number'), '未提供章節編號時不產生空標籤')
-      assert.ok(!modalContent.includes('project-chapter-subtitle'), '未提供副標題時不產生空段落')
+      assert.equal((modalContent.match(/class="project-chapter-heading"/g) ?? []).length, 2)
+      assert.ok(modalContent.includes('SECTION 01') && modalContent.includes('SECTION 02'))
+      assert.equal((modalContent.match(/內容準備中/g) ?? []).length, project === papago ? 0 : 2)
+      if (project === papago) {
+        assert.equal((modalContent.match(/project-section-media--phone/g) ?? []).length, 4)
+        assert.equal((modalContent.match(/project-section-media--qr-code/g) ?? []).length, 1)
+        assert.ok(modalContent.includes('aria-label="停車位查詢流程"'))
+        for (const step of papago.sections[1].items[3].flow.steps)
+          assert.ok(modalContent.includes(step))
+        assert.ok(
+          modalContent.indexOf('line-qr-code.png') < modalContent.indexOf('機器人部署於 Render'),
+        )
+        assert.ok(!modalContent.includes('07 / SOURCE CODE'))
+        assert.ok(!modalContent.includes('GitHub 專案程式碼'))
+        assert.ok(!modalContent.includes('https://github.com/ZhengFang121/LineBot_PAPAGO'))
+      }
     }
     for (const [index, [, html]] of renderedSections.entries()) {
       const section = project.sections[index]
       assert.ok(html.includes(section.title))
       for (const item of section.items ?? [section]) {
         assert.ok(html.includes(item.title))
-        if (!item.content && !item.paragraphs?.length && !item.tagline && !item.media) {
-          assert.ok(html.includes('此區內容與圖片待提供。'))
+        if (
+          !item.content &&
+          !item.paragraphs?.length &&
+          !item.tagline &&
+          !item.media &&
+          !item.flow &&
+          !item.links?.length &&
+          !item.note
+        ) {
+          assert.ok(html.includes('內容準備中'))
           continue
         }
         if (item.content) assert.ok(html.includes(item.content))
@@ -239,6 +292,35 @@ try {
   )
   assert.match(imageHtml, /<p[^>]*>圖片內文<\/p>.*<img[^>]*alt="圖片替代文字"[^>]*loading="lazy"/s)
   assert.ok(!imageHtml.includes('<video'))
+  assert.ok(!imageHtml.includes('project-section-media--phone'))
+  assert.ok(!imageHtml.includes('project-section-media--qr-code'))
+  const extrasOnlyHtml = await renderToString(
+    createSSRApp(ProjectDetail, {
+      mode: 'modal',
+      project: {
+        ...papago,
+        sections: [
+          {
+            id: 'flow',
+            title: '流程',
+            content: null,
+            flow: { label: '流程說明', steps: ['步驟一', '步驟二'] },
+          },
+          {
+            id: 'link',
+            title: '連結',
+            content: null,
+            links: [{ label: '查看專案', href: 'https://example.com' }],
+          },
+          { id: 'note', title: '補充', content: null, note: '補充說明' },
+        ],
+      },
+    }),
+  )
+  assert.ok(!extrasOnlyHtml.includes('內容準備中'))
+  assert.ok(!extrasOnlyHtml.includes('project-item-text'))
+  assert.ok(extrasOnlyHtml.includes('步驟一') && extrasOnlyHtml.includes('步驟二'))
+  assert.ok(extrasOnlyHtml.includes('查看專案') && extrasOnlyHtml.includes('補充說明'))
   // 空陣列仍呈現單層內容；只有媒體時不顯示空文字區或待提供訊息。
   const mediaOnlyHtml = await renderToString(
     createSSRApp(ProjectDetail, {
@@ -408,10 +490,18 @@ try {
       for (const category of project.categories) assert.ok(html.includes(category))
       assert.ok(html.includes(`# ${project.designYear}`))
       assert.equal(
-        html.includes('此區內容與圖片待提供。'),
+        html.includes('內容準備中'),
         project.sections
           .flatMap((section) => section.items ?? [section])
-          .some((item) => !item.content && !item.paragraphs?.length),
+          .some(
+            (item) =>
+              !item.content &&
+              !item.paragraphs?.length &&
+              !item.media &&
+              !item.flow &&
+              !item.links?.length &&
+              !item.note,
+          ),
       )
     }
     if (expectedName === 'not-found') {

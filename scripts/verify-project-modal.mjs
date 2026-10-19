@@ -273,7 +273,60 @@ try {
     assert.ok(detail.blue.every((color) => color === 'rgb(185, 218, 232)'))
     assert.ok(detail.titles.every((color) => color === 'rgb(0, 0, 0)'))
     assert.ok(detail.texts.every((text) => text.align === 'center'))
-    assert.equal(detail.contentSections.length, index === 0 ? 2 : 3)
+    assert.equal(detail.contentSections.length, 2)
+    assert.equal(detail.chapters.length, 2)
+    const textReference = detail.chapters[0].items[0].text
+    const titleReference = detail.chapters[0].items[0].titleType
+    for (const chapter of detail.chapters) {
+      assert.ok(Math.abs(chapter.rect.width - detail.media.width) < 1, '章節與封面同寬')
+      assert.ok(Math.abs(chapter.rect.left - detail.media.left) < 1)
+      assert.equal(chapter.itemGap, width <= 480 ? 24 : width <= 899 ? 32 : 48)
+      assert.ok(detail.chapterGap > chapter.itemGap, '主要章節留白大於子項目留白')
+      assert.equal(chapter.padding, 0, '章節間距不再疊加 padding')
+      assert.equal(chapter.border, '0px', '章節無分隔線')
+      for (const item of chapter.items) {
+        assert.ok(Math.abs(item.text.left - textReference.left) < 1, '所有子段落文字區共用左側起點')
+        assert.ok(
+          Math.abs(item.text.width - textReference.width) < 1,
+          '所有子段落文字區共用閱讀寬度',
+        )
+        assert.ok(item.text.width <= 672, '文字不超過既有 42rem 閱讀寬度')
+        assert.ok(
+          Math.abs(
+            item.text.left + item.text.width / 2 - (chapter.rect.left + chapter.rect.width / 2),
+          ) < 1,
+        )
+        assert.equal(item.gap, width <= 480 ? '16px' : '24px')
+        assert.ok(chapter.itemGap > parseFloat(item.gap), '子段落留白大於段內元素')
+        assert.equal(item.textGap, width <= 480 ? '8px' : '16px')
+        assert.equal(item.padding, 0, '子段落間距不再疊加 padding')
+        assert.equal(item.border, '0px', '子段落無分隔線')
+        assert.deepEqual(item.titleType, titleReference, '核心句與功能標題使用相同樣式')
+        assert.equal(item.titleType.weight, '600')
+        assert.ok(item.titleType.size < chapter.headingTypes[1].size)
+        assert.equal(item.labelType.color, 'rgb(167, 31, 36)')
+        assert.ok(item.labelType.size < item.titleType.size)
+        assert.ok(
+          item.children.every((child) => child.type.align === 'left'),
+          '所有內容文字靠左',
+        )
+        assert.ok(
+          item.children.every(
+            (child) =>
+              child.rect.left >= item.text.left - 1 && child.rect.right <= item.text.right + 1,
+          ),
+          '文字不溢出',
+        )
+        assert.ok(item.children.slice(1).every((child) => child.type.color === 'rgb(0, 0, 0)'))
+        for (const body of item.children.filter(
+          (child) =>
+            child.tag === 'P' && child.type.weight === '400' && child.type.color === 'rgb(0, 0, 0)',
+        )) {
+          assert.equal(body.type.size, 16)
+          assert.equal(body.type.lineHeight, '28px')
+        }
+      }
+    }
     if (index === 0) {
       assert.equal(detail.chapters.length, 2)
       assert.deepEqual(
@@ -300,57 +353,6 @@ try {
         detail.chapters.map((chapter) => chapter.items.length),
         [3, 8],
       )
-      const textReference = detail.chapters[0].items[0].text
-      const titleReference = detail.chapters[0].items[0].titleType
-      for (const chapter of detail.chapters) {
-        assert.ok(Math.abs(chapter.rect.width - detail.media.width) < 1, '章節與封面同寬')
-        assert.ok(Math.abs(chapter.rect.left - detail.media.left) < 1)
-        assert.equal(chapter.itemGap, width <= 480 ? 24 : width <= 899 ? 32 : 48)
-        assert.ok(detail.chapterGap > chapter.itemGap, '主要章節留白大於子項目留白')
-        assert.equal(chapter.padding, 0, '章節間距不再疊加 padding')
-        assert.equal(chapter.border, '0px', '章節無分隔線')
-        for (const item of chapter.items) {
-          assert.ok(Math.abs(item.text.left - textReference.left) < 1, '十一個文字區共用左側起點')
-          assert.ok(Math.abs(item.text.width - textReference.width) < 1, '十一個文字區共用閱讀寬度')
-          assert.ok(item.text.width <= 672, '文字不超過既有 42rem 閱讀寬度')
-          assert.ok(
-            Math.abs(
-              item.text.left + item.text.width / 2 - (chapter.rect.left + chapter.rect.width / 2),
-            ) < 1,
-          )
-          assert.equal(item.gap, width <= 480 ? '16px' : '24px')
-          assert.ok(chapter.itemGap > parseFloat(item.gap), '子段落留白大於段內元素')
-          assert.equal(item.textGap, width <= 480 ? '8px' : '16px')
-          assert.equal(item.padding, 0, '子段落間距不再疊加 padding')
-          assert.equal(item.border, '0px', '子段落無分隔線')
-          assert.deepEqual(item.titleType, titleReference, '核心句與功能標題使用相同樣式')
-          assert.equal(item.titleType.weight, '600')
-          assert.ok(item.titleType.size < chapter.headingTypes[1].size)
-          assert.equal(item.labelType.color, 'rgb(167, 31, 36)')
-          assert.ok(item.labelType.size < item.titleType.size)
-          assert.ok(
-            item.children.every((child) => child.type.align === 'left'),
-            '所有內容文字靠左',
-          )
-          assert.ok(
-            item.children.every(
-              (child) =>
-                child.rect.left >= item.text.left - 1 && child.rect.right <= item.text.right + 1,
-            ),
-            '文字不溢出',
-          )
-          assert.ok(item.children.slice(1).every((child) => child.type.color === 'rgb(0, 0, 0)'))
-          for (const body of item.children.filter(
-            (child) =>
-              child.tag === 'P' &&
-              child.type.weight === '400' &&
-              child.type.color === 'rgb(0, 0, 0)',
-          )) {
-            assert.equal(body.type.size, 16)
-            assert.equal(body.type.lineHeight, '28px')
-          }
-        }
-      }
       assert.deepEqual(
         detail.chapters[0].items.map((item) => item.label),
         ['INSIGHT — 設計洞察', 'CONCEPT — 設計概念', 'VISION — 品牌願景'],
@@ -448,12 +450,89 @@ try {
         assert.equal(media.button.icon.height, 20)
         assert.ok(media.rect.top >= item.children[2].rect.bottom, '介紹內文接續影片')
       }
+    } else if (index === 1) {
+      assert.deepEqual(
+        detail.chapters.map((chapter) => [chapter.number, chapter.title, chapter.subtitle]),
+        [
+          ['SECTION 01', '設計理念', 'DESIGN CONCEPT'],
+          ['SECTION 02', '機器人介紹', 'LINE BOT OVERVIEW'],
+        ],
+      )
+      assert.deepEqual(
+        detail.chapters.map((chapter) => chapter.items.length),
+        [3, 6],
+      )
+      assert.ok(!detail.text.includes('內容準備中'))
+      const extras = await evaluate(`(() => {
+        const root=document.querySelector('.project-detail--modal');
+        const rect=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}};
+        return {
+          images:[...root.querySelectorAll('.project-section-media img')].map(img=>({
+            rect:rect(img),container:rect(img.closest('.project-section-item')),
+            natural:[img.naturalWidth,img.naturalHeight],alt:img.alt,loaded:img.complete && img.naturalWidth>0,
+            fit:getComputedStyle(img).objectFit,radius:getComputedStyle(img).borderRadius,
+            variant:img.parentElement.classList.contains('project-section-media--phone')?'phone':'qr-code',
+          })),
+          flow:{rect:rect(root.querySelector('.project-item-flow')),direction:getComputedStyle(root.querySelector('.project-item-flow')).flexDirection,
+            steps:[...root.querySelectorAll('.project-item-flow li')].map(li=>({rect:rect(li),text:li.textContent.trim()}))},
+          note:root.querySelector('.project-item-note').textContent.trim(),
+          links:root.querySelectorAll('.project-item-links a').length,
+        };
+      })()`)
+      assert.equal(extras.images.length, 5)
+      assert.deepEqual(
+        extras.images.map((img) => img.variant),
+        ['phone', 'phone', 'phone', 'phone', 'qr-code'],
+      )
+      for (const img of extras.images) {
+        assert.ok(img.loaded && img.alt)
+        assert.equal(img.fit, 'contain')
+        assert.ok(
+          Math.abs(img.rect.width / img.rect.height - img.natural[0] / img.natural[1]) < 0.01,
+          '圖片維持原始比例',
+        )
+        assert.ok(
+          Math.abs(
+            img.rect.width - Math.min(img.container.width, img.variant === 'phone' ? 340 : 200),
+          ) < 1,
+        )
+        assert.ok(
+          Math.abs(
+            img.rect.left + img.rect.width / 2 - (img.container.left + img.container.width / 2),
+          ) < 1,
+          '圖片水平置中',
+        )
+        if (img.variant === 'qr-code') assert.equal(img.radius, '0px', 'QR Code 不裁切圓角')
+      }
+      assert.equal(extras.flow.direction, width <= 899 ? 'column' : 'row')
+      assert.equal(extras.flow.steps.length, 4)
+      assert.ok(
+        extras.flow.steps.every(
+          (step) =>
+            step.rect.left >= extras.flow.rect.left - 1 &&
+            step.rect.right <= extras.flow.rect.right + 1,
+        ),
+      )
+      assert.ok(extras.note.includes('機器人部署於 Render'))
+      assert.equal(extras.links, 0)
+      assert.ok(!detail.text.includes('07 / SOURCE CODE'))
+      assert.ok(!detail.text.includes('GitHub 專案程式碼'))
     } else {
-      assert.equal(detail.chapters.length, 0, '其他作品不套用章節版型')
-      for (const section of detail.contentSections) {
-        assert.equal(section.border, '0px')
-        assert.equal(section.media, 0)
-        assert.equal(section.content, '此區內容與圖片待提供。')
+      assert.deepEqual(
+        detail.chapters.map((chapter) => [chapter.number, chapter.title, chapter.subtitle]),
+        [
+          ['SECTION 01', '設計理念', 'DESIGN CONCEPT'],
+          ['SECTION 02', '作品介紹', 'PROJECT OVERVIEW'],
+        ],
+      )
+      assert.deepEqual(
+        detail.chapters.map((chapter) => chapter.items.length),
+        [1, 1],
+      )
+      assert.equal((detail.text.match(/內容準備中/g) ?? []).length, 2)
+      for (const chapter of detail.chapters) {
+        assert.equal(chapter.items[0].media.length, 0)
+        assert.equal(chapter.items[0].children.at(-1).content, '內容準備中')
       }
     }
     for (const element of [
@@ -692,15 +771,48 @@ try {
           await key('Enter')
           await waitFor(`document.querySelector('.project-modal h2')===document.activeElement`)
           await evaluate(
-            `Promise.all([...document.querySelectorAll('.project-modal img')].map(img=>img.decode()))`,
+            `(async () => {
+              const panel=document.querySelector('.project-modal-panel');
+              for (const img of document.querySelectorAll('.project-modal img')) {
+                panel.scrollTo({top:panel.scrollTop+img.getBoundingClientRect().top-panel.getBoundingClientRect().top-(panel.clientHeight-img.clientHeight)/2,behavior:'instant'});
+                await img.decode();
+              }
+              panel.scrollTop=0;
+            })()`,
           )
           await checkDetail(index, width)
+          if (index === 1 && [1440, 768, 390].includes(width) && height > 500) {
+            for (const [name, id] of [
+              ['phone', 'find-parking'],
+              ['flow', 'technical-implementation'],
+              ['qr', 'add-friend'],
+            ]) {
+              await evaluate(
+                `(() => {const panel=document.querySelector('.project-modal-panel'),item=document.querySelector('#project-02-modal-line-bot-overview-${id}').closest('.project-section-item');panel.scrollTo({top:panel.scrollTop+item.getBoundingClientRect().top-panel.getBoundingClientRect().top,behavior:'instant'})})()`,
+              )
+              await delay(150)
+              const { data } = await cdp('Page.captureScreenshot', { format: 'png' })
+              await writeFile(
+                join(output, `${width}x${height}-papago-${name}.png`),
+                Buffer.from(data, 'base64'),
+              )
+            }
+          }
           if (index === 4 && [1440, 768, 390].includes(width)) {
             const { data } = await cdp('Page.captureScreenshot', { format: 'png' })
             await writeFile(
               join(output, `${width}x${height}-project-05.png`),
               Buffer.from(data, 'base64'),
             )
+            if (height > 500) {
+              await evaluate(`document.querySelector('.project-modal-panel').scrollTop=100000`)
+              await delay(150)
+              const { data } = await cdp('Page.captureScreenshot', { format: 'png' })
+              await writeFile(
+                join(output, `${width}x${height}-placeholder-chapters.png`),
+                Buffer.from(data, 'base64'),
+              )
+            }
           }
           await key('Escape')
           await closed(card, beforeProject)

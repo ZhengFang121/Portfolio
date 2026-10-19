@@ -7,8 +7,19 @@ export interface ProjectSection {
   paragraphs?: string[]
   tagline?: string
   items?: ProjectSection[]
+  note?: string
+  links?: { label: string; href: string }[]
+  flow?: { label: string; steps: string[] }
   media?:
-    { type: 'video'; src: string; poster?: string } | { type: 'image'; src: string; alt: string }
+    | { type: 'video'; src: string; poster?: string }
+    | {
+        type: 'image'
+        src: string
+        alt: string
+        variant?: 'default' | 'phone' | 'qr-code'
+        width?: number
+        height?: number
+      }
 }
 export interface PortfolioProject {
   slug: string
@@ -20,6 +31,27 @@ export interface PortfolioProject {
   summary: string | null
   cover: { src: string; alt: string; width: number; height: number } | null
   sections: ProjectSection[]
+}
+// 每次建立獨立的章節資料，未來補作品內容時不會連動到其他作品。
+function createPlaceholderSections(): ProjectSection[] {
+  return [
+    {
+      id: 'design-concept',
+      label: 'SECTION 01',
+      title: '設計理念',
+      subtitle: 'DESIGN CONCEPT',
+      content: null,
+      items: [{ id: 'concept', label: 'CONCEPT', title: '理念說明', content: null }],
+    },
+    {
+      id: 'project-overview',
+      label: 'SECTION 02',
+      title: '作品介紹',
+      subtitle: 'PROJECT OVERVIEW',
+      content: null,
+      items: [{ id: 'overview', label: '01 / PROJECT', title: '作品內容', content: null }],
+    },
+  ]
 }
 // 保留既有 slug，讓已分享的作品網址繼續有效；未提供的介紹內容維持占位。
 export const projects: PortfolioProject[] = [
@@ -167,9 +199,146 @@ export const projects: PortfolioProject[] = [
       height: 2480,
     },
     sections: [
-      { id: 'overview', title: '作品背景', content: null },
-      { id: 'process', title: '設計過程', content: null },
-      { id: 'deliverables', title: '作品呈現', content: null },
+      {
+        id: 'design-concept',
+        label: 'SECTION 01',
+        title: '設計理念',
+        subtitle: 'DESIGN CONCEPT',
+        content: null,
+        items: [
+          {
+            id: 'insight',
+            label: 'INSIGHT — 設計洞察',
+            title: '找車位不容易，找回愛車也很麻煩。',
+            content: null,
+            paragraphs: [
+              '在台北市與新北市，開車出門經常需要花費不少時間尋找路邊停車位。即使順利停好車，也可能因為不熟悉周遭環境，而忘記愛車停放的位置。',
+              '如何減少尋找車位的時間，並讓停車與取車的過程更加便利，成為這次專案想解決的問題。',
+            ],
+          },
+          {
+            id: 'concept',
+            label: 'CONCEPT — 設計概念',
+            title: '透過 LINE，讓停車資訊一查即得。',
+            content: null,
+            paragraphs: [
+              '以使用者熟悉的 LINE 作為操作介面，結合即時停車資訊，開發出「PAPAGO 一查即停」停車小幫手。',
+              '不需要額外下載 App，只要分享位置，就能查詢附近的路邊空停車位，並透過記住停車位置與導航功能，讓停車體驗更加輕鬆。',
+            ],
+          },
+          {
+            id: 'vision',
+            label: 'VISION — 設計目標',
+            title: '一按即查，一查即停。',
+            content:
+              '希望透過簡單直覺的互動方式，降低查詢停車資訊的操作門檻，減少駕駛尋找車位的負擔，讓每一次停車都能更有效率。',
+          },
+        ],
+      },
+      {
+        id: 'line-bot-overview',
+        label: 'SECTION 02',
+        title: '機器人介紹',
+        subtitle: 'LINE BOT OVERVIEW',
+        content: null,
+        items: [
+          {
+            id: 'find-parking',
+            label: '01 / FIND PARKING',
+            title: '尋找空停車位',
+            content:
+              '透過 LINE 分享目前位置，即可查詢附近最近的三個路邊空停車位，查看停車格資訊及距離，並透過導航連結前往目的地，減少尋找停車位所花費的時間。',
+            media: {
+              type: 'image',
+              src: '/images/projects/papago/find-parking.png',
+              alt: 'PAPAGO 尋找空停車位：LINE 對話顯示附近停車格、距離與導航按鈕',
+              variant: 'phone',
+              width: 945,
+              height: 1925,
+            },
+          },
+          {
+            id: 'save-parking',
+            label: '02 / SAVE PARKING LOCATION',
+            title: '記住停車位置',
+            content:
+              '停好車後，點選「記住停車位置」，再透過 LINE 分享停車地點，就能記錄愛車的停放位置，避免因不熟悉周遭環境而忘記停車地點。',
+            media: {
+              type: 'image',
+              src: '/images/projects/papago/save-parking.png',
+              alt: 'PAPAGO 記住停車位置：透過 LINE 分享位置並確認已記錄停車地點',
+              variant: 'phone',
+              width: 945,
+              height: 1925,
+            },
+          },
+          {
+            id: 'navigate-to-car',
+            label: '03 / NAVIGATE TO CAR',
+            title: '導航愛車位置',
+            content:
+              '準備取車時，只要點選「導航愛車位置」，即可取得 Google Maps 導航連結，快速返回先前記錄的停車地點，讓取車更加方便。',
+            media: {
+              type: 'image',
+              src: '/images/projects/papago/navigate-to-car.png',
+              alt: 'PAPAGO 導航愛車位置：LINE 提供返回已記錄停車地點的 Google Maps 連結',
+              variant: 'phone',
+              width: 945,
+              height: 1925,
+            },
+          },
+          {
+            id: 'technical-implementation',
+            label: '04 / TECHNICAL IMPLEMENTATION',
+            title: '技術整合',
+            content: null,
+            paragraphs: [
+              'PAPAGO 以 LINE Bot 作為互動介面，結合 TDX 運輸資料流通服務取得停車資訊，並透過後端程式處理使用者的查詢請求，再將結果回傳至 LINE 對話中。',
+              'Node.js 後端整合停車格基本資料與即時狀態，篩選附近空位並依距離排序，透過 LINE Flex Message 回傳最近的三個車位與 Google Maps 導航連結。',
+            ],
+            flow: {
+              label: '停車位查詢流程',
+              steps: [
+                'LINE 使用者分享位置',
+                'Node.js 後端查詢 TDX 停車資料',
+                '篩選空位並依距離排序',
+                'LINE 回傳最近三個車位',
+              ],
+            },
+          },
+          {
+            id: 'line-account',
+            label: '05 / LINE ACCOUNT',
+            title: 'LINE 官方帳號',
+            content:
+              'PAPAGO 透過 LINE 提供停車相關功能，使用者可在熟悉的聊天介面中完成停車位查詢、位置記錄及導航操作。',
+            media: {
+              type: 'image',
+              src: '/images/projects/papago/line-profile.png',
+              alt: 'PAPAGO LINE 官方帳號個人檔案與加入好友畫面',
+              variant: 'phone',
+              width: 945,
+              height: 1925,
+            },
+          },
+          {
+            id: 'add-friend',
+            label: '06 / ADD FRIEND',
+            title: '加入 PAPAGO 好友',
+            content:
+              '使用手機掃描下方 QR Code，即可前往 PAPAGO 的 LINE 官方帳號，體驗停車位查詢與愛車位置記錄功能。',
+            media: {
+              type: 'image',
+              src: '/images/projects/papago/line-qr-code.png',
+              alt: '加入 PAPAGO LINE 官方帳號好友的 QR Code',
+              variant: 'qr-code',
+              width: 360,
+              height: 360,
+            },
+            note: '機器人部署於 Render，若伺服器進入休眠，首次回應可能稍有延遲，請稍候再試。',
+          },
+        ],
+      },
     ],
   },
   {
@@ -186,11 +355,7 @@ export const projects: PortfolioProject[] = [
       width: 3508,
       height: 2480,
     },
-    sections: [
-      { id: 'overview', title: '作品背景', content: null },
-      { id: 'process', title: '設計過程', content: null },
-      { id: 'deliverables', title: '作品呈現', content: null },
-    ],
+    sections: createPlaceholderSections(),
   },
   {
     slug: 'project-04',
@@ -206,11 +371,7 @@ export const projects: PortfolioProject[] = [
       width: 3508,
       height: 2480,
     },
-    sections: [
-      { id: 'overview', title: '作品背景', content: null },
-      { id: 'process', title: '設計過程', content: null },
-      { id: 'deliverables', title: '作品呈現', content: null },
-    ],
+    sections: createPlaceholderSections(),
   },
   {
     slug: 'project-05',
@@ -226,10 +387,6 @@ export const projects: PortfolioProject[] = [
       width: 3508,
       height: 2480,
     },
-    sections: [
-      { id: 'overview', title: '作品背景', content: null },
-      { id: 'process', title: '設計過程', content: null },
-      { id: 'deliverables', title: '作品呈現', content: null },
-    ],
+    sections: createPlaceholderSections(),
   },
 ]

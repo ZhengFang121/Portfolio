@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, reactive, useTemplateRef, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import { ArrowLeft, Pause, Play } from '@lucide/vue'
+import { ArrowLeft, ArrowRight, ExternalLink, Pause, Play } from '@lucide/vue'
 import ProjectCategories from './ProjectCategories.vue'
 import type { PortfolioProject, ProjectSection } from '../data/projects'
 const props = withDefaults(
@@ -165,6 +165,18 @@ function headingTag(isChild = false) {
   if (props.mode === 'modal') return isChild ? 'h4' : 'h3'
   return isChild ? 'h3' : 'h2'
 }
+
+function hasItemContent(item: ProjectSection) {
+  return Boolean(
+    item.content ||
+    item.paragraphs?.length ||
+    item.tagline ||
+    item.media ||
+    item.flow?.steps.length ||
+    item.links?.length ||
+    item.note,
+  )
+}
 </script>
 <template>
   <article
@@ -228,7 +240,13 @@ function headingTag(isChild = false) {
           :aria-labelledby="section.items?.length ? sectionId(item.id, section.id) : undefined"
         >
           <div
-            v-if="section.items?.length || item.content || item.paragraphs?.length || item.tagline"
+            v-if="
+              section.items?.length ||
+              item.content ||
+              item.paragraphs?.length ||
+              item.tagline ||
+              !hasItemContent(item)
+            "
             class="project-item-text stack"
           >
             <p v-if="section.items?.length && item.label" class="project-item-label">
@@ -246,17 +264,18 @@ function headingTag(isChild = false) {
               {{ paragraph }}
             </p>
             <p v-if="item.content" class="project-item-body">{{ item.content }}</p>
-          </div>
-          <div
-            v-if="!item.content && !item.paragraphs?.length && !item.tagline && !item.media"
-            class="placeholder-panel"
-          >
-            <p class="muted">此區內容與圖片待提供。</p>
+            <p v-if="!hasItemContent(item)" class="project-item-body">內容準備中</p>
           </div>
           <div
             v-if="item.media"
             class="project-section-media"
-            :class="{ 'project-section-media--video': item.media.type === 'video' }"
+            :class="{
+              'project-section-media--video': item.media.type === 'video',
+              'project-section-media--phone':
+                item.media.type === 'image' && item.media.variant === 'phone',
+              'project-section-media--qr-code':
+                item.media.type === 'image' && item.media.variant === 'qr-code',
+            }"
           >
             <template v-if="item.media.type === 'video'">
               <video
@@ -289,7 +308,38 @@ function headingTag(isChild = false) {
                 <Play v-else :size="20" aria-hidden="true" />
               </button>
             </template>
-            <img v-else :src="item.media.src" :alt="item.media.alt" loading="lazy" />
+            <img
+              v-else
+              :src="item.media.src"
+              :alt="item.media.alt"
+              :width="item.media.width"
+              :height="item.media.height"
+              loading="lazy"
+            />
+          </div>
+          <ol
+            v-if="item.flow?.steps.length"
+            class="project-item-flow"
+            :aria-label="item.flow.label"
+          >
+            <li v-for="(step, index) in item.flow.steps" :key="index">
+              <span>{{ step }}</span>
+              <ArrowRight v-if="index < item.flow.steps.length - 1" :size="20" aria-hidden="true" />
+            </li>
+          </ol>
+          <p v-if="item.note" class="project-item-note project-item-body">{{ item.note }}</p>
+          <div v-if="item.links?.length" class="project-item-links">
+            <a
+              v-for="link in item.links"
+              :key="link.href"
+              class="text-link"
+              :href="link.href"
+              target="_blank"
+              rel="noopener noreferrer"
+              >{{ link.label }}<ExternalLink :size="18" aria-hidden="true" /><span class="sr-only"
+                >（另開新分頁）</span
+              ></a
+            >
           </div>
         </div>
       </div>
@@ -359,6 +409,87 @@ function headingTag(isChild = false) {
   .project-section-media video {
     border: 0;
   }
+  /* 尺寸由資料選擇；未設定變體的圖片維持原本的全寬呈現。 */
+  .project-section-media--phone,
+  .project-section-media--qr-code {
+    margin-inline: auto;
+  }
+  .project-section-media--phone {
+    width: min(100%, 340px);
+  }
+  .project-section-media--qr-code {
+    width: min(100%, 200px);
+  }
+  .project-section-media--qr-code img {
+    border-radius: 0;
+  }
+  .project-item-flow,
+  .project-item-note,
+  .project-item-links {
+    width: min(100%, var(--layout-text-width));
+    margin-inline: auto;
+  }
+  .project-item-flow {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: 0;
+    list-style: none;
+    font-size: var(--font-size-md);
+  }
+  .project-item-flow li {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+  .project-item-flow span {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    padding: var(--space-3);
+    border: 1px solid var(--palette-blue);
+    border-radius: var(--radius-control);
+    overflow-wrap: anywhere;
+  }
+  .project-item-flow svg {
+    flex-shrink: 0;
+    transform: rotate(90deg);
+  }
+  .project-item-note,
+  .project-item-links {
+    text-align: left;
+  }
+  .project-item-links {
+    --color-link: var(--palette-red);
+    --color-link-hover: var(--palette-black);
+    display: grid;
+    gap: var(--space-2);
+  }
+  .project-item-links a {
+    text-decoration: underline;
+  }
+  .project-item-links svg {
+    flex-shrink: 0;
+  }
+  @media (min-width: 900px) {
+    .project-item-flow,
+    .project-item-flow li {
+      flex-direction: row;
+    }
+    .project-item-flow li {
+      flex: 1;
+      align-self: stretch;
+    }
+    .project-item-flow span {
+      flex: 1;
+      align-self: stretch;
+    }
+    .project-item-flow svg {
+      transform: none;
+    }
+  }
   .project-video-toggle {
     position: absolute;
     inset-block-start: var(--space-3);
@@ -415,10 +546,6 @@ function headingTag(isChild = false) {
   .project-detail--modal .project-detail-title {
     color: var(--palette-black);
     font-size: var(--font-size-2xl);
-  }
-  .project-detail--modal .placeholder-panel {
-    width: 100%;
-    background: var(--palette-white);
   }
   .project-detail--modal :is(img, video, iframe, audio) {
     display: block;
