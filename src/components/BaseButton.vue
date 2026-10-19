@@ -1,23 +1,31 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { RouterLink, type RouteLocationRaw } from 'vue-router'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     label?: string
     variant?: 'cream' | 'red'
     to?: RouteLocationRaw
+    href?: string
     type?: 'button' | 'submit' | 'reset'
   }>(),
-  { label: 'VIEW MORE', variant: 'cream', to: undefined, type: 'button' },
+  { label: 'VIEW MORE', variant: 'cream', to: undefined, href: undefined, type: 'button' },
 )
+
+// 同時設定時以 to 優先；只傳入目前元素需要的屬性，避免混用連結與按鈕屬性。
+const elementProps = computed(() => {
+  if (props.to) return { to: props.to }
+  if (props.href) return { href: props.href, target: '_blank', rel: 'noopener noreferrer' }
+  return { type: props.type }
+})
 </script>
 
 <template>
-  <!-- 沿用共用膠囊樣式；有 to 時導覽，否則提供原生按鈕操作。 -->
+  <!-- 三種元素共用原有膠囊樣式與鍵盤焦點。 -->
   <component
-    :is="to ? RouterLink : 'button'"
-    :to="to"
-    :type="to ? undefined : type"
+    :is="to ? RouterLink : href ? 'a' : 'button'"
+    v-bind="elementProps"
     class="view-more-button"
     :class="`view-more-button--${variant}`"
   >

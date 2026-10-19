@@ -17,6 +17,7 @@ try {
   const { projects } = await server.ssrLoadModule('/src/data/projects.ts')
   const { default: App } = await server.ssrLoadModule('/src/App.vue')
   const { default: ProjectDetail } = await server.ssrLoadModule('/src/components/ProjectDetail.vue')
+  const { default: BaseButton } = await server.ssrLoadModule('/src/components/BaseButton.vue')
   const { portfolioPreset } = await server.ssrLoadModule('/src/theme/primevue.ts')
   assert.equal(projects.length, 5)
   assert.equal(new Set(projects.map((project) => project.slug)).size, 5)
@@ -377,6 +378,71 @@ try {
     }),
   )
   assert.ok(posterHtml.includes(`poster="${projects[0].cover.src}"`))
+
+  // 只在測試資料設定網址，不把測試網址寫入正式作品資料。
+  async function renderWithRouter(component, props) {
+    const router = createRouter({ history: createMemoryHistory(), routes })
+    const app = createSSRApp(component, props).use(router)
+    await router.push('/works')
+    await router.isReady()
+    return renderToString(app)
+  }
+  for (const project of projects) {
+    for (const mode of ['page', 'modal']) {
+      const baseline = await renderWithRouter(ProjectDetail, {
+        project: { ...project, websiteUrl: undefined },
+        mode,
+      })
+      assert.ok(!baseline.includes('project-website-link'), '無網址不渲染外層容器')
+      for (const websiteUrl of [
+        '',
+        '   ',
+        'not-a-url',
+        '/works',
+        'https://',
+        'https:example.com',
+        'javascript:alert(1)',
+        'data:text/html,test',
+      ]) {
+        const html = await renderWithRouter(ProjectDetail, {
+          project: { ...project, websiteUrl },
+          mode,
+        })
+        assert.equal(html, baseline, `${project.slug}/${mode}: 無效網址不增加內容或容器`)
+      }
+      for (const websiteUrl of ['https://example.com/project', 'http://example.com/project']) {
+        const html = await renderWithRouter(ProjectDetail, {
+          project: { ...project, websiteUrl: `  ${websiteUrl}  ` },
+          mode,
+        })
+        const link = html.match(/<a\b[^>]*>前往網站<\/a>/)?.[0]
+        assert.ok(link, `${project.slug}/${mode}: 共用網站連結`)
+        assert.ok(link.includes(`href="${websiteUrl}"`))
+        assert.ok(link.includes('target="_blank"') && link.includes('rel="noopener noreferrer"'))
+        assert.ok(link.includes('view-more-button--red'))
+        assert.ok(!/\s(?:to|type)=/.test(link), '外部連結不帶 Router 或 button 屬性')
+        assert.ok(html.indexOf('project-website-link') > html.lastIndexOf('</section>'))
+        assert.match(
+          html.replace(/<!--[\s\S]*?-->/g, ''),
+          /前往網站<\/a><\/div><\/article>$/,
+          '網站按鈕位於整份介紹最後',
+        )
+      }
+    }
+  }
+  const nativeButton = await renderToString(createSSRApp(BaseButton, { type: 'submit' }))
+  assert.match(nativeButton, /<button\b[^>]*type="submit"[^>]*>VIEW MORE<\/button>/)
+  assert.ok(!/\s(?:to|href|target|rel)=/.test(nativeButton))
+  const internalButton = await renderWithRouter(BaseButton, { to: '/about', variant: 'red' })
+  const conflictingButton = await renderWithRouter(BaseButton, {
+    to: '/about',
+    href: 'https://example.com',
+    variant: 'red',
+  })
+  assert.equal(conflictingButton, internalButton, 'to 與 href 並存時維持原站內導覽')
+  assert.ok(internalButton.includes('href="/about"'))
+  assert.ok(!/\s(?:type|target|rel)=/.test(internalButton))
+  console.log('PASS 共用網站連結：五作品、兩種版型、網址驗證、原生按鈕與連結優先規則')
 
   const cases = [
     ['/', 'home', '平面設計師 與 前端網頁設計學習者'],

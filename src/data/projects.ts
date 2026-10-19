@@ -29,6 +29,7 @@ export interface PortfolioProject {
   year: string | null
   role: string | null
   summary: string | null
+  websiteUrl?: string
   cover: { src: string; alt: string; width: number; height: number } | null
   sections: ProjectSection[]
 }
@@ -63,6 +64,7 @@ export const projects: PortfolioProject[] = [
     year: null,
     role: null,
     summary: '新手跑者養成網站',
+    websiteUrl: 'https://pheidi-the-runner.vercel.app',
     cover: {
       src: '/images/projects/pheidi-the-runner/cover.jpg',
       alt: '跑者菲迪 Pheidi the Runner 作品封面',

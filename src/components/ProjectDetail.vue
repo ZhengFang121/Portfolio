@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, reactive, useTemplateRef, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, useTemplateRef, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { ArrowLeft, ArrowRight, ExternalLink, Pause, Play } from '@lucide/vue'
+import BaseButton from './BaseButton.vue'
 import ProjectCategories from './ProjectCategories.vue'
 import type { PortfolioProject, ProjectSection } from '../data/projects'
 const props = withDefaults(
@@ -11,6 +12,18 @@ const props = withDefaults(
     titleId: undefined,
   },
 )
+
+// 作品網站僅接受完整的 HTTP／HTTPS 網址；空值或無效格式不產生按鈕與留白。
+const websiteUrl = computed(() => {
+  const value = props.project.websiteUrl?.trim()
+  if (!value || !/^https?:\/\//i.test(value)) return undefined
+  try {
+    const url = new URL(value)
+    return ['http:', 'https:'].includes(url.protocol) && url.hostname ? value : undefined
+  } catch {
+    return undefined
+  }
+})
 
 const detail = useTemplateRef<HTMLElement>('detail')
 let observer: IntersectionObserver | null = null
@@ -344,6 +357,9 @@ function hasItemContent(item: ProjectSection) {
         </div>
       </div>
     </section>
+    <div v-if="websiteUrl" class="project-website-link">
+      <BaseButton label="前往網站" variant="red" :href="websiteUrl" />
+    </div>
   </article>
 </template>
 
@@ -353,6 +369,12 @@ function hasItemContent(item: ProjectSection) {
   /* 主要章節 64px、子段落 48px、段內元素 16–24px；間距只由 gap 管理。 */
   .project-detail {
     row-gap: var(--space-16);
+  }
+  .project-website-link {
+    display: flex;
+    justify-content: center;
+    min-inline-size: 0;
+    padding-block-end: var(--space-6);
   }
   .project-section {
     row-gap: var(--space-8);
