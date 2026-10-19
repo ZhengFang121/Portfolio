@@ -250,6 +250,7 @@ function hasItemContent(item: ProjectSection) {
           v-for="item in section.items?.length ? section.items : [section]"
           :key="item.id"
           class="project-section-item stack"
+          :class="{ 'project-section-item--card-grid': item.imageLayout === 'card-grid' }"
           :role="section.items?.length ? 'group' : undefined"
           :aria-labelledby="section.items?.length ? sectionId(item.id, section.id) : undefined"
         >
@@ -331,7 +332,11 @@ function hasItemContent(item: ProjectSection) {
               loading="lazy"
             />
           </div>
-          <div v-if="item.images?.length" class="project-image-group">
+          <div
+            v-if="item.images?.length"
+            class="project-image-group"
+            :class="{ 'project-image-group--cards': item.imageLayout === 'card-grid' }"
+          >
             <div v-for="image in item.images" :key="image.src" class="project-section-media">
               <img
                 :src="image.src"
@@ -421,18 +426,36 @@ function hasItemContent(item: ProjectSection) {
     line-height: var(--line-height-body);
     letter-spacing: var(--letter-spacing-body);
   }
-  .project-section-media {
+  /* 單張媒體與圖片群組共用內文閱讀寬度；封面維持原有樣式。 */
+  .project-section-media,
+  .project-image-group {
     min-inline-size: 0;
-    width: 100%;
+    width: min(100%, var(--layout-text-width));
     max-inline-size: 100%;
+    margin-inline: auto;
   }
   .project-image-group {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
     align-items: start;
     gap: var(--space-6);
-    width: 100%;
-    min-inline-size: 0;
+  }
+  /* 依作品項目的可用寬度換欄，讓獨立頁與介紹視窗使用相同規則。 */
+  .project-section-item--card-grid {
+    container: project-card-grid / inline-size;
+  }
+  .project-image-group--cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  @container project-card-grid (min-width: 28rem) {
+    .project-image-group--cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @container project-card-grid (min-width: 40rem) {
+    .project-image-group--cards {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
   }
   .project-section-media :is(video, img) {
     display: block;
@@ -442,20 +465,13 @@ function hasItemContent(item: ProjectSection) {
     object-fit: contain;
     border-radius: var(--radius-panel);
   }
-  /* 只限制影片；封面與其他作品圖片沿用原本寬度。 */
   .project-section-media--video {
     position: relative;
-    width: min(100%, var(--layout-text-width));
-    margin-inline: auto;
   }
   .project-section-media video {
     border: 0;
   }
-  /* 尺寸由資料選擇；未設定變體的圖片維持原本的全寬呈現。 */
-  .project-section-media--phone,
-  .project-section-media--qr-code {
-    margin-inline: auto;
-  }
+  /* 特殊變體保留原有尺寸，仍受父容器寬度限制。 */
   .project-section-media--phone {
     width: min(100%, 340px);
   }

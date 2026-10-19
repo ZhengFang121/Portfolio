@@ -8,7 +8,7 @@ export interface ProjectImage {
 export interface ProjectSection {
   id: string
   title: string
-  content: string | null
+  content?: string | null
   label?: string
   subtitle?: string
   paragraphs?: string[]
@@ -24,6 +24,7 @@ export interface ProjectSection {
         variant?: 'default' | 'phone' | 'qr-code'
       })
   images?: ProjectImage[]
+  imageLayout?: 'card-grid'
 }
 export interface PortfolioProject {
   slug: string
@@ -118,8 +119,8 @@ export const projects: PortfolioProject[] = [
       {
         id: 'website-overview',
         label: 'SECTION 02',
-        title: '網站介紹',
-        subtitle: 'WEBSITE OVERVIEW',
+        title: '作品介紹',
+        subtitle: 'PROJECT OVERVIEW',
         content: null,
         items: [
           {
@@ -244,8 +245,8 @@ export const projects: PortfolioProject[] = [
       {
         id: 'line-bot-overview',
         label: 'SECTION 02',
-        title: '機器人介紹',
-        subtitle: 'LINE BOT OVERVIEW',
+        title: '作品介紹',
+        subtitle: 'PROJECT OVERVIEW',
         content: null,
         items: [
           {
@@ -356,10 +357,10 @@ export const projects: PortfolioProject[] = [
     role: null,
     summary: '咖啡品牌包裝設計與原創插畫',
     cover: {
-      src: '/images/projects/apollo/cover.jpg',
+      src: '/images/projects/apollo/cover.webp',
       alt: 'APOLLO 作品封面',
-      width: 3508,
-      height: 2480,
+      width: 1448,
+      height: 1086,
     },
     sections: [
       {
@@ -398,119 +399,120 @@ export const projects: PortfolioProject[] = [
       {
         id: 'apollo-brand-applications',
         label: 'SECTION 02',
-        title: '品牌視覺應用',
-        subtitle: 'BRAND APPLICATIONS',
+        title: '作品介紹',
+        subtitle: 'PROJECT OVERVIEW',
         content: null,
         items: [
           {
             id: 'apollo-drip-coffee-packaging',
-            label: '01 / DRIP COFFEE PACKAGING',
             title: '濾掛咖啡包裝設計',
-            content: null,
-            paragraphs: [
-              '以品牌既有識別搭配原創插畫，規劃濾掛咖啡的包裝視覺，並延伸至淺焙與深焙系列。',
-              '透過一致的版面編排，讓不同產品保有各自特色，同時呈現系列包裝的整體性。',
-            ],
             media: {
               type: 'image',
-              src: '/images/projects/apollo/drip-bag.jpg',
+              src: '/images/projects/apollo/drip-bag.webp',
               alt: 'APOLLO 濾掛咖啡系列包裝與原創插畫主要展示',
-              width: 4000,
-              height: 3000,
+              width: 1448,
+              height: 1086,
             },
             images: [
               {
-                src: '/images/projects/apollo/drip-bag-light-roast.jpg',
+                src: '/images/projects/apollo/drip-bag-light-roast.webp',
                 alt: 'APOLLO 淺焙濾掛咖啡包裝視覺',
-                width: 5000,
-                height: 3333,
+                width: 1448,
+                height: 1086,
               },
               {
-                src: '/images/projects/apollo/drip-bag-dark-roast.jpg',
+                src: '/images/projects/apollo/drip-bag-dark-roast.webp',
                 alt: 'APOLLO 深焙濾掛咖啡包裝視覺',
-                width: 5000,
-                height: 3333,
+                width: 1448,
+                height: 1086,
               },
             ],
           },
           {
             id: 'apollo-gift-box-packaging',
-            label: '02 / GIFT BOX PACKAGING',
             title: '濾掛咖啡禮盒設計',
-            content:
-              '將濾掛咖啡的系列視覺延伸至十入禮盒包裝，透過插畫、品牌識別與產品資訊的整合，讓單包裝與禮盒之間保持一致的設計風格。',
             media: {
               type: 'image',
-              src: '/images/projects/apollo/drip-bag-box-10pcs.jpg',
+              src: '/images/projects/apollo/drip-bag-box-10pcs.webp',
               alt: 'APOLLO 十入濾掛咖啡禮盒包裝視覺',
-              width: 6000,
-              height: 4000,
+              width: 1448,
+              height: 1086,
+            },
+          },
+          {
+            id: 'apollo-cup-sleeve',
+            title: '咖啡杯套設計',
+            media: {
+              type: 'image',
+              src: '/images/projects/apollo/cup-sleeve.webp',
+              alt: 'APOLLO 咖啡杯套設計',
+              width: 1448,
+              height: 1086,
             },
           },
           {
             id: 'apollo-coffee-bean-cards',
-            label: '03 / COFFEE BEAN CARDS',
             title: '咖啡豆介紹卡設計',
-            content: null,
-            paragraphs: [
-              '為不同咖啡豆設計專屬的介紹卡，結合原創插畫與版面編排，呈現各款咖啡豆的視覺特色。',
-              '透過統一的設計架構，讓不同品項既能各自展現個性，也能形成具有系列感的完整作品。',
-            ],
-            media: {
-              type: 'image',
-              src: '/images/projects/apollo/bean-card-collection.jpg',
-              alt: 'APOLLO 咖啡豆介紹卡系列集合',
-              // 依 EXIF 旋轉後的實際顯示尺寸，與瀏覽器載入後比例一致。
-              width: 2000,
-              height: 3000,
-            },
+            imageLayout: 'card-grid',
             images: [
               {
-                src: '/images/projects/apollo/bean-card-01.jpg',
+                src: '/images/projects/apollo/bean-card-01.webp',
                 alt: 'APOLLO 咖啡豆介紹卡 01：原創插畫與版面設計',
-                width: 4000,
-                height: 3000,
+                width: 1448,
+                height: 1086,
               },
               {
-                src: '/images/projects/apollo/bean-card-03.jpg',
+                src: '/images/projects/apollo/bean-card-02.webp',
+                alt: 'APOLLO 咖啡豆介紹卡 02：原創插畫與版面設計',
+                width: 1448,
+                height: 1086,
+              },
+              {
+                src: '/images/projects/apollo/bean-card-03.webp',
                 alt: 'APOLLO 咖啡豆介紹卡 03：原創插畫與版面設計',
-                width: 4000,
-                height: 3000,
+                width: 1448,
+                height: 1086,
               },
               {
-                src: '/images/projects/apollo/bean-card-05.jpg',
+                src: '/images/projects/apollo/bean-card-04.webp',
+                alt: 'APOLLO 咖啡豆介紹卡 04：原創插畫與版面設計',
+                width: 1448,
+                height: 1086,
+              },
+              {
+                src: '/images/projects/apollo/bean-card-05.webp',
                 alt: 'APOLLO 咖啡豆介紹卡 05：原創插畫與版面設計',
-                width: 4000,
-                height: 3000,
+                width: 1448,
+                height: 1086,
+              },
+              {
+                src: '/images/projects/apollo/bean-card-06.webp',
+                alt: 'APOLLO 咖啡豆介紹卡 06：原創插畫與版面設計',
+                width: 1448,
+                height: 1086,
               },
             ],
           },
           {
             id: 'apollo-shopping-bag',
-            label: '04 / SHOPPING BAG',
             title: '品牌提袋設計',
-            content:
-              '將品牌既有識別與視覺元素延伸至提袋設計，讓品牌形象從咖啡產品包裝延續至購買與攜帶的日常情境。',
             media: {
               type: 'image',
-              src: '/images/projects/apollo/shopping-bag.jpg',
+              src: '/images/projects/apollo/shopping-bag.webp',
               alt: 'APOLLO 品牌提袋視覺設計',
-              width: 3500,
-              height: 2500,
+              width: 1448,
+              height: 1086,
             },
           },
           {
             id: 'apollo-promotional-design',
-            label: '05 / PROMOTIONAL DESIGN',
             title: '品牌折價券設計',
-            content:
-              '延續品牌整體視覺風格，透過圖文編排與資訊層次的整理，讓折價券兼顧宣傳訊息的清楚傳達與品牌識別的一致性。',
             media: {
               type: 'image',
-              src: '/images/projects/apollo/voucher.jpg',
+              src: '/images/projects/apollo/voucher.webp',
               alt: 'APOLLO 品牌折價券圖文編排設計',
-              width: 2430,
-              height: 3645,
+              width: 1024,
+              height: 1536,
             },
           },
         ],
@@ -526,10 +528,10 @@ export const projects: PortfolioProject[] = [
     role: null,
     summary: '甜點品牌包裝設計與原創插畫',
     cover: {
-      src: '/images/projects/r4d/cover.jpg',
+      src: '/images/projects/r4d/cover.webp',
       alt: 'R4D 作品封面',
-      width: 3508,
-      height: 2480,
+      width: 1448,
+      height: 1086,
     },
     sections: [
       {
@@ -568,122 +570,98 @@ export const projects: PortfolioProject[] = [
       {
         id: 'r4d-brand-applications',
         label: 'SECTION 02',
-        title: '品牌視覺應用',
-        subtitle: 'BRAND APPLICATIONS',
+        title: '作品介紹',
+        subtitle: 'PROJECT OVERVIEW',
         content: null,
         items: [
           {
             id: 'r4d-cake-packaging',
-            label: '01 / CAKE PACKAGING',
             title: '蛋糕盒包裝設計',
-            content: null,
-            paragraphs: [
-              '依照不同蛋糕尺寸的包裝形式，將品牌識別與原創插畫延伸至四吋及六吋蛋糕盒。',
-              '透過一致的視覺編排方式，讓不同尺寸的包裝維持整體性，呈現完整的系列設計。',
-            ],
             images: [
               {
-                src: '/images/projects/r4d/cake-box-4-inch.jpg',
+                src: '/images/projects/r4d/cake-box-4-inch.webp',
                 alt: 'R4D 四吋蛋糕盒包裝視覺與原創插畫',
-                width: 3169,
-                height: 4754,
+                width: 1024,
+                height: 1536,
               },
               {
-                src: '/images/projects/r4d/cake-box-6-inch.jpg',
+                src: '/images/projects/r4d/cake-box-6-inch.webp',
                 alt: 'R4D 六吋蛋糕盒包裝視覺與原創插畫',
-                width: 4000,
-                height: 6000,
+                width: 1024,
+                height: 1536,
               },
             ],
           },
           {
             id: 'r4d-cake-carrier-box',
-            label: '02 / CAKE CARRIER BOX',
             title: '切片蛋糕手提盒設計',
-            content:
-              '針對切片蛋糕的產品形式與攜帶情境，將品牌視覺元素應用於手提盒包裝，讓單份甜點也能延續一致的品牌風格。',
             media: {
               type: 'image',
-              src: '/images/projects/r4d/cake-slice-carrier-box.jpg',
+              src: '/images/projects/r4d/cake-slice-carrier-box.webp',
               alt: 'R4D 切片蛋糕手提盒包裝視覺',
-              width: 4000,
-              height: 3000,
+              width: 1448,
+              height: 1086,
             },
           },
           {
             id: 'r4d-roll-cake-packaging',
-            label: '03 / ROLL CAKE PACKAGING',
             title: '長條蛋糕盒設計',
-            content:
-              '配合長條型蛋糕盒的包裝比例，調整插畫構圖與視覺元素配置，讓品牌識別在不同盒型上保有一致性，也展現包裝形式的特色。',
             media: {
               type: 'image',
-              src: '/images/projects/r4d/roll-cake-box.jpg',
+              src: '/images/projects/r4d/roll-cake-box.webp',
               alt: 'R4D 長條蛋糕盒插畫構圖與包裝視覺',
-              width: 6000,
-              height: 4000,
+              width: 1448,
+              height: 1086,
             },
           },
           {
             id: 'r4d-macaron-gift-box',
-            label: '04 / MACARON GIFT BOX',
             title: '馬卡龍禮盒設計',
-            content:
-              '結合原創插畫與品牌視覺元素，將設計延伸至馬卡龍禮盒包裝，透過圖像與版面配置，呈現甜點禮盒的視覺特色。',
             media: {
               type: 'image',
-              src: '/images/projects/r4d/macaron-gift-box.jpg',
+              src: '/images/projects/r4d/macaron-gift-box.webp',
               alt: 'R4D 馬卡龍禮盒包裝視覺與原創插畫',
-              width: 4000,
-              height: 6000,
+              width: 1024,
+              height: 1536,
             },
           },
           {
             id: 'r4d-chocolate-gift-box',
-            label: '05 / CHOCOLATE GIFT BOX',
             title: '生巧克力禮盒設計',
-            content:
-              '將品牌識別與原創插畫應用於生巧克力禮盒，透過視覺元素與包裝版面的整合，讓不同甜點品項保有各自特色，也延續一致的品牌形象。',
             media: {
               type: 'image',
-              src: '/images/projects/r4d/nama-chocolate-box.jpg',
+              src: '/images/projects/r4d/nama-chocolate-box.webp',
               alt: 'R4D 生巧克力禮盒包裝視覺與原創插畫',
-              width: 6000,
-              height: 4000,
+              width: 1448,
+              height: 1086,
             },
           },
           {
             id: 'r4d-promotional-design',
-            label: '06 / PROMOTIONAL DESIGN',
             title: '品牌宣傳物設計',
-            content:
-              '延續品牌既有的視覺風格，透過圖文編排與資訊層次的規劃，整合宣傳內容，讓品牌形象在平面宣傳媒介中保持一致。',
             media: {
               type: 'image',
-              src: '/images/projects/r4d/dm.jpg',
+              src: '/images/projects/r4d/dm.webp',
               alt: 'R4D 品牌宣傳物圖文編排設計',
-              width: 5460,
-              height: 3642,
+              width: 1448,
+              height: 1086,
             },
           },
           {
             id: 'r4d-brand-accessories',
-            label: '07 / BRAND APPLICATIONS',
             title: '品牌提袋與貼紙設計',
-            content:
-              '將品牌識別與視覺元素延伸至提袋、貼紙等周邊設計，依照不同媒介的尺寸與使用形式調整版面配置，讓品牌形象自然融入各種應用情境。',
             images: [
               {
-                src: '/images/projects/r4d/shopping-bag.jpg',
+                src: '/images/projects/r4d/shopping-bag.webp',
                 alt: 'R4D 品牌提袋視覺設計',
-                width: 3500,
-                height: 2500,
+                width: 1448,
+                height: 1086,
               },
               {
-                src: '/images/projects/r4d/sticker.jpg',
+                src: '/images/projects/r4d/sticker.webp',
                 alt: 'R4D 品牌貼紙視覺設計',
-                width: 4608,
-                height: 2592,
+                width: 1448,
+                height: 1086,
               },
             ],
           },

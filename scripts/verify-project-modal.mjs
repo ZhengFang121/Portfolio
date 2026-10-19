@@ -22,6 +22,7 @@ const types = {
   '.css': 'text/css',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
+  '.webp': 'image/webp',
   '.woff2': 'font/woff2',
   '.mp4': 'video/mp4',
 }
@@ -247,8 +248,8 @@ try {
             rect:rect(item),text:rect(item.querySelector('.project-item-text')),
             border:getComputedStyle(item).borderTopWidth,padding:parseFloat(getComputedStyle(item).paddingTop),gap:getComputedStyle(item).rowGap,
             textGap:getComputedStyle(item.querySelector('.project-item-text')).rowGap,
-            title:item.querySelector('h4').textContent,label:item.querySelector('.project-item-label').textContent,
-            titleType:type(item.querySelector('h4')),labelType:type(item.querySelector('.project-item-label')),
+            title:item.querySelector('h4').textContent,label:item.querySelector('.project-item-label')?.textContent ?? null,
+            titleType:type(item.querySelector('h4')),labelType:item.querySelector('.project-item-label') ? type(item.querySelector('.project-item-label')) : null,
             children:[...item.querySelector('.project-item-text').children].map(el=>({tag:el.tagName,content:el.textContent.trim(),type:type(el),rect:rect(el)})),
             media:[...item.querySelectorAll('video')].map(el=>({
               rect:rect(el),container:rect(el.parentElement),fit:getComputedStyle(el).objectFit,
@@ -263,6 +264,26 @@ try {
       }
     })()`)
     assert.ok(!detail.panelOverflow, `${width}: 介紹內容不水平溢出`)
+    const contentMedia = await evaluate(`(() => {
+      const root=document.querySelector('.project-detail--modal');
+      const rect=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,width:r.width}};
+      return [...root.querySelectorAll('.project-section-item > .project-section-media,.project-image-group')].map(el=>({
+        rect:rect(el),text:rect(el.parentElement.querySelector('.project-item-text')),
+        variant:el.classList.contains('project-section-media--phone')?340:el.classList.contains('project-section-media--qr-code')?200:null,
+      }));
+    })()`)
+    for (const media of contentMedia) {
+      assert.ok(
+        Math.abs(media.rect.width - Math.min(media.text.width, media.variant ?? Infinity)) < 1,
+        '單張圖片、影片與整個圖片群組遵守閱讀寬度及特殊尺寸',
+      )
+      assert.ok(
+        Math.abs(
+          media.rect.left + media.rect.width / 2 - (media.text.left + media.text.width / 2),
+        ) < 1,
+        '內容媒體與內文水平置中',
+      )
+    }
     assert.equal(detail.padding, width <= 480 ? '24px' : width <= 899 ? '48px' : '64px')
     assert.match(
       detail.year,
@@ -304,8 +325,10 @@ try {
         assert.deepEqual(item.titleType, titleReference, '核心句與功能標題使用相同樣式')
         assert.equal(item.titleType.weight, '600')
         assert.ok(item.titleType.size < chapter.headingTypes[1].size)
-        assert.equal(item.labelType.color, 'rgb(167, 31, 36)')
-        assert.ok(item.labelType.size < item.titleType.size)
+        if (item.labelType) {
+          assert.equal(item.labelType.color, 'rgb(167, 31, 36)')
+          assert.ok(item.labelType.size < item.titleType.size)
+        }
         assert.ok(
           item.children.every((child) => child.type.align === 'left'),
           '所有內容文字靠左',
@@ -522,18 +545,23 @@ try {
         detail.chapters.map((chapter) => [chapter.number, chapter.title, chapter.subtitle]),
         [
           ['SECTION 01', '設計理念', 'DESIGN CONCEPT'],
-          ['SECTION 02', '品牌視覺應用', 'BRAND APPLICATIONS'],
+          ['SECTION 02', '作品介紹', 'PROJECT OVERVIEW'],
         ],
       )
       assert.deepEqual(
         detail.chapters.map((chapter) => chapter.items.length),
-        [3, index === 2 ? 5 : 7],
+        [3, index === 2 ? 6 : 7],
       )
       assert.deepEqual(
         detail.chapters[0].items.map((item) => item.label),
         ['INSIGHT — 設計洞察', 'CONCEPT — 設計概念', 'GOAL — 設計目標'],
       )
       assert.ok(!detail.text.includes('內容準備中'))
+      for (const item of detail.chapters[1].items) {
+        assert.equal(item.label, null)
+        assert.equal(item.children.length, 1, '作品項目的文字區只保留作品名稱')
+        assert.equal(item.children[0].tag, 'H4')
+      }
       const gallery = await evaluate(`(() => {
         const root=document.querySelector('.project-detail--modal');
         const rect=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}};
@@ -549,37 +577,53 @@ try {
           groups:[...root.querySelectorAll('.project-image-group')].map(group=>({
             rect:rect(group),columns:getComputedStyle(group).gridTemplateColumns.split(' ').filter(track=>parseFloat(track)>0).length,
             gap:parseFloat(getComputedStyle(group).gap),children:group.children.length,
+            cards:group.classList.contains('project-image-group--cards'),containerWidth:group.parentElement.clientWidth,
+            items:[...group.children].map(rect),
           })),
           order:[...root.querySelectorAll('.project-section-item')].filter(item=>item.querySelector('.project-image-group'))
             .every(item=>[...item.children].findIndex(el=>el.classList.contains('project-item-text')) < [...item.children].findIndex(el=>el.classList.contains('project-image-group'))),
         };
       })()`)
       assert.ok(!gallery.website && gallery.order)
+      const webpResponses =
+        await evaluate(`Promise.all([...document.querySelectorAll('.project-modal img')].map(async img=>{
+        const response=await fetch(img.src);
+        return {src:img.getAttribute('src'),ok:response.ok,type:response.headers.get('content-type'),
+          declared:[Number(img.getAttribute('width')),Number(img.getAttribute('height'))],natural:[img.naturalWidth,img.naturalHeight]};
+      }))`)
+      for (const response of webpResponses) {
+        assert.ok(response.ok && response.src.endsWith('.webp'), '封面與介紹圖片的 WebP 路徑可載入')
+        assert.equal(response.type, 'image/webp', '測試伺服器提供正確 WebP MIME Type')
+        assert.deepEqual(response.declared, response.natural, 'WebP 封面與介紹圖片尺寸符合素材')
+      }
       assert.deepEqual(
         gallery.images.map((img) => img.src),
         index === 2
           ? [
-              'drip-bag.jpg',
-              'drip-bag-light-roast.jpg',
-              'drip-bag-dark-roast.jpg',
-              'drip-bag-box-10pcs.jpg',
-              'bean-card-collection.jpg',
-              'bean-card-01.jpg',
-              'bean-card-03.jpg',
-              'bean-card-05.jpg',
-              'shopping-bag.jpg',
-              'voucher.jpg',
+              'drip-bag.webp',
+              'drip-bag-light-roast.webp',
+              'drip-bag-dark-roast.webp',
+              'drip-bag-box-10pcs.webp',
+              'cup-sleeve.webp',
+              'bean-card-01.webp',
+              'bean-card-02.webp',
+              'bean-card-03.webp',
+              'bean-card-04.webp',
+              'bean-card-05.webp',
+              'bean-card-06.webp',
+              'shopping-bag.webp',
+              'voucher.webp',
             ]
           : [
-              'cake-box-4-inch.jpg',
-              'cake-box-6-inch.jpg',
-              'cake-slice-carrier-box.jpg',
-              'roll-cake-box.jpg',
-              'macaron-gift-box.jpg',
-              'nama-chocolate-box.jpg',
-              'dm.jpg',
-              'shopping-bag.jpg',
-              'sticker.jpg',
+              'cake-box-4-inch.webp',
+              'cake-box-6-inch.webp',
+              'cake-slice-carrier-box.webp',
+              'roll-cake-box.webp',
+              'macaron-gift-box.webp',
+              'nama-chocolate-box.webp',
+              'dm.webp',
+              'shopping-bag.webp',
+              'sticker.webp',
             ],
       )
       for (const image of gallery.images) {
@@ -603,11 +647,32 @@ try {
         assert.equal(group.gap, 24)
         assert.equal(
           group.columns,
-          Math.min(
-            group.children,
-            Math.max(1, Math.floor((group.rect.width + group.gap + 0.1) / (240 + group.gap))),
-          ),
+          group.cards
+            ? group.containerWidth >= 640
+              ? 3
+              : group.containerWidth >= 448
+                ? 2
+                : 1
+            : Math.min(
+                group.children,
+                Math.max(1, Math.floor((group.rect.width + group.gap + 0.1) / (240 + group.gap))),
+              ),
         )
+        if (group.cards) {
+          assert.equal(group.children, 6)
+          for (const [index, image] of group.items.entries()) {
+            assert.ok(Math.abs(image.width - group.items[0].width) < 1, '豆卡等寬')
+            assert.ok(
+              Math.abs(image.left - group.items[index % group.columns].left) < 1,
+              '豆卡由左至右排列',
+            )
+            if (index >= group.columns) {
+              assert.ok(image.top > group.items[index - group.columns].bottom, '豆卡依序換列')
+            } else {
+              assert.ok(Math.abs(image.top - group.items[0].top) < 1)
+            }
+          }
+        }
       }
     } else {
       assert.deepEqual(
@@ -728,6 +793,14 @@ try {
           )
         }
       }
+      await waitFor(`document.querySelector('.work-card')`)
+      await evaluate(`(async () => {
+        for (const img of document.querySelectorAll('.work-card img')) {
+          img.scrollIntoView({block:'center',behavior:'instant'});
+          await img.decode();
+          if (!img.naturalWidth) throw new Error('作品封面載入失敗：'+img.src);
+        }
+      })()`)
       const selector = '.work-card'
       await evaluate(
         `document.querySelector('${selector}').scrollIntoView({block:'center',behavior:'instant'}); document.querySelector('${selector}').focus({preventScroll:true})`,

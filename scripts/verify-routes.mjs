@@ -145,35 +145,41 @@ try {
   }
   const brandImages = [
     [
-      'drip-bag.jpg',
-      'drip-bag-light-roast.jpg',
-      'drip-bag-dark-roast.jpg',
-      'drip-bag-box-10pcs.jpg',
-      'bean-card-collection.jpg',
-      'bean-card-01.jpg',
-      'bean-card-03.jpg',
-      'bean-card-05.jpg',
-      'shopping-bag.jpg',
-      'voucher.jpg',
+      'drip-bag.webp',
+      'drip-bag-light-roast.webp',
+      'drip-bag-dark-roast.webp',
+      'drip-bag-box-10pcs.webp',
+      'cup-sleeve.webp',
+      'bean-card-01.webp',
+      'bean-card-02.webp',
+      'bean-card-03.webp',
+      'bean-card-04.webp',
+      'bean-card-05.webp',
+      'bean-card-06.webp',
+      'shopping-bag.webp',
+      'voucher.webp',
     ],
     [
-      'cake-box-4-inch.jpg',
-      'cake-box-6-inch.jpg',
-      'cake-slice-carrier-box.jpg',
-      'roll-cake-box.jpg',
-      'macaron-gift-box.jpg',
-      'nama-chocolate-box.jpg',
-      'dm.jpg',
-      'shopping-bag.jpg',
-      'sticker.jpg',
+      'cake-box-4-inch.webp',
+      'cake-box-6-inch.webp',
+      'cake-slice-carrier-box.webp',
+      'roll-cake-box.webp',
+      'macaron-gift-box.webp',
+      'nama-chocolate-box.webp',
+      'dm.webp',
+      'shopping-bag.webp',
+      'sticker.webp',
     ],
   ]
   for (const [index, project] of projects.slice(2, 4).entries()) {
-    assert.equal(project.sections[1].title, '品牌視覺應用')
-    assert.equal(project.sections[1].subtitle, 'BRAND APPLICATIONS')
+    assert.equal(project.sections[1].title, '作品介紹')
+    assert.equal(project.sections[1].subtitle, 'PROJECT OVERVIEW')
+    for (const item of project.sections[1].items) {
+      assert.ok(!item.label && !item.content && !item.paragraphs && !item.tagline)
+    }
     assert.deepEqual(
       project.sections.map((section) => section.items.length),
-      [3, index ? 7 : 5],
+      [3, index ? 7 : 6],
     )
     assert.deepEqual(
       project.sections[0].items.map((item) => item.label),
@@ -196,7 +202,7 @@ try {
     assert.ok(images.every((image) => image.alt && image.width > 0 && image.height > 0))
     assert.deepEqual(
       project.sections[1].items.filter((item) => item.images).map((item) => item.images.length),
-      index ? [2, 2] : [2, 3],
+      index ? [2, 2] : [2, 6],
     )
   }
   const papago = projects[1]
@@ -294,7 +300,7 @@ try {
         project === projects[4] ? 2 : 0,
       )
       assert.equal(
-        (modalContent.match(/class="project-image-group"/g) ?? []).length,
+        (modalContent.match(/class="[^"]*\bproject-image-group(?: [^"]*)?"/g) ?? []).length,
         project.sections
           .flatMap((section) => section.items ?? [section])
           .filter((item) => item.images?.length).length,
@@ -316,6 +322,9 @@ try {
     for (const [index, [, html]] of renderedSections.entries()) {
       const section = project.sections[index]
       assert.ok(html.includes(section.title))
+      if (index === 1 && projects.slice(2, 4).includes(project)) {
+        assert.ok(!html.includes('project-item-body') && !html.includes('project-item-label'))
+      }
       for (const item of section.items ?? [section]) {
         assert.ok(html.includes(item.title))
         if (
@@ -658,7 +667,9 @@ try {
             (item) =>
               !item.content &&
               !item.paragraphs?.length &&
+              !item.tagline &&
               !item.media &&
+              !item.images?.length &&
               !item.flow &&
               !item.links?.length &&
               !item.note,
