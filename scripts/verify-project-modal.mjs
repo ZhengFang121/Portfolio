@@ -264,12 +264,37 @@ try {
       }
     })()`)
     assert.ok(!detail.panelOverflow, `${width}: 介紹內容不水平溢出`)
+    const awards = await evaluate(`(() => {
+      const root=document.querySelector('.project-detail--modal'),block=root.querySelector('.project-awards');
+      if (!block) return null;
+      const label=block.querySelector('.project-awards-label'),icon=label.querySelector('svg'),list=block.querySelector('ul');
+      const rect=el=>el.getBoundingClientRect(),center=el=>rect(el).left+rect(el).width/2;
+      return {label:label.textContent.trim(),iconSize:[rect(icon).width,rect(icon).height],
+        colors:[label,icon,list].map(el=>getComputedStyle(el).color),
+        weights:[label,list].map(el=>getComputedStyle(el).fontWeight),
+        sizes:[label,list].map(el=>getComputedStyle(el).fontSize),
+        undecorated:[block,label,list,...list.children].every(el=>{const s=getComputedStyle(el);return s.backgroundColor==='rgba(0, 0, 0, 0)' && s.borderTopWidth==='0px' && s.borderRadius==='0px' && s.boxShadow==='none' && s.padding==='0px'}),
+        centered:Math.abs(center(block)-center(root))<1 && Math.abs(center(label)-center(block))<1 && getComputedStyle(list).textAlign==='center',
+        ordered:root.querySelector('.project-categories').compareDocumentPosition(block)===Node.DOCUMENT_POSITION_FOLLOWING && block.compareDocumentPosition(root.querySelector('.project-cover'))===Node.DOCUMENT_POSITION_FOLLOWING,
+        overflow:[block,label,list,...list.children].some(el=>el.scrollWidth>el.clientWidth+1),
+        linesBelow:rect(label).bottom<rect(list).top,
+      };
+    })()`)
+    if (index === 4) {
+      assert.equal(awards.label, 'AWARD · 獲獎紀錄')
+      assert.deepEqual(awards.iconSize, [18, 18])
+      assert.deepEqual(awards.colors, ['rgb(167, 31, 36)', 'rgb(167, 31, 36)', 'rgb(0, 0, 0)'])
+      assert.deepEqual(awards.weights, ['500', '500'])
+      assert.deepEqual(awards.sizes, ['12px', '16px'])
+      assert.ok(awards.undecorated && awards.centered && awards.ordered && awards.linesBelow)
+      assert.ok(!awards.overflow, '獎項自然換行且不溢出')
+    } else assert.equal(awards, null, '沒有獎項時不產生標籤、圖示或空白區塊')
     const contentMedia = await evaluate(`(() => {
       const root=document.querySelector('.project-detail--modal');
       const rect=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,width:r.width}};
       return [...root.querySelectorAll('.project-section-item > .project-section-media,.project-image-group')].map(el=>({
         rect:rect(el),text:rect(el.parentElement.querySelector('.project-item-text')),
-        variant:el.classList.contains('project-section-media--phone')?340:el.classList.contains('project-section-media--qr-code')?200:null,
+        variant:el.classList.contains('project-section-media--phone')?340:el.matches('.project-section-media--qr-code,.project-section-media--logo')?200:null,
       }));
     })()`)
     for (const media of contentMedia) {
@@ -356,7 +381,7 @@ try {
         detail.chapters.map((chapter) => [chapter.number, chapter.title, chapter.subtitle]),
         [
           ['SECTION 01', '設計理念', 'DESIGN CONCEPT'],
-          ['SECTION 02', '網站介紹', 'WEBSITE OVERVIEW'],
+          ['SECTION 02', '作品介紹', 'PROJECT OVERVIEW'],
         ],
       )
       assert.deepEqual(
@@ -370,7 +395,7 @@ try {
       assert.ok(detail.media.bottom <= detail.chapters[0].rect.top, '封面接續設計理念')
       assert.ok(
         detail.chapters[0].rect.bottom < detail.chapters[1].rect.top,
-        '設計理念接續網站介紹',
+        '設計理念接續作品介紹',
       )
       assert.deepEqual(
         detail.chapters.map((chapter) => chapter.items.length),
@@ -478,7 +503,7 @@ try {
         detail.chapters.map((chapter) => [chapter.number, chapter.title, chapter.subtitle]),
         [
           ['SECTION 01', '設計理念', 'DESIGN CONCEPT'],
-          ['SECTION 02', '機器人介紹', 'LINE BOT OVERVIEW'],
+          ['SECTION 02', '作品介紹', 'PROJECT OVERVIEW'],
         ],
       )
       assert.deepEqual(
@@ -684,12 +709,105 @@ try {
       )
       assert.deepEqual(
         detail.chapters.map((chapter) => chapter.items.length),
-        [1, 1],
+        [3, 5],
       )
-      assert.equal((detail.text.match(/內容準備中/g) ?? []).length, 2)
-      for (const chapter of detail.chapters) {
-        assert.equal(chapter.items[0].media.length, 0)
-        assert.equal(chapter.items[0].children.at(-1).content, '內容準備中')
+      assert.ok(!detail.text.includes('內容準備中'))
+      assert.deepEqual(
+        detail.chapters[0].items.map((item) => item.label),
+        ['INSIGHT — 設計洞察', 'CONCEPT — 設計概念', 'GOAL — 設計目標'],
+      )
+      const noodle = await evaluate(`(() => {
+        const root=document.querySelector('.project-detail--modal');
+        const catalog=root.querySelector('.project-catalog');
+        const grid=catalog.querySelector('.project-catalog-groups');
+        const rect=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}};
+        return {
+          award:root.querySelector('.project-awards-list').textContent.trim(),
+          title:catalog.previousElementSibling.querySelector('.project-item-title').textContent,
+          columns:getComputedStyle(grid).gridTemplateColumns.split(' ').length,
+          containerWidth:catalog.clientWidth,
+          duplicateGrid:!!catalog.parentElement.querySelector('.project-image-group'),
+          soap:[...catalog.querySelectorAll('img')].map(img=>img.src.split('/').at(-1)),
+          groups:[...catalog.querySelectorAll('.project-catalog-group')].map(group=>({
+            title:group.querySelector('.project-catalog-group-title').textContent,
+            heading:group.querySelector('.project-catalog-group-title').tagName,
+            rect:rect(group),
+            items:[...group.querySelectorAll('.project-catalog-item')].map(item=>({
+              rect:rect(item),image:rect(item.querySelector('img')),text:rect(item.querySelector('.project-catalog-text')),
+              title:item.querySelector('.project-catalog-item-title').textContent,
+              heading:item.querySelector('.project-catalog-item-title').tagName,
+              description:item.querySelector('p').textContent,
+              size:getComputedStyle(item.querySelector('p')).fontSize,
+              lineHeight:getComputedStyle(item.querySelector('p')).lineHeight,
+              columns:getComputedStyle(item).gridTemplateColumns.split(' ').length,
+              overflow:[item,...item.querySelectorAll('*')].some(el=>el.scrollWidth>el.clientWidth+1),
+            })),
+          })),
+          blocks:[...root.querySelectorAll('.project-content-block .project-item-label')].map(el=>el.textContent),
+          images:[...root.querySelectorAll('img')].map(img=>({loaded:img.complete && img.naturalWidth>0,
+            declared:[Number(img.getAttribute('width')),Number(img.getAttribute('height'))],
+            natural:[img.naturalWidth,img.naturalHeight],fit:getComputedStyle(img).objectFit})),
+          logo:root.querySelector('.project-section-media--logo img').clientWidth,
+          website:!!root.querySelector('.project-website-link'),
+        };
+      })()`)
+      assert.equal(noodle.award, '文創之星｜創意概念組・傳承創新 金獎')
+      assert.equal(noodle.title, '麵食造型肥皂圖鑑')
+      assert.equal(noodle.columns, noodle.containerWidth >= 640 ? 2 : 1)
+      assert.ok(!noodle.duplicateGrid, '圖鑑不重複顯示原本圖片網格')
+      assert.deepEqual(
+        noodle.groups.map((group) => [group.title, group.items.length]),
+        [
+          ['古早味系列肥皂', 2],
+          ['傳統節慶系列肥皂', 3],
+        ],
+      )
+      const [firstGroup, secondGroup] = noodle.groups
+      if (noodle.columns === 2) {
+        assert.ok(Math.abs(firstGroup.rect.top - secondGroup.rect.top) < 1, '系列標題頂端對齊')
+        assert.ok(Math.abs(firstGroup.rect.width - secondGroup.rect.width) < 1, '系列等寬')
+        assert.ok(firstGroup.rect.right < secondGroup.rect.left)
+      } else assert.ok(firstGroup.rect.bottom < secondGroup.rect.top, '完整古早味系列先於節慶系列')
+      for (const group of noodle.groups) {
+        assert.equal(group.heading, 'H5')
+        for (const product of group.items) {
+          assert.equal(product.heading, 'H6')
+          assert.ok(product.title && product.description.trim())
+          assert.equal(product.size, '16px')
+          assert.equal(product.lineHeight, '28px')
+          assert.ok(!product.overflow, '圖鑑文字與圖片無水平溢出')
+          assert.ok(Math.abs(product.image.width - 112) < 1, '五張圖片顯示寬度一致')
+          assert.equal(product.columns, group.rect.width >= 288 ? 2 : 1)
+          if (product.columns === 2) {
+            assert.ok(product.image.right < product.text.left, '左圖右文')
+            assert.ok(
+              Math.abs(
+                product.image.top +
+                  product.image.height / 2 -
+                  product.text.top -
+                  product.text.height / 2,
+              ) < 1,
+              '圖文垂直置中',
+            )
+          } else assert.ok(product.image.bottom < product.text.top, '窄容器改成上圖下文')
+        }
+      }
+      assert.deepEqual(noodle.soap, [
+        'soap-yangchun-noodle.png',
+        'soap-danzai-noodle.png',
+        'soap-dumpling.png',
+        'soap-winter-solstice-tangyuan.png',
+        'soap-grain-rain-noodle.png',
+      ])
+      assert.deepEqual(noodle.blocks, [
+        'AWARD — 獲獎紀錄',
+        'MEDIA — 媒體採訪',
+        'EXHIBITION — 實體展示與交流',
+      ])
+      assert.ok(!noodle.website && noodle.logo <= 200)
+      for (const image of noodle.images) {
+        assert.ok(image.loaded && image.fit === 'contain')
+        assert.deepEqual(image.declared, image.natural)
       }
     }
     for (const element of [
@@ -987,11 +1105,22 @@ try {
               Buffer.from(data, 'base64'),
             )
             if (height > 500) {
+              for (const group of [0, 1]) {
+                await evaluate(
+                  `(() => {const panel=document.querySelector('.project-modal-panel'),group=document.querySelectorAll('.project-catalog-group')[${group}];panel.scrollTo({top:panel.scrollTop+group.getBoundingClientRect().top-panel.getBoundingClientRect().top,behavior:'instant'})})()`,
+                )
+                await delay(150)
+                const { data } = await cdp('Page.captureScreenshot', { format: 'png' })
+                await writeFile(
+                  join(output, `${width}x${height}-catalog-${group + 1}.png`),
+                  Buffer.from(data, 'base64'),
+                )
+              }
               await evaluate(`document.querySelector('.project-modal-panel').scrollTop=100000`)
               await delay(150)
               const { data } = await cdp('Page.captureScreenshot', { format: 'png' })
               await writeFile(
-                join(output, `${width}x${height}-placeholder-chapters.png`),
+                join(output, `${width}x${height}-achievements.png`),
                 Buffer.from(data, 'base64'),
               )
             }

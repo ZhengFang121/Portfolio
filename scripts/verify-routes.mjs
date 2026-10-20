@@ -94,8 +94,8 @@ try {
   assert.equal(projects[0].sections.length, 2)
   assert.equal(designConcept.label, 'SECTION 01')
   assert.equal(projects[0].sections[1].label, 'SECTION 02')
-  assert.equal(projects[0].sections[1].title, '網站介紹')
-  assert.equal(projects[0].sections[1].subtitle, 'WEBSITE OVERVIEW')
+  assert.equal(projects[0].sections[1].title, '作品介紹')
+  assert.equal(projects[0].sections[1].subtitle, 'PROJECT OVERVIEW')
   assert.equal(designConcept.id, 'design-concept')
   assert.equal(designConcept.title, '設計理念')
   assert.equal(designConcept.subtitle, 'DESIGN CONCEPT')
@@ -133,16 +133,68 @@ try {
       ),
     )
   }
-  for (const project of projects.slice(4)) {
-    assert.equal(project.sections[1].title, '作品介紹')
-    assert.equal(project.sections[1].subtitle, 'PROJECT OVERVIEW')
-    for (const section of project.sections) {
-      assert.equal(section.content, null)
-      assert.equal(section.items.length, 1)
-      assert.equal(section.items[0].content, null)
-      assert.ok(!section.items[0].media && !section.items[0].paragraphs)
-    }
-  }
+  const noodle = projects[4]
+  assert.equal(noodle.summary, '台灣麵食文化主題肥皂設計')
+  assert.deepEqual(
+    noodle.sections.map((section) => section.items.length),
+    [3, 5],
+  )
+  assert.deepEqual(
+    noodle.sections[0].items.map((item) => item.label),
+    ['INSIGHT — 設計洞察', 'CONCEPT — 設計概念', 'GOAL — 設計目標'],
+  )
+  assert.equal(noodle.sections[0].items[1].paragraphs.length, 2)
+  assert.deepEqual(noodle.awards, [
+    {
+      name: '文創之星',
+      category: '創意概念組・傳承創新',
+      recognition: '金獎',
+    },
+  ])
+  assert.equal(noodle.sections[1].items[0].media.variant, 'logo')
+  const catalogSection = noodle.sections[1].items[1]
+  assert.equal(catalogSection.title, '麵食造型肥皂圖鑑')
+  assert.equal(catalogSection.imageLayout, undefined)
+  assert.equal(catalogSection.images, undefined)
+  assert.deepEqual(
+    catalogSection.catalog.map((group) => [group.title, group.items.length]),
+    [
+      ['古早味系列肥皂', 2],
+      ['傳統節慶系列肥皂', 3],
+    ],
+  )
+  assert.deepEqual(
+    catalogSection.catalog.flatMap((group) => group.items.map((item) => item.title)),
+    [
+      '01｜陽春麵的寬麵皂',
+      '02｜擔仔麵的油麵皂',
+      '03｜新年水餃皂',
+      '04｜冬至湯圓皂',
+      '05｜穀雨麵線皂',
+    ],
+  )
+  assert.deepEqual(
+    catalogSection.catalog.flatMap((group) =>
+      group.items.map((item) => item.image.src.split('/').at(-1)),
+    ),
+    [
+      'soap-yangchun-noodle.png',
+      'soap-danzai-noodle.png',
+      'soap-dumpling.png',
+      'soap-winter-solstice-tangyuan.png',
+      'soap-grain-rain-noodle.png',
+    ],
+  )
+  assert.deepEqual(
+    noodle.sections[1].items[4].blocks.map((block) => block.id),
+    ['award', 'media', 'exhibition'],
+  )
+  assert.deepEqual(
+    noodle.sections[1].items[4].blocks
+      .flatMap((block) => block.images ?? [])
+      .map((image) => image.src.split('/').at(-1)),
+    ['exhibition-03.jpg', 'exhibition-01.JPG', 'exhibition-02.jpg'],
+  )
   const brandImages = [
     [
       'drip-bag.webp',
@@ -206,8 +258,8 @@ try {
     )
   }
   const papago = projects[1]
-  assert.equal(papago.sections[1].title, '機器人介紹')
-  assert.equal(papago.sections[1].subtitle, 'LINE BOT OVERVIEW')
+  assert.equal(papago.sections[1].title, '作品介紹')
+  assert.equal(papago.sections[1].subtitle, 'PROJECT OVERVIEW')
   assert.deepEqual(
     papago.sections.map((section) => section.items.length),
     [3, 6],
@@ -259,6 +311,29 @@ try {
             ),
           )
         }
+        for (const group of item.catalog ?? []) {
+          const groupId = `${project.slug}-modal-${section.id}-${item.id}-${group.id}`
+          assert.match(modalContent, new RegExp(`<h5[^>]*id="${groupId}"`))
+          assert.ok(modalContent.includes(group.title))
+          for (const product of group.items) {
+            const image = product.image
+            await access(new URL(`../public${image.src}`, import.meta.url))
+            assert.ok(image.alt && image.width > 0 && image.height > 0)
+            assert.ok(product.description && modalContent.includes(product.description))
+            assert.ok(modalContent.includes(`<h6 class="project-catalog-item-title"`))
+            assert.ok(modalContent.includes(product.title))
+            assert.equal(
+              modalContent.split(`src="${image.src}"`).length - 1,
+              1,
+              '圖鑑圖片只出現一次',
+            )
+            assert.ok(
+              modalContent.includes(
+                `alt="${image.alt}" width="${image.width}" height="${image.height}" loading="lazy"`,
+              ),
+            )
+          }
+        }
         if (item.images?.length && item.media)
           assert.ok(
             modalContent.indexOf(`src="${item.media.src}"`) <
@@ -272,14 +347,32 @@ try {
           )
       }
     }
+    assert.equal(modalContent.includes('class="project-awards"'), Boolean(project.awards?.length))
+    if (project.awards?.length) {
+      assert.ok(modalContent.indexOf('project-categories') < modalContent.indexOf('project-awards'))
+      assert.ok(modalContent.indexOf('project-awards') < modalContent.indexOf('project-cover'))
+      assert.ok(modalContent.includes('文創之星｜創意概念組・傳承創新 金獎'))
+    }
+    for (const item of project.sections.flatMap((section) => section.items ?? [section])) {
+      for (const block of item.blocks ?? []) {
+        assert.ok(modalContent.includes(block.label) && modalContent.includes(block.content))
+        for (const image of block.images ?? []) {
+          await access(new URL(`../public${image.src}`, import.meta.url))
+          assert.ok(image.alt && image.width > 0 && image.height > 0)
+          assert.ok(
+            modalContent.indexOf(block.content) < modalContent.indexOf(`src="${image.src}"`),
+          )
+        }
+      }
+    }
     const ids = [...modalContent.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1])
     assert.equal(new Set(ids).size, ids.length, '章節與子段落的標題 ID 唯一')
     const renderedSections = [...modalContent.matchAll(/<section\b[^>]*>(.*?)<\/section>/gs)]
     assert.equal(renderedSections.length, project.sections.length)
     if (project === projects[0]) {
       assert.ok(modalContent.indexOf('class="project-cover"') < modalContent.indexOf('設計理念'))
-      assert.ok(modalContent.indexOf('設計理念') < modalContent.indexOf('網站介紹'))
-      assert.ok(modalContent.indexOf('網站介紹') < modalContent.indexOf('序章動畫'))
+      assert.ok(modalContent.indexOf('設計理念') < modalContent.indexOf('作品介紹'))
+      assert.ok(modalContent.indexOf('作品介紹') < modalContent.indexOf('序章動畫'))
       assert.equal((modalContent.match(/class="project-chapter-heading"/g) ?? []).length, 2)
       for (const paragraph of expectedConceptParagraphs) assert.ok(modalContent.includes(paragraph))
       assert.ok(modalContent.includes('START・GROW・WITH YOU'))
@@ -295,15 +388,18 @@ try {
     } else {
       assert.equal((modalContent.match(/class="project-chapter-heading"/g) ?? []).length, 2)
       assert.ok(modalContent.includes('SECTION 01') && modalContent.includes('SECTION 02'))
-      assert.equal(
-        (modalContent.match(/內容準備中/g) ?? []).length,
-        project === projects[4] ? 2 : 0,
-      )
+      assert.equal((modalContent.match(/內容準備中/g) ?? []).length, 0)
       assert.equal(
         (modalContent.match(/class="[^"]*\bproject-image-group(?: [^"]*)?"/g) ?? []).length,
         project.sections
           .flatMap((section) => section.items ?? [section])
-          .filter((item) => item.images?.length).length,
+          .reduce(
+            (count, item) =>
+              count +
+              Number(Boolean(item.images?.length)) +
+              (item.blocks ?? []).filter((block) => block.images?.length).length,
+            0,
+          ),
       )
       if (project === papago) {
         assert.equal((modalContent.match(/project-section-media--phone/g) ?? []).length, 4)
@@ -333,6 +429,8 @@ try {
           !item.tagline &&
           !item.media &&
           !item.images?.length &&
+          !item.catalog?.length &&
+          !item.blocks?.length &&
           !item.flow &&
           !item.links?.length &&
           !item.note
@@ -446,6 +544,21 @@ try {
     assert.equal(html.includes('class="project-image-group"'), Boolean(images?.length))
     assert.equal(html.includes('內容準備中'), !images?.length)
     assert.equal(html.includes('project-item-text'), !images?.length)
+  }
+  // 圖鑑可獨立構成有效內容；空值不產生空版面。
+  for (const catalog of [undefined, [], catalogSection.catalog]) {
+    const html = await renderToString(
+      createSSRApp(ProjectDetail, {
+        mode: 'modal',
+        project: {
+          ...noodle,
+          sections: [{ id: 'catalog', title: '圖鑑', catalog }],
+        },
+      }),
+    )
+    assert.equal(html.includes('class="project-catalog"'), Boolean(catalog?.length))
+    assert.equal(html.includes('內容準備中'), !catalog?.length)
+    assert.equal(html.includes('project-item-text'), !catalog?.length)
   }
   const optionalChapterHtml = await renderToString(
     createSSRApp(ProjectDetail, {
@@ -670,6 +783,8 @@ try {
               !item.tagline &&
               !item.media &&
               !item.images?.length &&
+              !item.catalog?.length &&
+              !item.blocks?.length &&
               !item.flow &&
               !item.links?.length &&
               !item.note,

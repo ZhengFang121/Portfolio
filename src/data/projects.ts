@@ -5,6 +5,34 @@ export interface ProjectImage {
   height?: number
 }
 
+export interface ProjectCatalogItem {
+  id: string
+  title: string
+  description: string
+  image: ProjectImage
+}
+
+export interface ProjectCatalogGroup {
+  id: string
+  title: string
+  items: ProjectCatalogItem[]
+}
+
+// 同一子段落可依序穿插文字與圖片，不必增加主要章節。
+export interface ProjectContentBlock {
+  id: string
+  label: string
+  title?: string
+  content: string
+  images?: ProjectImage[]
+}
+
+export interface ProjectAward {
+  name: string
+  category: string
+  recognition: string
+}
+
 export interface ProjectSection {
   id: string
   title: string
@@ -21,10 +49,12 @@ export interface ProjectSection {
     | { type: 'video'; src: string; poster?: string }
     | (ProjectImage & {
         type: 'image'
-        variant?: 'default' | 'phone' | 'qr-code'
+        variant?: 'default' | 'phone' | 'qr-code' | 'logo'
       })
   images?: ProjectImage[]
   imageLayout?: 'card-grid'
+  catalog?: ProjectCatalogGroup[]
+  blocks?: ProjectContentBlock[]
 }
 export interface PortfolioProject {
   slug: string
@@ -35,31 +65,11 @@ export interface PortfolioProject {
   role: string | null
   summary: string | null
   websiteUrl?: string
+  awards?: ProjectAward[]
   cover: { src: string; alt: string; width: number; height: number } | null
   sections: ProjectSection[]
 }
-// 每次建立獨立的章節資料，未來補作品內容時不會連動到其他作品。
-function createPlaceholderSections(): ProjectSection[] {
-  return [
-    {
-      id: 'design-concept',
-      label: 'SECTION 01',
-      title: '設計理念',
-      subtitle: 'DESIGN CONCEPT',
-      content: null,
-      items: [{ id: 'concept', label: 'CONCEPT', title: '理念說明', content: null }],
-    },
-    {
-      id: 'project-overview',
-      label: 'SECTION 02',
-      title: '作品介紹',
-      subtitle: 'PROJECT OVERVIEW',
-      content: null,
-      items: [{ id: 'overview', label: '01 / PROJECT', title: '作品內容', content: null }],
-    },
-  ]
-}
-// 保留既有 slug，讓已分享的作品網址繼續有效；未提供的介紹內容維持占位。
+// 保留既有 slug，讓已分享的作品網址繼續有效。
 export const projects: PortfolioProject[] = [
   {
     slug: 'project-01',
@@ -676,13 +686,247 @@ export const projects: PortfolioProject[] = [
     designYear: '2017',
     year: null,
     role: null,
-    summary: '台灣麵食主題肥皂',
+    summary: '台灣麵食文化主題肥皂設計',
+    awards: [
+      {
+        name: '文創之星',
+        category: '創意概念組・傳承創新',
+        recognition: '金獎',
+      },
+    ],
     cover: {
       src: '/images/projects/chu-ci-jian-mian/cover.jpg',
       alt: '初次見麵 作品封面',
       width: 3508,
       height: 2480,
     },
-    sections: createPlaceholderSections(),
+    sections: [
+      {
+        id: 'design-concept',
+        label: 'SECTION 01',
+        title: '設計理念',
+        subtitle: 'DESIGN CONCEPT',
+        items: [
+          {
+            id: 'insight',
+            label: 'INSIGHT — 設計洞察',
+            title: '熟悉的台灣麵食，承載著生活與文化的記憶。',
+            content:
+              '台灣麵食不僅是日常飲食的一部分，也蘊含各地的飲食特色與傳統節慶文化。如何透過不同的設計形式，讓人重新認識這些熟悉的文化元素，是本次創作的起點。',
+          },
+          {
+            id: 'concept',
+            label: 'CONCEPT — 設計概念',
+            title: '當台灣麵食遇上肥皂，讓文化融入日常。',
+            paragraphs: [
+              '以台灣麵食文化為靈感，將陽春麵、擔仔麵、水餃、湯圓與麵線轉化為五款造型肥皂，並結合品牌識別與系列包裝設計。',
+              '透過麵食的外觀、線條、觸感與氣味，讓使用者在日常生活中，以不同的感官重新體驗台灣麵食文化。',
+            ],
+            media: {
+              type: 'image',
+              src: '/images/projects/chu-ci-jian-mian/soap-in-use.jpg',
+              alt: '初次見麵麵食造型肥皂的使用情境',
+              width: 3543,
+              height: 2657,
+            },
+          },
+          {
+            id: 'goal',
+            label: 'GOAL — 設計目標',
+            title: '讓日常用品，成為傳遞文化與記憶的媒介。',
+            content:
+              '藉由趣味化的產品設計，讓台灣麵食不再只是餐桌上的食物，而是能被觀看、觸摸與使用的文化創意商品，喚起人們對台灣傳統飲食的熟悉感與美好記憶。',
+          },
+        ],
+      },
+      {
+        id: 'project-overview',
+        label: 'SECTION 02',
+        title: '作品介紹',
+        subtitle: 'PROJECT OVERVIEW',
+        items: [
+          {
+            id: 'brand-identity',
+            label: '01 / BRAND IDENTITY',
+            title: '品牌識別',
+            content:
+              '「初次見麵」以台灣麵食文化為主題，透過具有書寫感的文字設計，建立品牌識別，並將傳統飲食意象延伸至產品與包裝視覺。',
+            media: {
+              type: 'image',
+              variant: 'logo',
+              src: '/images/projects/chu-ci-jian-mian/logo.png',
+              alt: '初次見麵品牌識別：具有書寫感的文字標誌',
+              width: 1300,
+              height: 1831,
+            },
+          },
+          {
+            id: 'product-design',
+            label: '02 / PRODUCT DESIGN',
+            title: '麵食造型肥皂圖鑑',
+            content:
+              '從台灣日常麵食與傳統節慶中汲取靈感，將陽春麵、擔仔麵、水餃、湯圓與麵線轉化為五款造型肥皂，透過外觀、觸感與使用體驗，賦予熟悉的飲食文化全新樣貌。',
+            catalog: [
+              {
+                id: 'traditional-flavors',
+                title: '古早味系列肥皂',
+                items: [
+                  {
+                    id: 'yangchun-noodle',
+                    title: '01｜陽春麵的寬麵皂',
+                    description:
+                      '陽春麵是一種不加上其他菜餚配料的簡單湯麵，常見搭配的麵條為寬麵。將樸實的麵條造型轉化為肥皂，呈現台灣日常飲食的熟悉樣貌。',
+                    image: {
+                      src: '/images/projects/chu-ci-jian-mian/soap-yangchun-noodle.png',
+                      alt: '雙手捧著陽春麵的寬麵造型肥皂',
+                      width: 1438,
+                      height: 1876,
+                    },
+                  },
+                  {
+                    id: 'danzai-noodle',
+                    title: '02｜擔仔麵的油麵皂',
+                    description:
+                      '擔仔麵是發源於台南的傳統小吃，「擔仔」在台語中有挑扁擔之意。以油麵的捲曲線條為靈感，呈現具有地方特色的肥皂造型。',
+                    image: {
+                      src: '/images/projects/chu-ci-jian-mian/soap-danzai-noodle.png',
+                      alt: '雙手捧著擔仔麵的油麵造型肥皂',
+                      width: 1402,
+                      height: 1769,
+                    },
+                  },
+                ],
+              },
+              {
+                id: 'traditional-festivals',
+                title: '傳統節慶系列肥皂',
+                items: [
+                  {
+                    id: 'dumpling',
+                    title: '03｜新年水餃皂',
+                    description:
+                      '台灣新年有吃水餃的習俗，因水餃的形狀如同元寶，象徵吉祥與富貴。將這份年節祝福轉化為造型肥皂。',
+                    image: {
+                      src: '/images/projects/chu-ci-jian-mian/soap-dumpling.png',
+                      alt: '雙手捧著新年水餃造型肥皂',
+                      width: 1426,
+                      height: 1852,
+                    },
+                  },
+                  {
+                    id: 'winter-solstice-tangyuan',
+                    title: '04｜冬至湯圓皂',
+                    description:
+                      '冬至是二十四節氣之一，吃湯圓有團圓及象徵年長一歲的意涵。以粉白相間的湯圓造型，喚起熟悉的節慶記憶。',
+                    image: {
+                      src: '/images/projects/chu-ci-jian-mian/soap-winter-solstice-tangyuan.png',
+                      alt: '雙手捧著粉白相間的冬至湯圓造型肥皂',
+                      width: 1417,
+                      height: 1775,
+                    },
+                  },
+                  {
+                    id: 'grain-rain-noodle',
+                    title: '05｜穀雨麵線皂',
+                    description:
+                      '取材自穀雨節氣與傳統孝親文化，以麵線作為創作元素，將祝福與敬親的文化意涵融入造型肥皂。',
+                    image: {
+                      src: '/images/projects/chu-ci-jian-mian/soap-grain-rain-noodle.png',
+                      alt: '雙手捧著穀雨麵線造型肥皂',
+                      width: 1463,
+                      height: 1936,
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            id: 'packaging-design',
+            label: '03 / PACKAGING DESIGN',
+            title: '系列包裝設計',
+            content:
+              '以台灣傳統飲食文化為設計元素，結合插畫、產品標籤與系列圖紋，將麵食造型肥皂延伸為完整的包裝設計，呈現具有在地特色的品牌視覺。',
+            media: {
+              type: 'image',
+              src: '/images/projects/chu-ci-jian-mian/packaging-collection.jpg',
+              alt: '初次見麵麵食造型肥皂系列包裝、插畫與產品標籤',
+              width: 2048,
+              height: 1365,
+            },
+          },
+          {
+            id: 'brand-photography',
+            label: '04 / BRAND PHOTOGRAPHY',
+            title: '品牌形象照',
+            content:
+              '透過產品陳列、攝影構圖與色彩搭配，呈現麵食造型肥皂的系列特色，讓產品設計與品牌包裝形成完整的視覺體驗。',
+            images: [
+              {
+                src: '/images/projects/chu-ci-jian-mian/brand-photo-01.jpg',
+                alt: '初次見麵品牌形象照 01：麵食造型肥皂與品牌包裝陳列',
+                width: 3508,
+                height: 2480,
+              },
+              {
+                src: '/images/projects/chu-ci-jian-mian/brand-photo-02.jpg',
+                alt: '初次見麵品牌形象照 02：系列產品與包裝攝影',
+                width: 2362,
+                height: 1670,
+              },
+            ],
+          },
+          {
+            id: 'achievements-media',
+            label: '05 / ACHIEVEMENTS & MEDIA',
+            title: '成果與肯定',
+            blocks: [
+              {
+                id: 'award',
+                label: 'AWARD — 獲獎紀錄',
+                title: '文創之星｜創意概念組・傳承創新 金獎',
+                content:
+                  '「初次見麵」以台灣麵食文化為創作核心，將傳統飲食元素轉化為具有實用性與文化意涵的造型肥皂，獲得金獎肯定。',
+              },
+              {
+                id: 'media',
+                label: 'MEDIA — 媒體採訪',
+                title: '《創藝多腦河》節目採訪',
+                content:
+                  '作品曾接受《創藝多腦河》節目採訪，透過媒體呈現「初次見麵」的設計理念與創作成果。',
+                images: [
+                  {
+                    src: '/images/projects/chu-ci-jian-mian/exhibition-03.jpg',
+                    alt: '初次見麵接受《創藝多腦河》電視節目採訪的紀錄照片',
+                    width: 1181,
+                    height: 737,
+                  },
+                ],
+              },
+              {
+                id: 'exhibition',
+                label: 'EXHIBITION — 實體展示與交流',
+                content:
+                  '透過實體作品展示，向觀眾介紹產品造型、設計理念與台灣麵食文化的連結，呈現從概念發想到實際成果的完整設計過程。',
+                images: [
+                  {
+                    src: '/images/projects/chu-ci-jian-mian/exhibition-01.JPG',
+                    alt: '初次見麵實體作品展示與交流紀錄 01',
+                    width: 1181,
+                    height: 1608,
+                  },
+                  {
+                    src: '/images/projects/chu-ci-jian-mian/exhibition-02.jpg',
+                    alt: '初次見麵實體作品展示與交流紀錄 02',
+                    width: 1181,
+                    height: 821,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
   },
 ]

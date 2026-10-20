@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, useTemplateRef, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import { ArrowLeft, ArrowRight, ExternalLink, Pause, Play } from '@lucide/vue'
+import { ArrowLeft, ArrowRight, Award, ExternalLink, Pause, Play } from '@lucide/vue'
 import BaseButton from './BaseButton.vue'
 import ProjectCategories from './ProjectCategories.vue'
 import type { PortfolioProject, ProjectSection } from '../data/projects'
@@ -186,6 +186,8 @@ function hasItemContent(item: ProjectSection) {
     item.tagline ||
     item.media ||
     item.images?.length ||
+    item.catalog?.length ||
+    item.blocks?.length ||
     item.flow?.steps.length ||
     item.links?.length ||
     item.note,
@@ -221,6 +223,22 @@ function hasItemContent(item: ProjectSection) {
         :single-line="mode === 'modal'"
       />
       <p v-else class="muted">作品類型待提供</p>
+      <div
+        v-if="project.awards?.length"
+        class="project-awards"
+        role="group"
+        aria-label="作品獲獎資訊"
+      >
+        <p class="project-awards-label">
+          <Award :size="18" aria-hidden="true" />
+          <span>AWARD · 獲獎紀錄</span>
+        </p>
+        <ul class="project-awards-list">
+          <li v-for="award in project.awards" :key="`${award.name}-${award.category}`">
+            {{ award.name }}｜{{ award.category }} {{ award.recognition }}
+          </li>
+        </ul>
+      </div>
       <img
         v-if="project.cover"
         class="project-cover"
@@ -228,6 +246,7 @@ function hasItemContent(item: ProjectSection) {
         :alt="project.cover.alt"
         :width="project.cover.width"
         :height="project.cover.height"
+        loading="lazy"
       />
       <div v-else class="placeholder-media">作品主視覺待提供</div>
     </header>
@@ -290,6 +309,8 @@ function hasItemContent(item: ProjectSection) {
                 item.media.type === 'image' && item.media.variant === 'phone',
               'project-section-media--qr-code':
                 item.media.type === 'image' && item.media.variant === 'qr-code',
+              'project-section-media--logo':
+                item.media.type === 'image' && item.media.variant === 'logo',
             }"
           >
             <template v-if="item.media.type === 'video'">
@@ -347,6 +368,69 @@ function hasItemContent(item: ProjectSection) {
               />
             </div>
           </div>
+          <div v-if="item.catalog?.length" class="project-catalog">
+            <div class="project-catalog-groups">
+              <div
+                v-for="group in item.catalog"
+                :key="group.id"
+                class="project-catalog-group"
+                role="group"
+                :aria-labelledby="sectionId(`${item.id}-${group.id}`, section.id)"
+              >
+                <component
+                  :is="mode === 'modal' ? 'h5' : 'h4'"
+                  :id="sectionId(`${item.id}-${group.id}`, section.id)"
+                  class="project-catalog-group-title"
+                  >{{ group.title }}</component
+                >
+                <ul class="project-catalog-items">
+                  <li v-for="product in group.items" :key="product.id" class="project-catalog-item">
+                    <img
+                      class="project-catalog-image"
+                      :src="product.image.src"
+                      :alt="product.image.alt"
+                      :width="product.image.width"
+                      :height="product.image.height"
+                      loading="lazy"
+                    />
+                    <div class="project-catalog-text">
+                      <component
+                        :is="mode === 'modal' ? 'h6' : 'h5'"
+                        class="project-catalog-item-title"
+                        >{{ product.title }}</component
+                      >
+                      <p class="project-item-body">{{ product.description }}</p>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div v-if="item.blocks?.length" class="project-content-blocks">
+            <div v-for="block in item.blocks" :key="block.id" class="project-content-block stack">
+              <div class="project-item-text stack">
+                <p class="project-item-label">{{ block.label }}</p>
+                <component
+                  :is="mode === 'modal' ? 'h5' : 'h4'"
+                  v-if="block.title"
+                  class="project-block-title"
+                  >{{ block.title }}</component
+                >
+                <p class="project-item-body">{{ block.content }}</p>
+              </div>
+              <div v-if="block.images?.length" class="project-image-group">
+                <div v-for="image in block.images" :key="image.src" class="project-section-media">
+                  <img
+                    :src="image.src"
+                    :alt="image.alt"
+                    :width="image.width"
+                    :height="image.height"
+                    loading="lazy"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
           <ol
             v-if="item.flow?.steps.length"
             class="project-item-flow"
@@ -393,6 +477,38 @@ function hasItemContent(item: ProjectSection) {
     min-inline-size: 0;
     padding-block-end: var(--space-6);
   }
+  .project-awards {
+    display: grid;
+    justify-self: center;
+    gap: var(--space-2);
+    min-inline-size: 0;
+    max-inline-size: min(100%, var(--layout-text-width));
+    font-weight: var(--font-weight-medium);
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+  .project-awards-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    color: var(--palette-red);
+    font-size: var(--font-size-sm);
+  }
+  .project-awards-list {
+    display: grid;
+    gap: var(--space-2);
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--palette-black);
+    font-size: var(--font-size-md);
+    text-wrap: balance;
+  }
+  .project-awards svg {
+    flex-shrink: 0;
+  }
   .project-section {
     row-gap: var(--space-8);
     min-inline-size: 0;
@@ -400,15 +516,19 @@ function hasItemContent(item: ProjectSection) {
   }
   .project-section-items,
   .project-section-item,
-  .project-item-text {
+  .project-item-text,
+  .project-content-blocks,
+  .project-content-block {
     min-inline-size: 0;
     width: 100%;
   }
-  .project-section-items {
+  .project-section-items,
+  .project-content-blocks {
     display: grid;
     gap: var(--space-12);
   }
-  .project-section-item {
+  .project-section-item,
+  .project-content-block {
     gap: var(--space-6);
   }
   .project-item-text {
@@ -468,6 +588,76 @@ function hasItemContent(item: ProjectSection) {
   .project-section-media--video {
     position: relative;
   }
+  /* 圖鑑以實際閱讀寬度換欄；系列與單項產品各自判斷可用空間。 */
+  .project-catalog {
+    container: project-catalog / inline-size;
+    width: min(100%, var(--layout-text-width));
+    min-inline-size: 0;
+    margin-inline: auto;
+    text-align: left;
+  }
+  .project-catalog-groups {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-12) var(--space-8);
+    align-items: start;
+  }
+  .project-catalog-group {
+    container: project-catalog-group / inline-size;
+    min-inline-size: 0;
+  }
+  .project-catalog-group-title,
+  .project-catalog-item-title {
+    font-family: var(--font-family-heading);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-heading);
+    letter-spacing: var(--letter-spacing-heading);
+    overflow-wrap: anywhere;
+  }
+  .project-catalog-group-title {
+    margin-block-end: var(--space-6);
+    font-size: var(--font-size-lg);
+  }
+  .project-catalog-item-title {
+    font-size: var(--font-size-md);
+  }
+  .project-catalog-items {
+    display: grid;
+    gap: var(--space-8);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .project-catalog-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-4);
+    min-inline-size: 0;
+  }
+  .project-catalog-image {
+    display: block;
+    width: 7rem;
+    max-inline-size: 100%;
+    height: auto;
+    object-fit: contain;
+  }
+  .project-catalog-text {
+    display: grid;
+    gap: var(--space-2);
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+  @container project-catalog (min-width: 40rem) {
+    .project-catalog-groups {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @container project-catalog-group (min-width: 18rem) {
+    .project-catalog-item {
+      grid-template-columns: 7rem minmax(0, 1fr);
+    }
+  }
   .project-section-media video {
     border: 0;
   }
@@ -478,7 +668,11 @@ function hasItemContent(item: ProjectSection) {
   .project-section-media--qr-code {
     width: min(100%, 200px);
   }
-  .project-section-media--qr-code img {
+  .project-section-media--logo {
+    width: min(100%, 200px);
+  }
+  .project-section-media--qr-code img,
+  .project-section-media--logo img {
     border-radius: 0;
   }
   .project-item-flow,
@@ -656,11 +850,20 @@ function hasItemContent(item: ProjectSection) {
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-semibold);
   }
+  .project-block-title {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-heading);
+    letter-spacing: var(--letter-spacing-heading);
+    overflow-wrap: anywhere;
+  }
   @media (max-width: 899px) {
     .project-detail {
       row-gap: var(--space-12);
     }
-    .project-section-items {
+    .project-section-items,
+    .project-content-blocks {
       gap: var(--space-8);
     }
     .project-detail--modal {
@@ -673,10 +876,12 @@ function hasItemContent(item: ProjectSection) {
       row-gap: var(--space-8);
     }
     .project-section,
-    .project-section-items {
+    .project-section-items,
+    .project-content-blocks {
       gap: var(--space-6);
     }
-    .project-section-item {
+    .project-section-item,
+    .project-content-block {
       gap: var(--space-4);
     }
     .project-item-text {
