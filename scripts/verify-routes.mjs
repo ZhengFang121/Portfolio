@@ -8,6 +8,8 @@ import { renderToString } from '@vue/server-renderer'
 import PrimeVue from 'primevue/config'
 
 const server = await createServer({
+  // 驗證與開發伺服器不可共用依賴快取，避免覆寫使用中的 PrimeVue 模組。
+  cacheDir: 'node_modules/.vite-verify-routes',
   server: { middlewareMode: true, hmr: false, ws: false },
   appType: 'custom',
 })
@@ -15,6 +17,19 @@ const server = await createServer({
 try {
   const { routes } = await server.ssrLoadModule('/src/router/routes.ts')
   const { projects } = await server.ssrLoadModule('/src/data/projects.ts')
+  const { experiences } = await server.ssrLoadModule('/src/data/experiences.ts')
+  assert.deepEqual(
+    experiences.map(({ year }) => year),
+    [2026, 2021, 2018, 2017, 2016, 2015, 2014, 2013],
+  )
+  assert.deepEqual(
+    experiences.map(({ items }) => items.length),
+    [1, 1, 1, 9, 9, 1, 1, 1],
+  )
+  assert.equal(
+    experiences.find(({ year }) => year === 2017).items[0].text,
+    '擔任 奇軒包裝有限公司 設計（2017–2021）',
+  )
   const { default: App } = await server.ssrLoadModule('/src/App.vue')
   const { default: ProjectDetail } = await server.ssrLoadModule('/src/components/ProjectDetail.vue')
   const { default: BaseButton } = await server.ssrLoadModule('/src/components/BaseButton.vue')
@@ -700,7 +715,7 @@ try {
       : expectedName === 'home'
         ? 2
         : expectedName === 'about'
-          ? 3
+          ? 4
           : 1
     assert.equal(
       (html.match(/class="[^"]*\bcontent-section\b[^"]*"/g) ?? []).length,
@@ -719,6 +734,24 @@ try {
     const activeLinks = [...html.matchAll(/<a\b[^>]*class="[^"]*is-active[^"]*"[^>]*>(.*?)<\/a>/gs)]
     assert.equal(activeLinks.length, activeImage ? 1 : 0, `${path}: 正確的導覽狀態`)
     if (activeImage) assert.ok(activeLinks[0][1].includes(`${activeImage}-2.png`))
+    if (expectedName === 'about') {
+      assert.ok(html.includes('經歷 Experience'))
+      assert.equal((html.match(/class="experience-marker"/g) ?? []).length, 8)
+      const timelineItems = [...html.matchAll(/<time\b[^>]*>(\d+)<\/time>/g)]
+      assert.deepEqual(
+        timelineItems.map((match) => Number(match[1])),
+        experiences.map(({ year }) => year),
+      )
+      let previousPosition = -1
+      for (const { items } of experiences) {
+        for (const { text } of items) {
+          const position = html.indexOf(text)
+          assert.ok(position > previousPosition, `經歷完整呈現並維持順序：${text}`)
+          assert.equal(html.indexOf(text, position + text.length), -1, `經歷不重複：${text}`)
+          previousPosition = position
+        }
+      }
+    }
     if (expectedName === 'home' || expectedName === 'works') {
       const visibleProjects =
         expectedName === 'home'

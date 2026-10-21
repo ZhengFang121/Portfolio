@@ -1,3 +1,8 @@
+<script setup lang="ts">
+import ExperienceTimeline from '../components/ExperienceTimeline.vue'
+import { experiences } from '../data/experiences'
+</script>
+
 <template>
   <div class="page-sections">
     <header class="content-section stack">
@@ -6,7 +11,11 @@
     </header>
     <section class="content-section stack" aria-labelledby="about-background">
       <h2 id="about-background">個人介紹</h2>
-      <div class="placeholder-panel"><p class="muted">完整自我介紹、經歷與照片待提供。</p></div>
+      <div class="placeholder-panel"><p class="muted">完整自我介紹與照片待提供。</p></div>
+    </section>
+    <section class="content-section stack" aria-labelledby="about-experience">
+      <h2 id="about-experience">經歷 Experience</h2>
+      <ExperienceTimeline :entries="experiences" />
     </section>
     <section class="content-section stack" aria-labelledby="about-contact">
       <h2 id="about-contact">聯絡方式</h2>
