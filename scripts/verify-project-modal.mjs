@@ -744,9 +744,13 @@ try {
             })),
           })),
           blocks:[...root.querySelectorAll('.project-content-block .project-item-label')].map(el=>el.textContent),
+          exhibition:[...root.querySelectorAll('.project-image-group--feature img')].map(img=>({
+            file:img.src.split('/').at(-1),rect:rect(img),
+          })),
           images:[...root.querySelectorAll('img')].map(img=>({loaded:img.complete && img.naturalWidth>0,
             declared:[Number(img.getAttribute('width')),Number(img.getAttribute('height'))],
-            natural:[img.naturalWidth,img.naturalHeight],fit:getComputedStyle(img).objectFit})),
+            natural:[img.naturalWidth,img.naturalHeight],fit:getComputedStyle(img).objectFit,
+            feature:!!img.closest('.project-image-group--feature')})),
           logo:root.querySelector('.project-section-media--logo img').clientWidth,
           website:!!root.querySelector('.project-website-link'),
         };
@@ -805,8 +809,24 @@ try {
         'EXHIBITION — 實體展示與交流',
       ])
       assert.ok(!noodle.website && noodle.logo <= 200)
+      assert.deepEqual(
+        noodle.exhibition.map((image) => image.file),
+        ['exhibition-01.JPG', 'exhibition-02.jpg', 'exhibition-03.JPG'],
+      )
+      const [portrait, upper, lower] = noodle.exhibition.map((image) => image.rect)
+      const twoColumns = Math.abs(portrait.top - upper.top) < 1
+      if (twoColumns) {
+        assert.ok(portrait.right < upper.left, '直式展示照在左側')
+        assert.ok(Math.abs(upper.left - lower.left) < 1, '右側兩張照片左緣對齊')
+        assert.ok(Math.abs(upper.right - lower.right) < 1, '右側兩張照片右緣對齊')
+        assert.ok(Math.abs(portrait.bottom - lower.bottom) < 1, '展示區底部對齊')
+        assert.ok(upper.bottom < lower.top, '第三張展示照位於右下方')
+      } else {
+        assert.ok(portrait.bottom < upper.top && upper.bottom < lower.top, '窄版展示照依序單欄')
+      }
       for (const image of noodle.images) {
-        assert.ok(image.loaded && image.fit === 'contain')
+        assert.ok(image.loaded)
+        assert.equal(image.fit, image.feature && twoColumns ? 'cover' : 'contain')
         assert.deepEqual(image.declared, image.natural)
       }
     }
@@ -859,6 +879,8 @@ try {
     features: [{ name: 'prefers-reduced-motion', value: 'reduce' }],
   })
   const sizes = [
+    [1920, 1080],
+    [1440, 716],
     [1440, 1024],
     [900, 900],
     [899, 900],
@@ -884,12 +906,19 @@ try {
           const grid=document.querySelector('.project-grid'),section=grid.parentElement;
           const style=getComputedStyle(section);
           return {count:grid.querySelectorAll('.work-card').length,last:section.lastElementChild===grid,
+            columns:getComputedStyle(grid).gridTemplateColumns.split(' ').filter(track=>parseFloat(track)>0).length,
+            width:grid.clientWidth,gap:parseFloat(getComputedStyle(grid).columnGap),rem:parseFloat(getComputedStyle(document.documentElement).fontSize),
             bottomGap:section.getBoundingClientRect().bottom-grid.getBoundingClientRect().bottom,
             paddingBottom:parseFloat(style.paddingBottom),
             background:style.backgroundColor,radius:style.borderTopLeftRadius,
             overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth}
         })()`)
         assert.equal(layout.count, 5, '保留五張作品卡片')
+        assert.equal(
+          layout.columns,
+          layout.width >= 19 * layout.rem * 2 + layout.gap ? 2 : 1,
+          '作品列表最多兩欄，空間不足時維持單欄',
+        )
         assert.ok(layout.last, '作品列表後沒有多餘入口或容器')
         assert.ok(
           Math.abs(layout.bottomGap - layout.paddingBottom) < 1,

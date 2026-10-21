@@ -47,7 +47,11 @@ function openProject(project: PortfolioProject, event: MouseEvent) {
 @layer components {
   .project-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+    /* 卡片至少佔可用寬度的一半，最多兩欄；不足原本最小寬度時維持單欄。 */
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(min(100%, max(19rem, calc((100% - var(--space-6)) / 2))), 1fr)
+    );
     gap: var(--space-6);
   }
 }

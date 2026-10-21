@@ -25,6 +25,7 @@ export interface ProjectContentBlock {
   title?: string
   content: string
   images?: ProjectImage[]
+  imageLayout?: 'feature-grid'
 }
 
 export interface ProjectAward {
@@ -887,6 +888,14 @@ export const projects: PortfolioProject[] = [
                 title: '文創之星｜創意概念組・傳承創新 金獎',
                 content:
                   '「初次見麵」以台灣麵食文化為創作核心，將傳統飲食元素轉化為具有實用性與文化意涵的造型肥皂，獲得金獎肯定。',
+                images: [
+                  {
+                    src: '/images/projects/chu-ci-jian-mian/exhibition-04.jpg',
+                    alt: '初次見麵獲獎紀錄照片',
+                    width: 4096,
+                    height: 2733,
+                  },
+                ],
               },
               {
                 id: 'media',
@@ -896,16 +905,17 @@ export const projects: PortfolioProject[] = [
                   '作品曾接受《創藝多腦河》節目採訪，透過媒體呈現「初次見麵」的設計理念與創作成果。',
                 images: [
                   {
-                    src: '/images/projects/chu-ci-jian-mian/exhibition-03.jpg',
+                    src: '/images/projects/chu-ci-jian-mian/exhibition-05.JPG',
                     alt: '初次見麵接受《創藝多腦河》電視節目採訪的紀錄照片',
-                    width: 1181,
-                    height: 737,
+                    width: 1920,
+                    height: 1080,
                   },
                 ],
               },
               {
                 id: 'exhibition',
                 label: 'EXHIBITION — 實體展示與交流',
+                imageLayout: 'feature-grid',
                 content:
                   '透過實體作品展示，向觀眾介紹產品造型、設計理念與台灣麵食文化的連結，呈現從概念發想到實際成果的完整設計過程。',
                 images: [
@@ -920,6 +930,12 @@ export const projects: PortfolioProject[] = [
                     alt: '初次見麵實體作品展示與交流紀錄 02',
                     width: 1181,
                     height: 821,
+                  },
+                  {
+                    src: '/images/projects/chu-ci-jian-mian/exhibition-03.JPG',
+                    alt: '初次見麵實體作品展示與交流紀錄 03',
+                    width: 960,
+                    height: 720,
                   },
                 ],
               },

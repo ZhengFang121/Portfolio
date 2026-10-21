@@ -208,7 +208,13 @@ try {
     noodle.sections[1].items[4].blocks
       .flatMap((block) => block.images ?? [])
       .map((image) => image.src.split('/').at(-1)),
-    ['exhibition-03.jpg', 'exhibition-01.JPG', 'exhibition-02.jpg'],
+    [
+      'exhibition-04.jpg',
+      'exhibition-05.JPG',
+      'exhibition-01.JPG',
+      'exhibition-02.jpg',
+      'exhibition-03.JPG',
+    ],
   )
   const brandImages = [
     [

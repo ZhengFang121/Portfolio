@@ -418,7 +418,11 @@ function hasItemContent(item: ProjectSection) {
                 >
                 <p class="project-item-body">{{ block.content }}</p>
               </div>
-              <div v-if="block.images?.length" class="project-image-group">
+              <div
+                v-if="block.images?.length"
+                class="project-image-group"
+                :class="{ 'project-image-group--feature': block.imageLayout === 'feature-grid' }"
+              >
                 <div v-for="image in block.images" :key="image.src" class="project-section-media">
                   <img
                     :src="image.src"
@@ -531,6 +535,9 @@ function hasItemContent(item: ProjectSection) {
   .project-content-block {
     gap: var(--space-6);
   }
+  .project-content-block {
+    container: project-content-block / inline-size;
+  }
   .project-item-text {
     gap: var(--space-4);
     width: min(100%, var(--layout-text-width));
@@ -559,6 +566,24 @@ function hasItemContent(item: ProjectSection) {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
     align-items: start;
     gap: var(--space-6);
+  }
+  /* 窄容器依圖片順序單欄；寬容器以首張直式圖搭配右側上下兩張照片。 */
+  .project-image-group--feature {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  @container project-content-block (min-width: 31.5rem) {
+    .project-image-group--feature {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: repeat(2, minmax(0, 1fr));
+      align-items: stretch;
+    }
+    .project-image-group--feature > :first-child {
+      grid-row: span 2;
+    }
+    .project-image-group--feature .project-section-media img {
+      height: 100%;
+      object-fit: cover;
+    }
   }
   /* 依作品項目的可用寬度換欄，讓獨立頁與介紹視窗使用相同規則。 */
   .project-section-item--card-grid {
