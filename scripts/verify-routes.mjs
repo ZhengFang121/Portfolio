@@ -684,7 +684,7 @@ try {
 
   const cases = [
     ['/', 'home', '平面設計師 與 前端網頁設計學習者'],
-    ['/about', 'about', '關於 Fang'],
+    ['/about', 'about', '正芳 Fang'],
     ['/works', 'works', '主要作品'],
     ['/graphic-works', 'not-found', '找不到這個頁面'],
     ...projects.map((project) => [`/works/${project.slug}`, `work-${project.slug}`, project.title]),
@@ -741,11 +741,16 @@ try {
     assert.equal(activeLinks.length, activeImage ? 1 : 0, `${path}: 正確的導覽狀態`)
     if (activeImage) assert.ok(activeLinks[0][1].includes(`${activeImage}-2.png`))
     if (expectedName === 'about') {
-      assert.ok(html.includes('經歷 Experience'))
-      assert.equal((html.match(/class="experience-marker"/g) ?? []).length, 8)
-      const timelineItems = [...html.matchAll(/<time\b[^>]*>(\d+)<\/time>/g)]
       assert.deepEqual(
-        timelineItems.map((match) => Number(match[1])),
+        [...html.matchAll(/<h2\b[^>]*>(.*?)<\/h2>/gs)].map((match) => match[1]),
+        ['學歷 Education', '證照 License', '技能 Skills', 'Likes'],
+      )
+      for (const removed of ['個人介紹', '經歷 Experience', '待提供', '待確認']) {
+        assert.ok(!html.includes(removed), `Profile 移除舊內容：${removed}`)
+      }
+      assert.equal((html.match(/class="experience-marker"/g) ?? []).length, experiences.length)
+      assert.deepEqual(
+        [...html.matchAll(/<time\b[^>]*>(\d+)<\/time>/g)].map((match) => Number(match[1])),
         experiences.map(({ year }) => year),
       )
       let previousPosition = -1
@@ -757,6 +762,51 @@ try {
           previousPosition = position
         }
       }
+      assert.ok(previousPosition < html.indexOf('id="about-likes"'), '完整經歷呈現在 Likes 前')
+      assert.ok(!/<h2\b[^>]*>聯絡方式<\/h2>/.test(html))
+      for (const text of [
+        '2013–2017',
+        '朝陽科技大學工業設計系',
+        '2010–2013',
+        '鶯歌高職陶瓷工程科',
+        '丙級陶瓷技術士－石膏模',
+        '丙級廣告設計技術士',
+        'AutoCAD 國際認證',
+      ]) {
+        assert.ok(html.includes(text), `Profile 資料完整：${text}`)
+      }
+      assert.deepEqual(
+        [...html.matchAll(/<li\b[^>]*class="skill-tag"[^>]*>(.*?)<\/li>/gs)].map(
+          (match) => match[1],
+        ),
+        ['Ai', 'Ps', 'AutoCAD', 'Word', 'PowerPoint', 'Excel', '陶瓷', '金工'],
+      )
+      const likeImages = [
+        ...html.matchAll(/<img\b[^>]*src="(\/images\/profile\/likes\/[^"]+)"[^>]*>/g),
+      ]
+      assert.deepEqual(
+        likeImages.map((match) => match[1].split('/').at(-1)),
+        [
+          'baseball-1.png',
+          'baseball-2.JPG',
+          'ceramics-1.png',
+          'ceramics-2.jpg',
+          'coffee-1.png',
+          'coffee-2.JPG',
+          'mountain-sea-1.png',
+          'mountain-sea-2.jpg',
+          'panda-1.png',
+          'panda-2.JPG',
+          'run-1.png',
+          'run-2.JPG',
+        ],
+      )
+      for (const [index, match] of likeImages.entries()) {
+        await access(new URL(`../public${match[1]}`, import.meta.url))
+        if (index % 2 === 0) assert.ok(/alt="[^"]+"/.test(match[0]))
+        else assert.ok(match[0].includes('alt=""') && match[0].includes('aria-hidden="true"'))
+      }
+      assert.ok(html.includes('href="mailto:skin84121@gmail.com"'))
     }
     if (expectedName === 'home' || expectedName === 'works') {
       const visibleProjects =
