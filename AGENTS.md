@@ -4,7 +4,7 @@
 
 - 使用繁體中文與台灣用語，修改時簡要說明原因，讓前端初學者能理解。
 - 先閱讀相關檔案；保留既有修改，不做無關重構。資訊不足時先詢問，不猜測作品事實。
-- 已有固定品牌圖、圖片導覽、原生頁面捲動、首頁兩階段 GSAP 進場及共用作品頁；維持目前視覺與互動。五個作品名稱、簡介、分類與封面已提供，年份、角色、詳細內容與公開聯絡資料仍待確認。
+- 已有固定品牌圖、圖片導覽、原生頁面捲動、首頁兩階段 GSAP 進場及共用作品頁；維持目前視覺與互動。六個作品的名稱、設計年份、簡介、分類、封面與介紹內容已建立，以 `src/data/projects.ts` 中已確認的資料為準，未提供的資訊不得自行補寫。
 - 未經授權不要發布、建立遠端儲存庫、commit 或 push；不加入 Pinia、後端、資料庫或登入。
 - 不沿用跑者菲迪的品牌色彩、角色或遊戲化介面。
 
@@ -12,7 +12,8 @@
 
 - Vue 3 Composition API，使用 `<script setup lang="ts">` 與 TypeScript；避免 `any`。
 - 使用 Vite、Vue Router、PrimeVue styled mode、Tailwind CSS v4 與 `@lucide/vue`。
-- `src/data/projects.ts` 是主要作品資料來源；`ProjectDetail.vue` 是五個作品共用的介紹版型；作品類型使用 `categories: string[]`。
+- `src/data/projects.ts` 是主要作品資料來源；`ProjectDetail.vue` 是六個作品共用的介紹版型；作品類型使用 `categories: string[]`。
+- 六個作品的頂部基本順序統一為設計年份、作品名稱、作品簡介、作品類型標籤、作品封面，使用同一組元件與樣式；不同內容章節不得改變頂部版型。似顏繪使用 `cover.jpg` 作為封面，展示區使用 `imageLayout: 'stack'` 依序呈現 `01.jpg`～`06.jpg`，避免重複封面素材。
 - 作品路由由資料產生。維持穩定網址；更改 slug 前確認並規劃舊網址轉址。
 - 不捏造作品成果、客戶、年份、個人經歷或聯絡資料；缺資料使用 null 與明確占位。
 
@@ -34,7 +35,7 @@
 - 採三層架構：基礎值（Palette、字級、間距、圓角）→ 用途語意（文字、連結、控制項等）→ 元件契約。不同用途即使目前同色，也保留必要的語意區分。
 - `tokens.css` 保持單檔，依 Colors、Typography、Spacing、Radius、Layout、Motion、Components 七區排序；`@theme inline` 只映射同一套五色色盤與共用字型，不恢復 Tailwind 預設色盤。
 - CSS 自訂屬性使用英文小寫 kebab-case。全域使用 `--palette-*`、`--color-*`、`--font-family-*`、`--font-size-*`、`--font-weight-*`、`--line-height-*`、`--letter-spacing-*`、`--space-*`、`--radius-*`、`--layout-*`、`--motion-*` 等前綴；局部契約以元件用途命名，如 `--button-*`、`--card-*`、`--nav-image-*`。
-- 字型沿用 Bricolage Grotesque Variable、Chiron GoRound TC Variable 與系統 fallback。字級依序使用 `sm`（0.875rem）、`md`（1rem）、`lg`（1.25rem）、`xl`（既有 clamp）、`2xl`（既有 clamp）；字重、行距與字距優先沿用現有 Token，保留頁面特殊字級與響應式公式。
+- 中英文、數字與標點統一優先使用 Chiron GoRound TC Variable，保留系統 fallback；內文與標題共用 `--font-family-portfolio`。字級依序使用 `sm`（0.875rem）、`md`（1rem）、`lg`（1.25rem）、`xl`（既有 clamp）、`2xl`（既有 clamp）；字重、行距與字距優先沿用現有 Token，保留頁面特殊字級與響應式公式。
 - 基礎間距使用 `--space-1/2/3/4/6/8/12/16`，依序對應 0.25/0.5/0.75/1/1.5/2/3/4rem。共用頁面留白使用 `--layout-gutter`；特殊尺寸與 `clamp()` 可留在所屬樣式，不為符合尺度而改變距離。
 - 圓角使用 `--radius-sm/md/lg/xl/full`：6/12/18/24px 與 9999px。控制項及卡片依 `--radius-control`、`--radius-panel` 選用；主要紅、黃內容區塊與藍色頁尾共用 `--content-section-radius`，桌機 24px，899px 以下 18px；BaseButton 保留膠囊形狀。
 - `index.css` 負責 Tailwind 入口、全域基礎、固定外框、原生文件捲動、跨頁內容區塊、共用文字／占位樣式及 RWD；元件私有樣式放在自身 style，優先 scoped，搬移時保留 CSS layer 優先順序。ProjectGrid 只管理自身 `.project-grid` class，使用非 scoped style，避免 scope id 穿過 WorkCard 的 custom RouterLink 根節點造成 Vue 警告。
@@ -69,6 +70,6 @@
 - 執行 `npm run type-check`、`npm run lint`、`npm run build`，修正本次變更造成的錯誤。
 - 執行 `npm run verify`，包含 13 個路由／HTML 渲染案例與兩階段進場邏輯；靜態檢查不等於瀏覽器 QA。Token 遷移需提供前後對照並檢查全專案引用；瀏覽器可用時比對 1440、768、390px、899px 斷點前後及矮螢幕。
 - 不格式化第三方 `.agents/skills/`、package-lock.json 或 skills-lock.json。
-- 檢查首頁、五個作品頁、已移除的第六個作品、未知作品與 404。瀏覽器可用時檢查桌機與手機，無法使用時明確標示未驗證。
+- 檢查首頁、Works 列表、六個作品頁（`project-01`～`project-06`，包含似顏繪）、已移除的 `/graphic-works`、未知作品與 404。瀏覽器可用時檢查六個作品在桌機與手機的共用頂部版型，無法使用時明確標示未驗證。
 - 保留 package-lock.json。部署前處理 history fallback、正式網站網址與 SEO；占位階段維持 noindex。
 - 回報固定包含「完成事項」、「修改檔案與原因」、「驗證結果」、「注意事項」。

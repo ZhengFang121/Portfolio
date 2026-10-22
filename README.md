@@ -44,7 +44,7 @@ TypeScript 使用相容的 6.0 系列，因目前 typescript-eslint 要求 TypeS
 | `/works/project-03`      | APOLLO                       |
 | `/works/project-04`      | R4D                          |
 | `/works/project-05`      | 初次見麵                     |
-| `/works/project-06`      | Custom Portrait Illustration |
+| `/works/project-06`      | 似顏繪                       |
 | 其他網址（包含未知作品） | 404 與返回首頁連結           |
 
 保留 `project-01`～`project-05` 的既有 slug，避免作品網址失效；`project-06` 為新增的似顏繪作品。
@@ -73,7 +73,7 @@ skills-lock.json           # skills CLI 產生的來源與 hash
 六個作品共用 `ProjectDetail.vue`，修改版型會同步套用至全部作品。作品內容放在 `src/data/projects.ts`，
 `categories` 使用字串陣列，每個類型在共用 `WorkCard.vue` 底部顯示獨立膠囊，沒有類型時使用空陣列。
 封面引用 `public/images/projects/` 的既有檔案，尺寸依實際像素設定。
-似顏繪使用 `detailLayout: 'gallery'`，封面只出現在列表，介紹依名稱、中文名稱、年份、類型排序；展示區透過 `imageLayout: 'stack'` 維持六張圖片單欄、完整比例與共用閱讀寬度，不影響其他作品。
+六個作品的頂部共用同一組版型，依序顯示設計年份、作品名稱、作品簡介、類型標籤與封面。似顏繪使用 `cover.jpg` 作為封面，展示區透過 `imageLayout: 'stack'` 依序呈現 `01.jpg`～`06.jpg`，維持單欄、完整比例與共用閱讀寬度，總共一張封面加六張展示圖。
 尚未提供的年份、角色與章節內容保持 `null`，畫面以明確占位呈現，不捏造成果。
 共用導覽與頁尾由 `App.vue` 管理；頁面採 lazy import。路由切換更新標題、移動主要內容焦點並恢復捲動位置。
 
@@ -82,7 +82,7 @@ PrimeVue Dialog 掛載在 `.app-shell`，直接繼承窄版 `--shell-*`；維持
 背景鎖定捲動並設為 `inert`，Modal 內部可獨立捲動；關閉鈕、Esc 或遮罩可關閉，並還原背景、捲動位置與原卡片焦點。
 黑色遮罩依本次互動規格使用 55% 不透明度，只有遮罩背景半透明，介紹面板仍為不透明白底與 6px 藍框。
 
-Token 定義色彩、字體、字距、行距、間距、閱讀寬度、圓角與互動時間。介面色盤已確認只使用 `#A71F24`、`#B9DAE8`、`#FBEDB3`、`#000000`、`#FFFFFF`，字型使用 Bricolage Grotesque＋昭源環方，
+Token 定義色彩、字體、字距、行距、間距、閱讀寬度、圓角與互動時間。介面色盤已確認只使用 `#A71F24`、`#B9DAE8`、`#FBEDB3`、`#000000`、`#FFFFFF`，中英文、數字與標點統一使用昭源環方，
 後續視覺調整另行確認，本次 Token 整理維持現有外觀。
 白色用於頁面與卡片，黑色用於文字與邊框，紅色用於主要操作與連結，淺藍用於導覽狀態與圖片占位，淡黃用於資訊占位區塊。
 Hover／active 使用黑色，不新增深淺衍生色；作品圖片保留原始色彩。Tailwind Vite 插件已啟用，以 `@theme inline` 對應專案語意 Token。
@@ -101,13 +101,12 @@ PrimeVue 4 使用 Aura，主色與控制圓角直接參照同一套 Token，CSS 
 
 ## 網站字型
 
-- 英文與數字：Bricolage Grotesque（`@fontsource-variable/bricolage-grotesque`）。
-- 繁體中文：昭源環方 Chiron GoRound TC（`@fontsource-variable/chiron-goround-tc`）。
-- 兩者使用可變字型，於 `src/main.ts` 匯入，採 `font-display: swap`；套件透過 `unicode-range` 分段，瀏覽器依頁面文字載入需要的字型檔。
+- 中英文、數字與標點：昭源環方 Chiron GoRound TC Variable（`@fontsource-variable/chiron-goround-tc`）。
+- 使用可變字型，於 `src/main.ts` 匯入，採 `font-display: swap`；套件透過 `unicode-range` 分段，瀏覽器依頁面文字載入需要的字型檔。
 - 字型檔經 Vite 打包，由網站自行提供；訪客不必安裝，也不需連線 Google Fonts。
-- `src/styles/tokens.css` 的 `--font-family-portfolio` 以英文字型在前、中文字型在後；英文與數字優先使用 Bricolage，中文由昭源環方補足。
+- `src/styles/tokens.css` 的 `--font-family-portfolio` 優先使用昭源環方，再依序使用 `system-ui`、`-apple-system`、`BlinkMacSystemFont`、`Segoe UI`、`Noto Sans TC`、`sans-serif` 備援。
 - 內文、標題、Tailwind `font-sans` 與表單控制項共用 Token，PrimeVue 與掛載至 body 的浮層繼承全域字型。
-- 兩套字型採 SIL OFL 1.1；套件內保留 LICENSE，發佈時一併保留 `public/fonts/OFL-*.txt` 授權檔。
+- 字型採 SIL OFL 1.1；套件內保留 LICENSE，發佈時一併保留 `public/fonts/OFL-chiron-goround-tc.txt` 授權檔。
 - 換電腦執行 `npm ci` 即可還原字型套件，無須另外手動下載。
 
 ## 套件版本
@@ -116,17 +115,16 @@ PrimeVue 4 使用 Aura，主色與控制圓角直接參照同一套 Token，CSS 
 
 ### 執行依賴
 
-| 套件                                       | 實際安裝版本 |
-| ------------------------------------------ | ------------ |
-| `@fontsource-variable/bricolage-grotesque` | 5.3.0        |
-| `@fontsource-variable/chiron-goround-tc`   | 5.3.0        |
-| `@lucide/vue`                              | 1.52.0       |
-| `@primeuix/themes`                         | 2.0.3        |
-| `@primevue/themes`                         | 4.5.4        |
-| `gsap`                                     | 3.15.0       |
-| `primevue`                                 | 4.5.5        |
-| `vue`                                      | 3.5.43       |
-| `vue-router`                               | 5.3.1        |
+| 套件                                     | 實際安裝版本 |
+| ---------------------------------------- | ------------ |
+| `@fontsource-variable/chiron-goround-tc` | 5.3.0        |
+| `@lucide/vue`                            | 1.52.0       |
+| `@primeuix/themes`                       | 2.0.3        |
+| `@primevue/themes`                       | 4.5.4        |
+| `gsap`                                   | 3.15.0       |
+| `primevue`                               | 4.5.5        |
+| `vue`                                    | 3.5.43       |
+| `vue-router`                             | 5.3.1        |
 
 ### 開發依賴
 
@@ -203,7 +201,7 @@ Skills 是開發指引，不是網站執行依賴。安裝 motion-design 不代�
 ## 後續內容與部署待辦
 
 - 後續視覺與動畫擴充需另行確認；維持目前已確認的五色、字型與進場互動，不沿用跑者菲迪品牌或遊戲化介面。
-- 補齊五個作品的年份、角色、背景、過程、成果與內頁圖片，以及公開聯絡資料。
+- 依使用者提供且已確認的資料維護六個作品的內容，未確認的資訊不自行補寫。
 - 依實際使用尺寸評估封面壓縮與響應式圖片，非首屏圖片採 lazy loading。
 - 使用 HTML5 history；部署平台須把應用路由導回 `/index.html`，否則直接開啟或重新整理作品頁會失敗。
   靜態資產遺失應回傳 404，不把所有資產請求一律改成 HTML。
