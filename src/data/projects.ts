@@ -53,7 +53,7 @@ export interface ProjectSection {
         variant?: 'default' | 'phone' | 'qr-code' | 'logo'
       })
   images?: ProjectImage[]
-  imageLayout?: 'card-grid'
+  imageLayout?: 'card-grid' | 'stack'
   catalog?: ProjectCatalogGroup[]
   blocks?: ProjectContentBlock[]
 }
@@ -65,6 +65,8 @@ export interface PortfolioProject {
   year: string | null
   role: string | null
   summary: string | null
+  // Gallery 以介紹後的圖片群組展示作品，封面僅用於列表卡片。
+  detailLayout?: 'gallery'
   websiteUrl?: string
   awards?: ProjectAward[]
   cover: { src: string; alt: string; width: number; height: number } | null
@@ -675,6 +677,73 @@ export const projects: PortfolioProject[] = [
                 height: 1086,
               },
             ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'project-06',
+    title: '似顏繪',
+    categories: ['ILLUSTRATION'],
+    designYear: '2022 - 2023',
+    year: null,
+    role: null,
+    summary: '客製化肖像插畫',
+    detailLayout: 'gallery',
+    cover: {
+      src: '/images/projects/custom-portrait/01.jpg',
+      alt: '似顏繪：長髮人物與白色小狗的客製化肖像插畫',
+      width: 3000,
+      height: 3000,
+    },
+    sections: [
+      {
+        id: 'project-introduction',
+        title: '作品介紹',
+        content:
+          '依照客戶提供的照片，繪製專屬的人物與寵物似顏繪。以簡約的手繪線條與柔和的色彩，保留每個角色獨特的外型與神情，將照片中的日常回憶轉化為溫暖且富有個人特色的插畫作品。',
+      },
+      {
+        id: 'project-gallery',
+        title: '作品展示',
+        imageLayout: 'stack',
+        images: [
+          {
+            src: '/images/projects/custom-portrait/01.jpg',
+            alt: '似顏繪 01：長髮人物與白色小狗',
+            width: 3000,
+            height: 3000,
+          },
+          {
+            src: '/images/projects/custom-portrait/02.jpg',
+            alt: '似顏繪 02：長髮人物抱著銀灰色虎斑貓',
+            width: 3000,
+            height: 3000,
+          },
+          {
+            src: '/images/projects/custom-portrait/03.jpg',
+            alt: '似顏繪 03：四隻不同毛色與神情的貓咪肖像',
+            width: 3000,
+            height: 3000,
+          },
+          {
+            src: '/images/projects/custom-portrait/04.jpg',
+            alt: '似顏繪 04：戴帽人物抱著棕色虎斑貓',
+            width: 3000,
+            height: 3000,
+          },
+          {
+            src: '/images/projects/custom-portrait/05.jpg',
+            alt: '似顏繪 05：孩童伸手碰觸虎斑白貓的前腳',
+            width: 3000,
+            height: 3000,
+          },
+          {
+            src: '/images/projects/custom-portrait/06.jpg',
+            alt: '似顏繪 06：灰白色貓咪與戴紅色領巾的長毛狗',
+            width: 3000,
+            height: 3000,
           },
         ],
       },

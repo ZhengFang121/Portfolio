@@ -200,13 +200,16 @@ function hasItemContent(item: ProjectSection) {
     class="project-detail page-sections"
     :class="{
       'project-detail--modal': mode === 'modal',
+      'project-detail--gallery': project.detailLayout === 'gallery',
     }"
   >
     <header class="stack" :class="{ 'content-section': mode === 'page' }">
       <RouterLink v-if="mode === 'page'" class="text-link" to="/works"
         ><ArrowLeft :size="18" aria-hidden="true" />返回主要作品</RouterLink
       >
-      <p class="project-design-year"># {{ project.designYear }}</p>
+      <p v-if="project.detailLayout !== 'gallery'" class="project-design-year">
+        # {{ project.designYear }}
+      </p>
       <component
         :is="mode === 'modal' ? 'h2' : 'h1'"
         :id="titleId"
@@ -216,6 +219,9 @@ function hasItemContent(item: ProjectSection) {
       >
       <p class="project-detail-summary intro muted">
         {{ project.summary ?? '作品簡介尚未提供，將於內容確認後補上。' }}
+      </p>
+      <p v-if="project.detailLayout === 'gallery'" class="project-design-year">
+        # {{ project.designYear }}
       </p>
       <ProjectCategories
         v-if="project.categories.length"
@@ -240,7 +246,7 @@ function hasItemContent(item: ProjectSection) {
         </ul>
       </div>
       <img
-        v-if="project.cover"
+        v-if="project.cover && project.detailLayout !== 'gallery'"
         class="project-cover"
         :src="project.cover.src"
         :alt="project.cover.alt"
@@ -248,7 +254,9 @@ function hasItemContent(item: ProjectSection) {
         :height="project.cover.height"
         loading="lazy"
       />
-      <div v-else class="placeholder-media">作品主視覺待提供</div>
+      <div v-else-if="project.detailLayout !== 'gallery'" class="placeholder-media">
+        作品主視覺待提供
+      </div>
     </header>
     <section
       v-for="section in project.sections"
@@ -356,7 +364,10 @@ function hasItemContent(item: ProjectSection) {
           <div
             v-if="item.images?.length"
             class="project-image-group"
-            :class="{ 'project-image-group--cards': item.imageLayout === 'card-grid' }"
+            :class="{
+              'project-image-group--cards': item.imageLayout === 'card-grid',
+              'project-image-group--stack': item.imageLayout === 'stack',
+            }"
           >
             <div v-for="image in item.images" :key="image.src" class="project-section-media">
               <img
@@ -566,6 +577,17 @@ function hasItemContent(item: ProjectSection) {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
     align-items: start;
     gap: var(--space-6);
+  }
+  /* 由作品資料選用固定單欄，各尺寸皆保留圖片完整原貌。 */
+  .project-image-group--stack {
+    display: flex;
+    flex-direction: column;
+  }
+  .project-image-group--stack .project-section-media img {
+    border-radius: 0;
+  }
+  .project-detail--gallery .project-item-text {
+    text-align: center;
   }
   /* 窄容器依圖片順序單欄；寬容器以首張直式圖搭配右側上下兩張照片。 */
   .project-image-group--feature {

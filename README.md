@@ -38,15 +38,16 @@ TypeScript 使用相容的 6.0 系列，因目前 typescript-eslint 要求 TypeS
 | ------------------------ | ---------------------------- |
 | `/`                      | 首頁與主要作品入口           |
 | `/about`                 | 個人介紹、經歷與聯絡資訊占位 |
-| `/works`                 | 五個主要作品列表             |
+| `/works`                 | 六個主要作品列表             |
 | `/works/project-01`      | 跑者菲迪 Pheidi the Runner   |
 | `/works/project-02`      | PAPAGO                       |
 | `/works/project-03`      | APOLLO                       |
 | `/works/project-04`      | R4D                          |
 | `/works/project-05`      | 初次見麵                     |
+| `/works/project-06`      | Custom Portrait Illustration |
 | 其他網址（包含未知作品） | 404 與返回首頁連結           |
 
-保留 `project-01`～`project-05` 的既有 slug，避免作品網址失效；已移除的 `project-06` 顯示 404。
+保留 `project-01`～`project-05` 的既有 slug，避免作品網址失效；`project-06` 為新增的似顏繪作品。
 首頁依 slug 固定顯示跑者菲迪與 APOLLO，不受 Works 列表順序影響。
 首頁與 Works 的卡片一般點擊／Enter 會在目前頁面開啟作品介紹 Modal，網址保持不變；右鍵、修飾鍵與滑鼠中鍵保留原生獨立頁連結操作。
 
@@ -54,7 +55,7 @@ TypeScript 使用相容的 6.0 系列，因目前 typescript-eslint 要求 TypeS
 
 ```text
 src/
-  data/projects.ts          # 五個作品的型別、分類陣列與封面資料
+  data/projects.ts          # 六個作品的型別、分類陣列與封面資料
   router/                  # 路由、頁面標題與捲動恢復
   components/              # 導覽、頁尾、作品列表、共用介紹版型
   views/                   # 首頁、介紹、作品與 404
@@ -69,9 +70,10 @@ docs/design-token-migration.md # Token 前後對照與本次驗證範圍
 skills-lock.json           # skills CLI 產生的來源與 hash
 ```
 
-五個作品共用 `ProjectDetail.vue`，修改版型會同步套用至全部作品。作品內容放在 `src/data/projects.ts`，
+六個作品共用 `ProjectDetail.vue`，修改版型會同步套用至全部作品。作品內容放在 `src/data/projects.ts`，
 `categories` 使用字串陣列，每個類型在共用 `WorkCard.vue` 底部顯示獨立膠囊，沒有類型時使用空陣列。
 封面引用 `public/images/projects/` 的既有檔案，尺寸依實際像素設定。
+似顏繪使用 `detailLayout: 'gallery'`，封面只出現在列表，介紹依名稱、中文名稱、年份、類型排序；展示區透過 `imageLayout: 'stack'` 維持六張圖片單欄、完整比例與共用閱讀寬度，不影響其他作品。
 尚未提供的年份、角色與章節內容保持 `null`，畫面以明確占位呈現，不捏造成果。
 共用導覽與頁尾由 `App.vue` 管理；頁面採 lazy import。路由切換更新標題、移動主要內容焦點並恢復捲動位置。
 
@@ -191,9 +193,9 @@ Skills 是開發指引，不是網站執行依賴。安裝 motion-design 不代�
 - 2026-10-05 實際執行：`type-check`、`lint`、`build`、`verify:routes` 與 `format:check` 全部通過；`npm ls --depth=0` 無相依性錯誤，安裝檢查回報 0 vulnerabilities。
 - 本機 Vite 成功啟動；11 個頁面網址與 5 個入口／Vue／CSS 模組的 HTTP 回應通過。頁面 HTTP 200 僅代表 SPA fallback 正常，404 畫面由下列路由渲染檢查確認，未把 HTTP 200 當成真實 404 狀態碼。
 - `type-check`、`lint`、`build`：程式、型別與正式建置驗證。
-- `verify:routes`：Vue Memory Router＋HTML render，檢查 13 個網址，包括五個作品、已移除頁面的 404、未知作品與巢狀未知網址；確認主要導覽、h1、首頁精選、卡片順序、封面檔案與多個分類標籤。
+- `verify:routes`：Vue Memory Router＋HTML render，檢查 13 個網址，包括六個作品、已移除頁面的 404、未知作品與巢狀未知網址；確認主要導覽、h1、首頁精選、卡片順序、封面檔案與多個分類標籤。
 - 路由腳本供開發驗證，網站仍是 client SPA，並未啟用 SSR 部署。
-- `verify:routes` 也檢查卡片 Dialog 屬性、五個作品共用 Modal 內容的 H2／H3 與標題關聯，以及保留獨立頁連結。
+- `verify:routes` 也檢查卡片 Dialog 屬性、六個作品共用 Modal 內容的 H2／H3 與標題關聯，以及保留獨立頁連結。
 - `npm run build` 後執行 `npm run verify:modal`，使用本機 Chrome 無頭模式測試首頁／Works 的 1440、900、899、768、390px 與矮螢幕，涵蓋左右對齊、三種關閉、鍵盤焦點、背景鎖定、內部捲動、修飾鍵、實際中鍵另開獨立頁、模擬觸控捲動、跨斷點 resize、卸載清理與作品直接網址。此檢查獨立於不需瀏覽器的 `npm run verify`。
 - `verify:modal` 預設使用 macOS Google Chrome；其他環境以 `CHROME_BIN` 指定 Chromium 執行檔，無需新增 npm 套件。截圖與報告輸出至已忽略的 `.impeccable/review/project-modal/`。實體手機、Safari、螢幕閱讀器仍需另外檢查。
 - 上述 2026-10-05 紀錄未包含瀏覽器視覺 QA；2026-10-14 Token 重構的本機 Chrome 無頭模式回歸範圍與限制另見 [整理紀錄](docs/design-token-migration.md)。無頭模式不等同於實體手機、Safari 或螢幕閱讀器驗證。

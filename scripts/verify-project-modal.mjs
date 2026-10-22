@@ -213,6 +213,65 @@ try {
     )
   }
   async function checkDetail(index, width) {
+    if (index === 4) {
+      const gallery = await evaluate(`(() => {
+        const root=document.querySelector('.project-detail--gallery');
+        const panel=root.closest('.project-modal-panel');
+        const group=root.querySelector('.project-image-group--stack');
+        const rect=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}};
+        const reference=root.querySelector('.project-item-text');
+        return {
+          header:[...root.querySelector(':scope > header').children].map(el=>el.textContent.trim()),
+          headings:[...root.querySelectorAll('h3')].map(el=>el.textContent.trim()),
+          count:root.querySelectorAll('img').length,cover:!!root.querySelector('.project-cover'),
+          display:getComputedStyle(group).display,direction:getComputedStyle(group).flexDirection,
+          gap:parseFloat(getComputedStyle(group).gap),reference:rect(reference),group:rect(group),
+          centered:getComputedStyle(reference).textAlign,
+          overflow:panel.scrollWidth>panel.clientWidth || document.documentElement.scrollWidth>document.documentElement.clientWidth,
+          images:[...group.querySelectorAll('img')].map(img=>({
+            src:img.getAttribute('src'),alt:img.alt,loading:img.loading,rect:rect(img),
+            natural:[img.naturalWidth,img.naturalHeight],fit:getComputedStyle(img).objectFit,
+            radius:getComputedStyle(img).borderRadius,border:getComputedStyle(img).borderWidth,
+            shadow:getComputedStyle(img).boxShadow,background:getComputedStyle(img).backgroundColor,
+          })),
+        };
+      })()`)
+      assert.deepEqual(gallery.header, [
+        '似顏繪',
+        '客製化肖像插畫',
+        '# 2022 - 2023',
+        'ILLUSTRATION',
+      ])
+      assert.deepEqual(gallery.headings, ['作品介紹', '作品展示'])
+      assert.equal(gallery.count, 6)
+      assert.ok(!gallery.cover && !gallery.overflow)
+      assert.equal(gallery.display, 'flex')
+      assert.equal(gallery.direction, 'column')
+      assert.equal(gallery.centered, 'center')
+      assert.equal(gallery.gap, 24)
+      assert.ok(Math.abs(gallery.group.width - gallery.reference.width) < 1)
+      assert.ok(gallery.group.width <= 672)
+      for (const [imageIndex, image] of gallery.images.entries()) {
+        assert.equal(image.src, `/images/projects/custom-portrait/0${imageIndex + 1}.jpg`)
+        assert.ok(image.alt)
+        assert.equal(image.loading, 'lazy')
+        assert.deepEqual(image.natural, [3000, 3000])
+        assert.ok(Math.abs(image.rect.width - image.rect.height) < 1, '保留原始 1:1 比例')
+        assert.ok(Math.abs(image.rect.width - gallery.group.width) < 1, '六張圖片統一展示寬度')
+        assert.ok(Math.abs(image.rect.left - gallery.group.left) < 1, '圖片水平置中')
+        if (imageIndex > 0)
+          assert.ok(
+            Math.abs(image.rect.top - gallery.images[imageIndex - 1].rect.bottom - gallery.gap) < 1,
+            '六列圖片間距一致',
+          )
+        assert.equal(image.fit, 'contain')
+        assert.equal(image.radius, '0px')
+        assert.equal(image.border, '0px')
+        assert.equal(image.shadow, 'none')
+        assert.equal(image.background, 'rgba(0, 0, 0, 0)')
+      }
+      return
+    }
     const detail = await evaluate(`(() => {
       const root=document.querySelector('.project-detail--modal');
       const card=document.querySelectorAll('.work-card')[${index}];
@@ -280,7 +339,7 @@ try {
         linesBelow:rect(label).bottom<rect(list).top,
       };
     })()`)
-    if (index === 4) {
+    if (index === 5) {
       assert.equal(awards.label, 'AWARD · 獲獎紀錄')
       assert.deepEqual(awards.iconSize, [18, 18])
       assert.deepEqual(awards.colors, ['rgb(167, 31, 36)', 'rgb(167, 31, 36)', 'rgb(0, 0, 0)'])
@@ -312,7 +371,7 @@ try {
     assert.equal(detail.padding, width <= 480 ? '24px' : width <= 899 ? '48px' : '64px')
     assert.match(
       detail.year,
-      new RegExp(['2026', '2026', '2022 - 2025', '2021 - 2024', '2017'][index]),
+      new RegExp(['2026', '2026', '2022 - 2025', '2021 - 2024', '2022 - 2023', '2017'][index]),
     )
     for (const removed of ['作品內容整理中', '設計年份', '製作年份', '負責角色'])
       assert.ok(!detail.text.includes(removed))
@@ -913,7 +972,7 @@ try {
             background:style.backgroundColor,radius:style.borderTopLeftRadius,
             overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth}
         })()`)
-        assert.equal(layout.count, 5, '保留五張作品卡片')
+        assert.equal(layout.count, 6, '六張作品卡片')
         assert.equal(
           layout.columns,
           layout.width >= 19 * layout.rem * 2 + layout.gap ? 2 : 1,
@@ -1074,7 +1133,7 @@ try {
       await closed(selector, before)
       report.push({ width, height, path, before, state })
       if (path === '/works') {
-        for (const index of [1, 2, 3, 4]) {
+        for (const index of [1, 2, 3, 4, 5]) {
           const card = `.work-card:nth-child(${index + 1})`
           await evaluate(
             `document.querySelector('${card}').scrollIntoView({block:'center',behavior:'instant'});document.querySelector('${card}').focus({preventScroll:true})`,
@@ -1093,6 +1152,13 @@ try {
             })()`,
           )
           await checkDetail(index, width)
+          if (index === 4 && [1440, 768, 390].includes(width) && height > 500) {
+            const { data } = await cdp('Page.captureScreenshot', { format: 'png' })
+            await writeFile(
+              join(output, `${width}x${height}-custom-portrait.png`),
+              Buffer.from(data, 'base64'),
+            )
+          }
           if ([2, 3].includes(index) && [1440, 768, 390].includes(width) && height > 500) {
             const brand = index === 2 ? 'apollo' : 'r4d'
             const groups = await evaluate(
@@ -1127,7 +1193,7 @@ try {
               )
             }
           }
-          if (index === 4 && [1440, 768, 390].includes(width)) {
+          if (index === 5 && [1440, 768, 390].includes(width)) {
             const { data } = await cdp('Page.captureScreenshot', { format: 'png' })
             await writeFile(
               join(output, `${width}x${height}-project-05.png`),
@@ -1444,7 +1510,7 @@ try {
   })
   await navigate('/works')
   let projectFrame
-  for (const index of [1, 2, 3, 4, 5]) {
+  for (const index of [1, 2, 3, 4, 5, 6]) {
     const selector = `.work-card:nth-child(${index})`
     await evaluate(
       `document.querySelector('${selector}').scrollIntoView({block:'center',behavior:'instant'});document.querySelector('${selector}').focus({preventScroll:true})`,
@@ -1458,7 +1524,7 @@ try {
     assert.equal(
       await evaluate(`document.querySelector('.project-modal h2').textContent`),
       await evaluate(`document.querySelector('${selector} h3').textContent`),
-      '五個作品內容正確',
+      '六個作品內容正確',
     )
     await key('Escape')
     await closed(selector, before)
@@ -1560,12 +1626,7 @@ try {
         `!!document.querySelector('main h1') && !document.querySelector('[role="dialog"]')`,
       ),
     )
-    if (
-      path.includes('project-06') ||
-      path.includes('unknown') ||
-      path === '/missing-page' ||
-      path === '/graphic-works'
-    )
+    if (path.includes('unknown') || path === '/missing-page' || path === '/graphic-works')
       assert.equal(
         await evaluate(`document.querySelector('main h1').textContent`),
         '找不到這個頁面',
@@ -1573,7 +1634,7 @@ try {
   }
   await writeFile(join(output, 'report.json'), JSON.stringify(report, null, 2))
   console.log(
-    `PASS 五個作品、修飾鍵、原生中鍵另開頁、觸控捲動、開啟中 resize、卸載清理、直接網址與 404。證據：${output}`,
+    `PASS 六個作品、似顏繪六列單欄、修飾鍵、原生中鍵另開頁、觸控捲動、開啟中 resize、卸載清理、直接網址與 404。證據：${output}`,
   )
 } finally {
   socket?.close()

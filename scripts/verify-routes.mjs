@@ -20,29 +20,29 @@ try {
   const { experiences } = await server.ssrLoadModule('/src/data/experiences.ts')
   assert.deepEqual(
     experiences.map(({ year }) => year),
-    [2026, 2021, 2018, 2017, 2016, 2015, 2014, 2013],
+    [2026, 2025, 2021, 2018, 2017, 2016, 2015, 2014, 2013],
   )
   assert.deepEqual(
     experiences.map(({ items }) => items.length),
-    [1, 1, 1, 9, 9, 1, 1, 1],
+    [1, 1, 1, 1, 8, 9, 1, 1, 1],
   )
   assert.equal(
-    experiences.find(({ year }) => year === 2017).items[0].text,
-    '擔任 奇軒包裝有限公司 設計（2017–2021）',
+    experiences.find(({ year }) => year === 2021).items[0].text,
+    '擔任 奇軒包裝有限公司 設計 ( 2017 - 2021 )',
   )
   const { default: App } = await server.ssrLoadModule('/src/App.vue')
   const { default: ProjectDetail } = await server.ssrLoadModule('/src/components/ProjectDetail.vue')
   const { default: BaseButton } = await server.ssrLoadModule('/src/components/BaseButton.vue')
   const { portfolioPreset } = await server.ssrLoadModule('/src/theme/primevue.ts')
-  assert.equal(projects.length, 5)
-  assert.equal(new Set(projects.map((project) => project.slug)).size, 5)
+  assert.equal(projects.length, 6)
+  assert.equal(new Set(projects.map((project) => project.slug)).size, 6)
   assert.deepEqual(
     projects.map((project) => project.title),
-    ['跑者菲迪 Pheidi the Runner', 'PAPAGO', 'APOLLO', 'R4D', '初次見麵'],
+    ['跑者菲迪 Pheidi the Runner', 'PAPAGO', 'APOLLO', 'R4D', '似顏繪', '初次見麵'],
   )
   assert.deepEqual(
     projects.map((project) => project.designYear),
-    ['2026', '2026', '2022 - 2025', '2021 - 2024', '2017'],
+    ['2026', '2026', '2022 - 2025', '2021 - 2024', '2022 - 2023', '2017'],
   )
   const pheidiSections = [
     [
@@ -133,7 +133,7 @@ try {
     expectedConceptParagraphs,
   )
   assert.equal(designConcept.items[2].tagline, 'START・GROW・WITH YOU')
-  for (const project of projects) {
+  for (const project of projects.filter((project) => project.detailLayout !== 'gallery')) {
     assert.equal(project.sections.length, 2, `${project.slug}: 統一新版兩章架構`)
     assert.deepEqual(
       project.sections.map((section) => section.label),
@@ -148,7 +148,7 @@ try {
       ),
     )
   }
-  const noodle = projects[4]
+  const noodle = projects.find((project) => project.slug === 'project-05')
   assert.equal(noodle.summary, '台灣麵食文化主題肥皂設計')
   assert.deepEqual(
     noodle.sections.map((section) => section.items.length),
@@ -405,6 +405,40 @@ try {
       )
       assert.ok(
         conceptHtml.indexOf('START・GROW・WITH YOU') < conceptHtml.indexOf('用遊戲化建立期待'),
+      )
+    } else if (project.detailLayout === 'gallery') {
+      assert.equal(project.summary, '客製化肖像插畫')
+      assert.deepEqual(project.categories, ['ILLUSTRATION'])
+      assert.ok(
+        !modalContent.includes('project-cover') && !modalContent.includes('placeholder-media'),
+      )
+      const orderedContent = [
+        project.title,
+        project.summary,
+        `# ${project.designYear}`,
+        'ILLUSTRATION',
+        '作品介紹',
+        '依照客戶提供的照片，繪製專屬的人物與寵物似顏繪。以簡約的手繪線條與柔和的色彩，保留每個角色獨特的外型與神情，將照片中的日常回憶轉化為溫暖且富有個人特色的插畫作品。',
+        '作品展示',
+      ]
+      let previous = -1
+      for (const content of orderedContent) {
+        const position = modalContent.indexOf(content, previous + 1)
+        assert.ok(position > previous, `似顏繪內容順序：${content}`)
+        previous = position
+      }
+      assert.equal(project.sections[1].imageLayout, 'stack')
+      assert.ok(modalContent.includes('project-image-group--stack'))
+      const images = [...modalContent.matchAll(/<img\b[^>]*src="([^"]+)"/g)]
+      assert.deepEqual(
+        images.map((match) => match[1]),
+        ['01', '02', '03', '04', '05', '06'].map(
+          (name) => `/images/projects/custom-portrait/${name}.jpg`,
+        ),
+        '六張圖片各出現一次，依編號順序展示',
+      )
+      assert.ok(
+        project.sections[1].images.every((image) => image.width === 3000 && image.height === 3000),
       )
     } else {
       assert.equal((modalContent.match(/class="project-chapter-heading"/g) ?? []).length, 2)
@@ -680,7 +714,7 @@ try {
   assert.equal(conflictingButton, internalButton, 'to 與 href 並存時維持原站內導覽')
   assert.ok(internalButton.includes('href="/about"'))
   assert.ok(!/\s(?:type|target|rel)=/.test(internalButton))
-  console.log('PASS 共用網站連結：五作品、兩種版型、網址驗證、原生按鈕與連結優先規則')
+  console.log('PASS 共用網站連結：六作品、兩種版型、網址驗證、原生按鈕與連結優先規則')
 
   const cases = [
     ['/', 'home', '平面設計師 與 前端網頁設計學習者'],
@@ -688,7 +722,6 @@ try {
     ['/works', 'works', '主要作品'],
     ['/graphic-works', 'not-found', '找不到這個頁面'],
     ...projects.map((project) => [`/works/${project.slug}`, `work-${project.slug}`, project.title]),
-    ['/works/project-06', 'not-found', '找不到這個頁面'],
     ['/works/unknown-project', 'not-found', '找不到這個頁面'],
     ['/missing-page', 'not-found', '找不到這個頁面'],
     ['/missing/nested/page', 'not-found', '找不到這個頁面'],
@@ -765,11 +798,12 @@ try {
       assert.ok(previousPosition < html.indexOf('id="about-likes"'), '完整經歷呈現在 Likes 前')
       assert.ok(!/<h2\b[^>]*>聯絡方式<\/h2>/.test(html))
       for (const text of [
-        '2013–2017',
+        '2013 - 2017',
         '朝陽科技大學工業設計系',
-        '2010–2013',
+        '2010 - 2013',
         '鶯歌高職陶瓷工程科',
-        '丙級陶瓷技術士－石膏模',
+        '丙級網頁設計技術士',
+        '丙級陶瓷石膏模技術士',
         '丙級廣告設計技術士',
         'AutoCAD 國際認證',
       ]) {
@@ -779,7 +813,20 @@ try {
         [...html.matchAll(/<li\b[^>]*class="skill-tag"[^>]*>(.*?)<\/li>/gs)].map(
           (match) => match[1],
         ),
-        ['Ai', 'Ps', 'AutoCAD', 'Word', 'PowerPoint', 'Excel', '陶瓷', '金工'],
+        [
+          'Ai',
+          'Ps',
+          'Procreate',
+          'html',
+          'css',
+          'javascript',
+          'Figma',
+          'ChatGPT',
+          'Word',
+          'PowerPoint',
+          'Excel',
+          '陶瓷',
+        ],
       )
       const likeImages = [
         ...html.matchAll(/<img\b[^>]*src="(\/images\/profile\/likes\/[^"]+)"[^>]*>/g),
