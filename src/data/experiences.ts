@@ -14,14 +14,17 @@ export const experiences: ExperienceYear[] = [
     items: [{ text: '參與 勞動部勞動力發展署職前訓練「前端技術與 AI 應用」課程' }],
   },
   {
+    year: 2025,
+    items: [{ text: '擔任 恬品軒企業有限公司 設計 ( 2021 - 2025 )' }],
+  },
+  {
     year: 2021,
-    items: [{ text: '擔任 恬品軒企業有限公司 設計（2021–2025）' }],
+    items: [{ text: '擔任 奇軒包裝有限公司 設計 ( 2017 - 2021 )' }],
   },
   { year: 2018, items: [{ text: '參與 杭州文博會' }] },
   {
     year: 2017,
     items: [
-      { text: '擔任 奇軒包裝有限公司 設計（2017–2021）' },
       { text: '參與 創藝多腦河節目採訪' },
       { text: '獲得 文創之星創意概念組傳承創新 金獎', type: 'award' },
       { text: '金點新秀年度最佳設計獎 入圍', type: 'nomination' },
