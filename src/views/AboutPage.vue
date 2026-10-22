@@ -8,7 +8,7 @@ const education = [
   { years: '2010 - 2013', school: '鶯歌高職陶瓷工程科' },
 ]
 const licenses = ['丙級網頁設計技術士','丙級陶瓷石膏模技術士', '丙級廣告設計技術士', 'AutoCAD 國際認證']
-const skills = ['Ai', 'Ps', 'Procreate', 'html','css','javascript','Figma',,'ChatGPT','Word', 'PowerPoint', 'Excel', '陶瓷']
+const skills = ['Ai', 'Ps', 'Procreate', 'html','css','javascript','Figma','ChatGPT','Word', 'PowerPoint', 'Excel', '陶瓷']
 const likes = [
   { id: 'baseball', alt: '棒球', defaultImage: 'baseball-1.png', hoverImage: 'baseball-2.JPG' },
   { id: 'ceramics', alt: '陶瓷', defaultImage: 'ceramics-1.png', hoverImage: 'ceramics-2.jpg' },
