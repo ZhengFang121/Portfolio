@@ -79,6 +79,7 @@ const chrome = spawn(
 let socket
 const delay = (ms) => new Promise((done) => setTimeout(done, ms))
 const report = []
+const headerChecks = []
 try {
   const endpoint = await new Promise((done, reject) => {
     let log = ''
@@ -134,7 +135,8 @@ try {
     return result.result.value
   }
   async function waitFor(expression) {
-    for (let attempt = 0; attempt < 100; attempt++) {
+    // 圖片／影片解碼與頁面初始化在忙碌環境可能超過 5 秒，保留判定並等候最多約 15 秒。
+    for (let attempt = 0; attempt < 300; attempt++) {
       if (await evaluate(expression)) return
       await delay(50)
     }
@@ -212,21 +214,99 @@ try {
       '關閉後影片停止播放',
     )
   }
+  let headerReference
+  async function checkSharedHeader(index, width) {
+    const header = await evaluate(`(() => {
+      const root=document.querySelector('.project-detail--modal'),header=root.querySelector(':scope > header');
+      const classes=['project-design-year','project-detail-title','project-detail-summary','project-categories','project-cover'];
+      const children=[...header.children].filter(el=>classes.some(name=>el.classList.contains(name)));
+      const style=el=>{const s=getComputedStyle(el);return {font:s.fontFamily,size:s.fontSize,weight:s.fontWeight,lineHeight:s.lineHeight,spacing:s.letterSpacing,color:s.color,align:s.textAlign}};
+      const bounds=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}};
+      const cover=header.querySelector('.project-cover'),s=getComputedStyle(cover);
+      const overview=[...root.querySelectorAll('.project-chapter-heading')].find(el=>el.querySelector('.project-chapter-title').textContent.trim()==='作品介紹');
+      return {
+        slug:document.querySelectorAll('.work-card')[${index}].getAttribute('href').split('/').at(-1),
+        height:innerHeight,order:children.map(el=>classes.find(name=>el.classList.contains(name))),
+        sectionNumbers:root.querySelectorAll('.project-chapter-number').length,
+        yearCount:header.querySelectorAll('.project-design-year').length,coverCount:header.querySelectorAll('.project-cover').length,
+        bounds:bounds(header),children:children.map(bounds),
+        styles:children.slice(0,3).map(style),
+        overviewStyles:{title:style(overview.querySelector('.project-chapter-title')),subtitle:style(overview.querySelector('.project-chapter-subtitle')),gap:getComputedStyle(overview).rowGap},
+        layout:{display:getComputedStyle(header).display,gap:getComputedStyle(header).rowGap,align:getComputedStyle(header).justifyItems},
+        coverStyle:{width:s.width,maxWidth:s.maxWidth,fit:s.objectFit,radius:s.borderRadius},
+        cover:{src:cover.getAttribute('src'),alt:cover.alt,loading:cover.loading,natural:[cover.naturalWidth,cover.naturalHeight],rect:bounds(cover)},
+      };
+    })()`)
+    assert.deepEqual(header.order, [
+      'project-design-year',
+      'project-detail-title',
+      'project-detail-summary',
+      'project-categories',
+      'project-cover',
+    ])
+    assert.equal(header.yearCount, 1)
+    assert.equal(header.coverCount, 1)
+    assert.equal(header.sectionNumbers, 0, '所有作品介紹視窗皆無 SECTION 編號')
+    assert.equal(header.overviewStyles.subtitle.size, '12px', '英文副標題使用下一級 sm 字級')
+    const shared = {
+      styles: header.styles,
+      layout: header.layout,
+      coverStyle: header.coverStyle,
+      overviewStyles: header.overviewStyles,
+    }
+    if (index === 0) headerReference = shared
+    else
+      assert.deepEqual(
+        shared,
+        headerReference,
+        '六個作品的頂部資訊、封面與作品介紹中英標題使用相同樣式',
+      )
+    for (const [childIndex, child] of header.children.entries()) {
+      if (childIndex > 0)
+        assert.ok(child.top >= header.children[childIndex - 1].bottom - 1, '頂部資訊依序垂直排列')
+      assert.ok(
+        Math.abs(child.left + child.width / 2 - (header.bounds.left + header.bounds.width / 2)) < 1,
+        '頂部資訊與封面水平置中',
+      )
+    }
+    assert.ok(header.cover.alt)
+    assert.equal(header.cover.loading, 'lazy')
+    assert.ok(
+      Math.abs(
+        header.cover.rect.width / header.cover.rect.height -
+          header.cover.natural[0] / header.cover.natural[1],
+      ) < 0.01,
+      '共用封面保留原始比例',
+    )
+    headerChecks.push({ width, ...header })
+    if ([1440, 390].includes(width) && header.height > 500) {
+      const { data } = await cdp('Page.captureScreenshot', { format: 'png' })
+      await writeFile(
+        join(output, `${width}x${header.height}-${header.slug}-header.png`),
+        Buffer.from(data, 'base64'),
+      )
+    }
+  }
   async function checkDetail(index, width) {
+    await checkSharedHeader(index, width)
     if (index === 4) {
       const gallery = await evaluate(`(() => {
-        const root=document.querySelector('.project-detail--gallery');
+        const root=document.querySelector('.project-detail--modal');
         const panel=root.closest('.project-modal-panel');
         const group=root.querySelector('.project-image-group--stack');
         const rect=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}};
-        const reference=root.querySelector('.project-item-text');
+        const reference=group.closest('.project-section');
         return {
-          header:[...root.querySelector(':scope > header').children].map(el=>el.textContent.trim()),
+          header:[...root.querySelector(':scope > header').children].filter(el=>el.tagName!=='IMG').map(el=>el.textContent.trim()),
           headings:[...root.querySelectorAll('h3')].map(el=>el.textContent.trim()),
-          count:root.querySelectorAll('img').length,cover:!!root.querySelector('.project-cover'),
+          subtitles:[...root.querySelectorAll('.project-chapter-subtitle')].map(el=>el.textContent.trim()),
+          textBlocks:root.querySelectorAll('.project-item-text').length,
+          introduction:root.querySelector('.project-item-body').textContent.trim(),
+          count:root.querySelectorAll('img').length,cover:root.querySelector('.project-cover').getAttribute('src'),
+          sharedRadius:getComputedStyle(root.querySelector('.project-cover')).borderRadius,
+          allSources:[...root.querySelectorAll('img')].map(img=>img.getAttribute('src')),
           display:getComputedStyle(group).display,direction:getComputedStyle(group).flexDirection,
           gap:parseFloat(getComputedStyle(group).gap),reference:rect(reference),group:rect(group),
-          centered:getComputedStyle(reference).textAlign,
           overflow:panel.scrollWidth>panel.clientWidth || document.documentElement.scrollWidth>document.documentElement.clientWidth,
           images:[...group.querySelectorAll('img')].map(img=>({
             src:img.getAttribute('src'),alt:img.alt,loading:img.loading,rect:rect(img),
@@ -237,19 +317,40 @@ try {
         };
       })()`)
       assert.deepEqual(gallery.header, [
+        '# 2022 - 2023',
         '似顏繪',
         '客製化肖像插畫',
-        '# 2022 - 2023',
         'ILLUSTRATION',
       ])
-      assert.deepEqual(gallery.headings, ['作品介紹', '作品展示'])
-      assert.equal(gallery.count, 6)
-      assert.ok(!gallery.cover && !gallery.overflow)
+      assert.deepEqual(gallery.headings, ['作品介紹'])
+      assert.deepEqual(gallery.subtitles, ['PROJECT OVERVIEW'])
+      assert.equal(gallery.textBlocks, 1)
+      assert.equal(
+        gallery.introduction,
+        '依照客戶提供的照片，繪製專屬的人物與寵物似顏繪。以簡約的手繪線條與柔和的色彩，保留每個角色獨特的外型與神情，將照片中的日常回憶轉化為溫暖且富有個人特色的插畫作品。',
+      )
+      assert.equal(gallery.count, 7)
+      assert.equal(gallery.cover, '/images/projects/custom-portrait/cover.jpg')
+      assert.deepEqual(
+        gallery.allSources,
+        ['cover', '01', '02', '03', '04', '05', '06'].map(
+          (name) => `/images/projects/custom-portrait/${name}.jpg`,
+        ),
+      )
+      assert.equal(gallery.images.length, 6)
+      assert.ok(!gallery.overflow)
       assert.equal(gallery.display, 'flex')
       assert.equal(gallery.direction, 'column')
-      assert.equal(gallery.centered, 'center')
       assert.equal(gallery.gap, 24)
-      assert.ok(Math.abs(gallery.group.width - gallery.reference.width) < 1)
+      assert.ok(Math.abs(gallery.group.width - Math.min(gallery.reference.width, 672)) < 1)
+      assert.ok(
+        Math.abs(
+          gallery.group.left +
+            gallery.group.width / 2 -
+            gallery.reference.left -
+            gallery.reference.width / 2,
+        ) < 1,
+      )
       assert.ok(gallery.group.width <= 672)
       for (const [imageIndex, image] of gallery.images.entries()) {
         assert.equal(image.src, `/images/projects/custom-portrait/0${imageIndex + 1}.jpg`)
@@ -257,15 +358,15 @@ try {
         assert.equal(image.loading, 'lazy')
         assert.deepEqual(image.natural, [3000, 3000])
         assert.ok(Math.abs(image.rect.width - image.rect.height) < 1, '保留原始 1:1 比例')
-        assert.ok(Math.abs(image.rect.width - gallery.group.width) < 1, '六張圖片統一展示寬度')
+        assert.ok(Math.abs(image.rect.width - gallery.group.width) < 1, '六張展示圖片統一寬度')
         assert.ok(Math.abs(image.rect.left - gallery.group.left) < 1, '圖片水平置中')
         if (imageIndex > 0)
           assert.ok(
             Math.abs(image.rect.top - gallery.images[imageIndex - 1].rect.bottom - gallery.gap) < 1,
-            '六列圖片間距一致',
+            '六列展示圖片間距一致',
           )
         assert.equal(image.fit, 'contain')
-        assert.equal(image.radius, '0px')
+        assert.equal(image.radius, gallery.sharedRadius, '展示圖片沿用共用圓角')
         assert.equal(image.border, '0px')
         assert.equal(image.shadow, 'none')
         assert.equal(image.background, 'rgba(0, 0, 0, 0)')
@@ -298,7 +399,7 @@ try {
         chapterGap:parseFloat(getComputedStyle(root).rowGap),
         chapters:[...root.querySelectorAll('.project-chapter')].map(chapter=>({
           rect:rect(chapter),border:getComputedStyle(chapter).borderTopWidth,padding:parseFloat(getComputedStyle(chapter).paddingTop),
-          number:chapter.querySelector('.project-chapter-number').textContent,
+          number:chapter.querySelector('.project-chapter-number')?.textContent ?? null,
           title:chapter.querySelector('h3').textContent,subtitle:chapter.querySelector('.project-chapter-subtitle').textContent,
           headingTypes:[...chapter.querySelector('.project-chapter-heading').children].map(type),
           headingGap:getComputedStyle(chapter.querySelector('.project-chapter-heading')).rowGap,
@@ -383,6 +484,12 @@ try {
     const textReference = detail.chapters[0].items[0].text
     const titleReference = detail.chapters[0].items[0].titleType
     for (const chapter of detail.chapters) {
+      assert.equal(chapter.number, null)
+      assert.equal(
+        chapter.headingTypes[1].size,
+        12,
+        'DESIGN CONCEPT 與 PROJECT OVERVIEW 皆縮小一級',
+      )
       assert.ok(Math.abs(chapter.rect.width - detail.media.width) < 1, '章節與封面同寬')
       assert.ok(Math.abs(chapter.rect.left - detail.media.left) < 1)
       assert.equal(chapter.itemGap, width <= 480 ? 24 : width <= 899 ? 32 : 48)
@@ -408,7 +515,7 @@ try {
         assert.equal(item.border, '0px', '子段落無分隔線')
         assert.deepEqual(item.titleType, titleReference, '核心句與功能標題使用相同樣式')
         assert.equal(item.titleType.weight, '600')
-        assert.ok(item.titleType.size < chapter.headingTypes[1].size)
+        assert.ok(item.titleType.size < chapter.headingTypes[0].size)
         if (item.labelType) {
           assert.equal(item.labelType.color, 'rgb(167, 31, 36)')
           assert.ok(item.labelType.size < item.titleType.size)
@@ -439,8 +546,8 @@ try {
       assert.deepEqual(
         detail.chapters.map((chapter) => [chapter.number, chapter.title, chapter.subtitle]),
         [
-          ['SECTION 01', '設計理念', 'DESIGN CONCEPT'],
-          ['SECTION 02', '作品介紹', 'PROJECT OVERVIEW'],
+          [null, '設計理念', 'DESIGN CONCEPT'],
+          [null, '作品介紹', 'PROJECT OVERVIEW'],
         ],
       )
       assert.deepEqual(
@@ -449,8 +556,7 @@ try {
         '兩章標題字級、字重、行距與對齊完全一致',
       )
       assert.equal(detail.chapters[0].headingGap, detail.chapters[1].headingGap)
-      assert.ok(detail.chapters[0].headingTypes[0].size < detail.chapters[0].headingTypes[2].size)
-      assert.ok(detail.chapters[0].headingTypes[2].size < detail.chapters[0].headingTypes[1].size)
+      assert.ok(detail.chapters[0].headingTypes[1].size < detail.chapters[0].headingTypes[0].size)
       assert.ok(detail.media.bottom <= detail.chapters[0].rect.top, '封面接續設計理念')
       assert.ok(
         detail.chapters[0].rect.bottom < detail.chapters[1].rect.top,
@@ -561,8 +667,8 @@ try {
       assert.deepEqual(
         detail.chapters.map((chapter) => [chapter.number, chapter.title, chapter.subtitle]),
         [
-          ['SECTION 01', '設計理念', 'DESIGN CONCEPT'],
-          ['SECTION 02', '作品介紹', 'PROJECT OVERVIEW'],
+          [null, '設計理念', 'DESIGN CONCEPT'],
+          [null, '作品介紹', 'PROJECT OVERVIEW'],
         ],
       )
       assert.deepEqual(
@@ -628,8 +734,8 @@ try {
       assert.deepEqual(
         detail.chapters.map((chapter) => [chapter.number, chapter.title, chapter.subtitle]),
         [
-          ['SECTION 01', '設計理念', 'DESIGN CONCEPT'],
-          ['SECTION 02', '作品介紹', 'PROJECT OVERVIEW'],
+          [null, '設計理念', 'DESIGN CONCEPT'],
+          [null, '作品介紹', 'PROJECT OVERVIEW'],
         ],
       )
       assert.deepEqual(
@@ -762,8 +868,8 @@ try {
       assert.deepEqual(
         detail.chapters.map((chapter) => [chapter.number, chapter.title, chapter.subtitle]),
         [
-          ['SECTION 01', '設計理念', 'DESIGN CONCEPT'],
-          ['SECTION 02', '作品介紹', 'PROJECT OVERVIEW'],
+          [null, '設計理念', 'DESIGN CONCEPT'],
+          [null, '作品介紹', 'PROJECT OVERVIEW'],
         ],
       )
       assert.deepEqual(
@@ -1153,11 +1259,15 @@ try {
           )
           await checkDetail(index, width)
           if (index === 4 && [1440, 768, 390].includes(width) && height > 500) {
+            await evaluate(
+              `(() => {const panel=document.querySelector('.project-modal-panel'),heading=document.querySelector('.project-chapter-heading');panel.scrollTo({top:panel.scrollTop+heading.getBoundingClientRect().top-panel.getBoundingClientRect().top,behavior:'instant'})})()`,
+            )
             const { data } = await cdp('Page.captureScreenshot', { format: 'png' })
             await writeFile(
               join(output, `${width}x${height}-custom-portrait.png`),
               Buffer.from(data, 'base64'),
             )
+            await evaluate(`document.querySelector('.project-modal-panel').scrollTop=0`)
           }
           if ([2, 3].includes(index) && [1440, 768, 390].includes(width) && height > 500) {
             const brand = index === 2 ? 'apollo' : 'r4d'
@@ -1633,8 +1743,9 @@ try {
       )
   }
   await writeFile(join(output, 'report.json'), JSON.stringify(report, null, 2))
+  await writeFile(join(output, 'shared-headers.json'), JSON.stringify(headerChecks, null, 2))
   console.log(
-    `PASS 六個作品、似顏繪六列單欄、修飾鍵、原生中鍵另開頁、觸控捲動、開啟中 resize、卸載清理、直接網址與 404。證據：${output}`,
+    `PASS 六個作品共用頂部資訊與封面、似顏繪封面加六列單欄展示、修飾鍵、原生中鍵另開頁、觸控捲動、開啟中 resize、卸載清理、直接網址與 404。證據：${output}`,
   )
 } finally {
   socket?.close()

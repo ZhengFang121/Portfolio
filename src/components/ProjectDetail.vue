@@ -200,16 +200,13 @@ function hasItemContent(item: ProjectSection) {
     class="project-detail page-sections"
     :class="{
       'project-detail--modal': mode === 'modal',
-      'project-detail--gallery': project.detailLayout === 'gallery',
     }"
   >
     <header class="stack" :class="{ 'content-section': mode === 'page' }">
       <RouterLink v-if="mode === 'page'" class="text-link" to="/works"
         ><ArrowLeft :size="18" aria-hidden="true" />返回主要作品</RouterLink
       >
-      <p v-if="project.detailLayout !== 'gallery'" class="project-design-year">
-        # {{ project.designYear }}
-      </p>
+      <p class="project-design-year"># {{ project.designYear }}</p>
       <component
         :is="mode === 'modal' ? 'h2' : 'h1'"
         :id="titleId"
@@ -219,9 +216,6 @@ function hasItemContent(item: ProjectSection) {
       >
       <p class="project-detail-summary intro muted">
         {{ project.summary ?? '作品簡介尚未提供，將於內容確認後補上。' }}
-      </p>
-      <p v-if="project.detailLayout === 'gallery'" class="project-design-year">
-        # {{ project.designYear }}
       </p>
       <ProjectCategories
         v-if="project.categories.length"
@@ -246,7 +240,7 @@ function hasItemContent(item: ProjectSection) {
         </ul>
       </div>
       <img
-        v-if="project.cover && project.detailLayout !== 'gallery'"
+        v-if="project.cover"
         class="project-cover"
         :src="project.cover.src"
         :alt="project.cover.alt"
@@ -254,19 +248,19 @@ function hasItemContent(item: ProjectSection) {
         :height="project.cover.height"
         loading="lazy"
       />
-      <div v-else-if="project.detailLayout !== 'gallery'" class="placeholder-media">
-        作品主視覺待提供
-      </div>
+      <div v-else class="placeholder-media">作品主視覺待提供</div>
     </header>
     <section
       v-for="section in project.sections"
       :key="section.id"
       class="project-section stack"
       :class="{ 'content-section': mode === 'page', 'project-chapter': section.items?.length }"
-      :aria-labelledby="sectionId(section.id)"
+      :aria-labelledby="section.title ? sectionId(section.id) : undefined"
     >
-      <header class="project-chapter-heading">
-        <p v-if="section.label" class="project-chapter-number">{{ section.label }}</p>
+      <header v-if="section.title" class="project-chapter-heading">
+        <p v-if="mode === 'page' && section.label" class="project-chapter-number">
+          {{ section.label }}
+        </p>
         <component :is="headingTag()" :id="sectionId(section.id)" class="project-chapter-title">{{
           section.title
         }}</component>
@@ -279,7 +273,9 @@ function hasItemContent(item: ProjectSection) {
           class="project-section-item stack"
           :class="{ 'project-section-item--card-grid': item.imageLayout === 'card-grid' }"
           :role="section.items?.length ? 'group' : undefined"
-          :aria-labelledby="section.items?.length ? sectionId(item.id, section.id) : undefined"
+          :aria-labelledby="
+            section.items?.length && item.title ? sectionId(item.id, section.id) : undefined
+          "
         >
           <div
             v-if="
@@ -296,7 +292,7 @@ function hasItemContent(item: ProjectSection) {
             </p>
             <component
               :is="headingTag(true)"
-              v-if="section.items?.length"
+              v-if="section.items?.length && item.title"
               :id="sectionId(item.id, section.id)"
               class="project-item-title"
               >{{ item.title }}</component
@@ -582,12 +578,6 @@ function hasItemContent(item: ProjectSection) {
   .project-image-group--stack {
     display: flex;
     flex-direction: column;
-  }
-  .project-image-group--stack .project-section-media img {
-    border-radius: 0;
-  }
-  .project-detail--gallery .project-item-text {
-    text-align: center;
   }
   /* 窄容器依圖片順序單欄；寬容器以首張直式圖搭配右側上下兩張照片。 */
   .project-image-group--feature {
@@ -876,6 +866,9 @@ function hasItemContent(item: ProjectSection) {
   }
   .project-chapter-subtitle {
     font-size: var(--font-size-md);
+  }
+  .project-detail--modal .project-chapter-subtitle {
+    font-size: var(--font-size-sm);
   }
   .project-item-label {
     color: var(--palette-red);

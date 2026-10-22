@@ -36,7 +36,7 @@ export interface ProjectAward {
 
 export interface ProjectSection {
   id: string
-  title: string
+  title?: string
   content?: string | null
   label?: string
   subtitle?: string
@@ -65,8 +65,6 @@ export interface PortfolioProject {
   year: string | null
   role: string | null
   summary: string | null
-  // Gallery 以介紹後的圖片群組展示作品，封面僅用於列表卡片。
-  detailLayout?: 'gallery'
   websiteUrl?: string
   awards?: ProjectAward[]
   cover: { src: string; alt: string; width: number; height: number } | null
@@ -690,9 +688,8 @@ export const projects: PortfolioProject[] = [
     year: null,
     role: null,
     summary: '客製化肖像插畫',
-    detailLayout: 'gallery',
     cover: {
-      src: '/images/projects/custom-portrait/01.jpg',
+      src: '/images/projects/custom-portrait/cover.jpg',
       alt: '似顏繪：長髮人物與白色小狗的客製化肖像插畫',
       width: 3000,
       height: 3000,
@@ -700,13 +697,13 @@ export const projects: PortfolioProject[] = [
     sections: [
       {
         id: 'project-introduction',
-        title: '作品介紹',
         content:
           '依照客戶提供的照片，繪製專屬的人物與寵物似顏繪。以簡約的手繪線條與柔和的色彩，保留每個角色獨特的外型與神情，將照片中的日常回憶轉化為溫暖且富有個人特色的插畫作品。',
       },
       {
         id: 'project-gallery',
-        title: '作品展示',
+        title: '作品介紹',
+        subtitle: 'PROJECT OVERVIEW',
         imageLayout: 'stack',
         images: [
           {

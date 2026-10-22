@@ -133,7 +133,7 @@ try {
     expectedConceptParagraphs,
   )
   assert.equal(designConcept.items[2].tagline, 'START・GROW・WITH YOU')
-  for (const project of projects.filter((project) => project.detailLayout !== 'gallery')) {
+  for (const project of projects.filter((project) => project.slug !== 'project-06')) {
     assert.equal(project.sections.length, 2, `${project.slug}: 統一新版兩章架構`)
     assert.deepEqual(
       project.sections.map((section) => section.label),
@@ -309,6 +309,24 @@ try {
     assert.ok(!modalContent.includes('返回主要作品'), `${project.slug}: Modal 保留在原頁面`)
     assert.ok(!modalContent.includes('設計年份'))
     assert.ok(modalContent.includes(`# ${project.designYear}`))
+    assert.ok(!modalContent.includes('project-chapter-number'), '介紹視窗不渲染章節編號')
+    assert.ok(!modalContent.includes('SECTION 01') && !modalContent.includes('SECTION 02'))
+    const header = modalContent.match(/<header\b[^>]*>(.*?)<\/header>/s)[1]
+    const headerOrder = [
+      'project-design-year',
+      'project-detail-title',
+      'project-detail-summary',
+      'project-categories',
+      'project-cover',
+    ].map((className) => header.indexOf(className))
+    assert.ok(
+      headerOrder.every(
+        (position, index) => position >= 0 && (!index || position > headerOrder[index - 1]),
+      ),
+      `${project.slug}: 共用頂部順序為年份、名稱、簡介、分類與封面`,
+    )
+    assert.equal((header.match(/class="project-design-year"/g) ?? []).length, 1)
+    assert.equal((header.match(/class="project-cover"/g) ?? []).length, 1)
     for (const removed of ['作品內容整理中', '製作年份', '負責角色', 'project-facts']) {
       assert.ok(!modalContent.includes(removed), `${project.slug}: 移除 ${removed}`)
     }
@@ -320,8 +338,13 @@ try {
     )
     for (const section of project.sections) {
       const sectionId = `${project.slug}-modal-${section.id}`
-      assert.ok(modalContent.includes(`aria-labelledby="${sectionId}"`))
-      assert.match(modalContent, new RegExp(`<h3[^>]*id="${sectionId}"`))
+      if (section.title) {
+        assert.ok(modalContent.includes(`aria-labelledby="${sectionId}"`))
+        assert.match(modalContent, new RegExp(`<h3[^>]*id="${sectionId}"`))
+      } else {
+        assert.ok(!modalContent.includes(`aria-labelledby="${sectionId}"`))
+        assert.ok(!modalContent.includes(`id="${sectionId}"`))
+      }
       for (const item of section.items ?? [section]) {
         if (item.media) await access(new URL(`../public${item.media.src}`, import.meta.url))
         for (const image of item.images ?? []) {
@@ -406,20 +429,20 @@ try {
       assert.ok(
         conceptHtml.indexOf('START・GROW・WITH YOU') < conceptHtml.indexOf('用遊戲化建立期待'),
       )
-    } else if (project.detailLayout === 'gallery') {
+    } else if (project.slug === 'project-06') {
       assert.equal(project.summary, '客製化肖像插畫')
       assert.deepEqual(project.categories, ['ILLUSTRATION'])
-      assert.ok(
-        !modalContent.includes('project-cover') && !modalContent.includes('placeholder-media'),
-      )
+      assert.ok(!modalContent.includes('placeholder-media'))
+      assert.ok(header.includes(`src="${project.cover.src}"`))
       const orderedContent = [
+        `# ${project.designYear}`,
         project.title,
         project.summary,
-        `# ${project.designYear}`,
         'ILLUSTRATION',
-        '作品介紹',
+        '/images/projects/custom-portrait/cover.jpg',
         '依照客戶提供的照片，繪製專屬的人物與寵物似顏繪。以簡約的手繪線條與柔和的色彩，保留每個角色獨特的外型與神情，將照片中的日常回憶轉化為溫暖且富有個人特色的插畫作品。',
-        '作品展示',
+        '作品介紹',
+        'PROJECT OVERVIEW',
       ]
       let previous = -1
       for (const content of orderedContent) {
@@ -427,22 +450,37 @@ try {
         assert.ok(position > previous, `似顏繪內容順序：${content}`)
         previous = position
       }
+      assert.equal(project.sections.length, 2)
+      assert.equal(project.sections[0].id, 'project-introduction')
+      assert.equal(project.sections[0].title, undefined)
+      assert.equal(project.sections[1].id, 'project-gallery')
+      assert.equal(project.sections[1].title, '作品介紹')
+      assert.equal(project.sections[1].subtitle, 'PROJECT OVERVIEW')
+      assert.equal((modalContent.match(/class="project-chapter-heading"/g) ?? []).length, 1)
+      assert.ok(modalContent.includes('依照客戶提供的照片'))
+      assert.ok(!modalContent.includes('作品展示'))
       assert.equal(project.sections[1].imageLayout, 'stack')
+      assert.deepEqual(
+        project.sections[1].images.map((image) => image.src),
+        ['01', '02', '03', '04', '05', '06'].map(
+          (name) => `/images/projects/custom-portrait/${name}.jpg`,
+        ),
+        '展示區不重複封面，依序顯示六張圖片',
+      )
       assert.ok(modalContent.includes('project-image-group--stack'))
       const images = [...modalContent.matchAll(/<img\b[^>]*src="([^"]+)"/g)]
       assert.deepEqual(
         images.map((match) => match[1]),
-        ['01', '02', '03', '04', '05', '06'].map(
+        ['cover', '01', '02', '03', '04', '05', '06'].map(
           (name) => `/images/projects/custom-portrait/${name}.jpg`,
         ),
-        '六張圖片各出現一次，依編號順序展示',
+        '封面與六張展示圖片各出現一次，依序呈現',
       )
       assert.ok(
         project.sections[1].images.every((image) => image.width === 3000 && image.height === 3000),
       )
     } else {
       assert.equal((modalContent.match(/class="project-chapter-heading"/g) ?? []).length, 2)
-      assert.ok(modalContent.includes('SECTION 01') && modalContent.includes('SECTION 02'))
       assert.equal((modalContent.match(/內容準備中/g) ?? []).length, 0)
       assert.equal(
         (modalContent.match(/class="[^"]*\bproject-image-group(?: [^"]*)?"/g) ?? []).length,
@@ -472,12 +510,12 @@ try {
     }
     for (const [index, [, html]] of renderedSections.entries()) {
       const section = project.sections[index]
-      assert.ok(html.includes(section.title))
+      if (section.title) assert.ok(html.includes(section.title))
       if (index === 1 && projects.slice(2, 4).includes(project)) {
         assert.ok(!html.includes('project-item-body') && !html.includes('project-item-label'))
       }
       for (const item of section.items ?? [section]) {
-        assert.ok(html.includes(item.title))
+        if (item.title) assert.ok(html.includes(item.title))
         if (
           !item.content &&
           !item.paragraphs?.length &&
@@ -904,7 +942,9 @@ try {
       }
     }
     if (expectedName.startsWith('work-')) {
-      for (const section of project.sections) assert.ok(html.includes(section.title))
+      for (const section of project.sections) {
+        if (section.title) assert.ok(html.includes(section.title))
+      }
       assert.ok(html.includes(`src="${project.cover.src}"`))
       for (const category of project.categories) assert.ok(html.includes(category))
       assert.ok(html.includes(`# ${project.designYear}`))
