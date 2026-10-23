@@ -67,12 +67,17 @@ function isActive(path: string) {
     min-height: 44px;
     aspect-ratio: var(--nav-image-ratio);
     border-radius: var(--radius-control);
+    -webkit-user-select: none;
+    user-select: none;
   }
   .nav-image-link img {
     grid-area: 1 / 1;
     width: 100%;
     height: 100%;
     object-fit: contain;
+    -webkit-user-select: none;
+    user-select: none;
+    pointer-events: none;
   }
   .nav-image-selected {
     visibility: hidden;
