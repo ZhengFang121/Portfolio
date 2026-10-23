@@ -95,16 +95,18 @@
     height: 100dvh;
     overflow: clip;
   }
-  /* 遮住捲到導覽列後方的內容；品牌圖與導覽列位於此白色層上方。 */
+  /* 固定透明圓角視窗，以外側白色遮罩裁出可視範圍，內容仍隨文件捲動。
+     圖層低於品牌、導覽與 Dialog；不攔截操作，也不建立捲動容器。 */
   .app-shell[data-content-ready='true']::before {
     content: '';
     position: fixed;
-    top: 0;
+    top: var(--shell-content-top);
+    bottom: max(var(--shell-content-bottom), env(safe-area-inset-bottom));
     left: var(--shell-content-left);
-    right: 0;
-    height: var(--shell-content-top);
+    right: var(--shell-edge);
     z-index: 1;
-    background: var(--color-background);
+    border-radius: var(--content-section-radius);
+    box-shadow: 0 0 0 100vmax var(--color-background);
     pointer-events: none;
   }
   .intro-viewport {
