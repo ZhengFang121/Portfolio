@@ -725,7 +725,9 @@ try {
           project: { ...project, websiteUrl: `  ${websiteUrl}  ` },
           mode,
         })
-        const link = html.match(/<a\b[^>]*>前往網站<\/a>/)?.[0]
+        const link = html.match(
+          /<a\b[^>]*>\s*<span\b[^>]*>前往網站<\/span>\s*<svg\b[\s\S]*?<\/svg>\s*<\/a>/,
+        )?.[0]
         assert.ok(link, `${project.slug}/${mode}: 共用網站連結`)
         assert.ok(link.includes(`href="${websiteUrl}"`))
         assert.ok(link.includes('target="_blank"') && link.includes('rel="noopener noreferrer"'))
@@ -734,14 +736,19 @@ try {
         assert.ok(html.indexOf('project-website-link') > html.lastIndexOf('</section>'))
         assert.match(
           html.replace(/<!--[\s\S]*?-->/g, ''),
-          /前往網站<\/a><\/div><\/article>$/,
+          /前往網站<\/span>\s*<svg\b[\s\S]*?<\/svg>\s*<\/a><\/div><\/article>$/,
           '網站按鈕位於整份介紹最後',
         )
       }
     }
   }
   const nativeButton = await renderToString(createSSRApp(BaseButton, { type: 'submit' }))
-  assert.match(nativeButton, /<button\b[^>]*type="submit"[^>]*>VIEW MORE<\/button>/)
+  assert.match(
+    nativeButton,
+    /<button\b[^>]*type="submit"[^>]*>\s*<span\b[^>]*>VIEW MORE<\/span>\s*<svg\b[\s\S]*?<\/svg>\s*<\/button>/,
+  )
+  const nativeIcon = nativeButton.match(/<svg\b[^>]*>/)?.[0] ?? ''
+  assert.ok(nativeIcon.includes('lucide-arrow-right') && nativeIcon.includes('aria-hidden="true"'))
   assert.ok(!/\s(?:to|href|target|rel)=/.test(nativeButton))
   const internalButton = await renderWithRouter(BaseButton, { to: '/about', variant: 'red' })
   const conflictingButton = await renderWithRouter(BaseButton, {
@@ -906,7 +913,14 @@ try {
       if (expectedName === 'home') {
         assert.ok(html.includes('href="/about"'), '首頁保留 Profile 導覽')
         assert.ok(html.includes('href="/works"'), '首頁導向全部主要作品')
-        assert.equal((html.match(/>\s*VIEW MORE\s*<\/a>/g) ?? []).length, 2)
+        assert.equal(
+          (
+            html.match(
+              /<a\b[^>]*>\s*<span\b[^>]*>VIEW MORE<\/span>\s*<svg\b[\s\S]*?<\/svg>\s*<\/a>/g,
+            ) ?? []
+          ).length,
+          2,
+        )
         assert.ok(html.includes('view-more-button--cream'))
         assert.ok(html.includes('view-more-button--red'))
         for (const project of projects.filter((project) => !visibleProjects.includes(project))) {

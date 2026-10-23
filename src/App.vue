@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
-import { RouterView, useRoute } from 'vue-router'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
 import AppHeader from './components/AppHeader.vue'
 import AppFooter from './components/AppFooter.vue'
 import { useIntro } from './composables/useIntro'
@@ -88,6 +88,7 @@ watch(
             @error="onBrandError"
           />
         </Transition>
+        <RouterLink class="intro-home-link" to="/" aria-label="回到首頁" :inert="!contentReady" />
       </div>
     </div>
 
@@ -104,6 +105,15 @@ watch(
 </template>
 
 <style scoped>
+.intro-home-link {
+  position: absolute;
+  inset: 0;
+}
+
+.intro-home-link:not([inert]) {
+  pointer-events: auto;
+}
+
 .intro-illustration-enter-active,
 .intro-illustration-leave-active {
   transition: opacity 450ms ease-in-out;
