@@ -840,6 +840,10 @@ function hasItemContent(item: ProjectSection) {
     color: var(--palette-black);
     font-size: var(--font-size-2xl);
   }
+  /* 標題用於宣讀視窗名稱與定位閱讀起點，並非可操作控制項。 */
+  .project-detail--modal .project-detail-title[tabindex='-1']:focus {
+    outline: none;
+  }
   .project-detail--modal :is(img, video, iframe, audio) {
     display: block;
     max-inline-size: 100%;

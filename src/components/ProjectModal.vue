@@ -9,6 +9,7 @@ const props = defineProps<{
   id: string
   project: PortfolioProject
   trigger: HTMLElement | null
+  initialInput: 'keyboard' | 'pointer'
 }>()
 const visible = defineModel<boolean>('visible', { required: true })
 const emit = defineEmits<{ 'after-hide': [] }>()
@@ -27,8 +28,24 @@ let background: { element: HTMLElement; inert: boolean }[] = []
 let scrollPosition: { x: number; y: number } | null = null
 let previousOverflow = ''
 let previousOverflowPriority = ''
+let lastInput: 'keyboard' | 'pointer' = props.initialInput
+
+function onKeyboardInput(event: KeyboardEvent) {
+  if (['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) return
+  lastInput = 'keyboard'
+}
+
+function onPointerInput() {
+  lastInput = 'pointer'
+}
+
+function markRestoredFocus() {
+  // 與 WorkCard 共用的局部契約：明確指定這次還原焦點的外觀，blur 時由卡片清除。
+  if (props.trigger?.isConnected) props.trigger.setAttribute('data-restored-focus', lastInput)
+}
 
 async function onShow() {
+  lastInput = props.initialInput
   const root = document.documentElement
   scrollPosition = { x: window.scrollX, y: window.scrollY }
   previousOverflow = root.style.getPropertyValue('overflow')
@@ -69,8 +86,15 @@ function restoreBackground() {
 }
 
 function onAfterHide() {
+  markRestoredFocus()
   if (props.trigger?.isConnected) props.trigger.focus({ preventScroll: true })
   emit('after-hide')
+}
+
+function onHide() {
+  // PrimeVue 會在 hide 事件後先還原焦點，必須在那之前標記，避免短暫閃出框線。
+  markRestoredFocus()
+  restoreBackground()
 }
 
 onBeforeUnmount(restoreBackground)
@@ -88,9 +112,16 @@ onBeforeUnmount(restoreBackground)
     :draggable="false"
     :aria-labelledby="`${id}-title`"
     class="project-modal"
-    :pt="{ mask: { class: 'project-modal-mask' }, transition: { css: false } }"
+    :pt="{
+      mask: {
+        class: 'project-modal-mask',
+        onKeydownCapture: onKeyboardInput,
+        onPointerdownCapture: onPointerInput,
+      },
+      transition: { css: false },
+    }"
     @show="onShow"
-    @hide="restoreBackground"
+    @hide="onHide"
     @after-hide="onAfterHide"
   >
     <template #container="{ closeCallback }">

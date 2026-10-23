@@ -1050,7 +1050,7 @@ try {
     )
     return evaluate(`(() => {
       const el=document.querySelector(${JSON.stringify(selector)}),s=getComputedStyle(el);
-      return {focused:document.activeElement===el,visible:el.matches(':focus-visible'),
+      return {focused:document.activeElement===el,visible:el.matches(':focus-visible'),restoredInput:el.dataset.restoredFocus ?? null,
         outline:s.outlineStyle,outlineColor:s.outlineColor,shadow:s.boxShadow,transform:s.transform,
         background:s.backgroundColor,icon:el.querySelector('.view-more-button-icon') ? getComputedStyle(el.querySelector('.view-more-button-icon')).display : null,
         label:el.querySelector('.view-more-button-label') ? getComputedStyle(el.querySelector('.view-more-button-label')).opacity : null};
@@ -1077,7 +1077,11 @@ try {
     await waitFor(`getComputedStyle(document.querySelector('${card}')).transform==='none'`)
     const state = await interactionStyle(card)
     assert.ok(state.focused, '關閉後仍將焦點交還原卡片')
-    assert.equal(state.visible, keyboard, '焦點提示依最後操作方式顯示')
+    assert.equal(
+      state.restoredInput,
+      keyboard ? 'keyboard' : 'pointer',
+      '焦點還原明確記錄最後輸入方式',
+    )
     assert.equal(state.transform, 'none', '還原焦點不放大卡片')
     assert.ok(!state.shadow.includes('6px'), '還原焦點不殘留 Hover 內框')
     if (keyboard) {
@@ -1138,20 +1142,82 @@ try {
   assert.equal((await interactionStyle(card)).transform, 'none', '放開後不殘留 Active 放大')
   await click(card)
   await waitFor(`document.querySelector('.project-modal h2')===document.activeElement`)
+  assert.equal(
+    (await interactionStyle('.project-modal h2')).outline,
+    'none',
+    '滑鼠開啟後標題保留焦點但不畫框',
+  )
   await click('.project-modal-close')
   await assertRestored(false)
+  // 模擬 Safari 把指標還原誤判為 :focus-visible；驗證的是外觀，並非 Chromium 的判斷結果。
+  await cdp('DOM.enable')
+  await cdp('CSS.enable')
+  const { root: focusDocument } = await cdp('DOM.getDocument')
+  const { nodeId: focusCardNode } = await cdp('DOM.querySelector', {
+    nodeId: focusDocument.nodeId,
+    selector: card,
+  })
+  await cdp('CSS.forcePseudoState', {
+    nodeId: focusCardNode,
+    forcedPseudoClasses: ['focus-visible'],
+  })
+  const forcedPointer = await interactionStyle(card)
+  assert.ok(forcedPointer.visible, '確實強制套用 :focus-visible 以測試誤判情境')
+  assert.equal(forcedPointer.outline, 'none', '指標還原即使符合 :focus-visible 也不畫焦點框')
+  assert.equal(forcedPointer.transform, 'none')
+  assert.ok(!forcedPointer.shadow.includes('6px'))
+  await cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point })
+  const forcedPointerHover = await interactionStyle(card)
+  assert.equal(forcedPointerHover.outline, 'none', '誤判情境下真正 Hover 仍只有原本的粗內框')
+  assert.ok(forcedPointerHover.shadow.includes('6px'))
+  assert.equal(forcedPointerHover.transform, 'matrix(1.04, 0, 0, 1.04, 0, 0)')
+  await moveAway()
+  await key('ArrowRight')
+  const switchedKeyboard = await interactionStyle(card)
+  assert.equal(switchedKeyboard.restoredInput, 'keyboard', '還原後鍵盤輸入會更新暫時狀態')
+  assert.equal(switchedKeyboard.outline, 'solid')
+  assert.equal(switchedKeyboard.outlineColor, blue)
+  assert.equal(switchedKeyboard.transform, 'none')
+  assert.equal(switchedKeyboard.shadow, 'none')
+  await cdp('Input.dispatchMouseEvent', {
+    type: 'mousePressed',
+    ...point,
+    button: 'left',
+    clickCount: 1,
+  })
+  await moveAway()
+  await cdp('Input.dispatchMouseEvent', {
+    type: 'mouseReleased',
+    x: 2,
+    y: 2,
+    button: 'left',
+    clickCount: 1,
+  })
+  assert.equal(
+    (await interactionStyle(card)).restoredInput,
+    'pointer',
+    '還原後指標輸入會更新暫時狀態',
+  )
+  assert.equal((await interactionStyle(card)).outline, 'none')
+  await cdp('CSS.forcePseudoState', { nodeId: focusCardNode, forcedPseudoClasses: [] })
   await tabTo('.work-card:nth-child(2)')
+  assert.equal((await interactionStyle(card)).restoredInput, null, '離開卡片後清除暫時焦點標記')
   await key('Tab', 8)
   const focus = await interactionStyle(card)
   assert.ok(focus.visible)
   assert.equal(focus.outlineColor, blue)
   assert.equal(focus.shadow, 'none', '鍵盤焦點只有一層框線')
   assert.equal(focus.transform, 'none', '鍵盤焦點不放大')
+  await cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point })
+  const hoveredKeyboard = await interactionStyle(card)
+  assert.equal(hoveredKeyboard.shadow, 'none', '鍵盤焦點與 Hover 不疊加內框')
+  assert.equal(hoveredKeyboard.transform, 'none', '鍵盤焦點與 Hover 不疊加放大')
+  await moveAway()
   await key('Enter')
   await waitFor(`document.querySelector('.project-modal h2')===document.activeElement`)
   const title = await interactionStyle('.project-modal h2')
-  assert.ok(title.visible)
-  assert.equal(title.outlineColor, blue, '作品標題的焦點框改成藍色')
+  assert.ok(title.focused, '標題保留程式化焦點')
+  assert.equal(title.outline, 'none', '鍵盤開啟後非互動標題也不顯示焦點框')
   await tabTo('.project-modal-close')
   assert.equal((await interactionStyle('.project-modal-close')).outlineColor, blue)
   await tabTo('.project-modal-panel')
@@ -1187,7 +1253,18 @@ try {
   assert.ok(buttonFocus.visible)
   assert.equal(buttonFocus.outlineColor, blue)
   assert.equal(buttonFocus.icon, 'none', '鍵盤焦點保留按鈕文字')
-  report.push({ interactions: { initial, hover, focus, title, clicked, buttonFocus } })
+  report.push({
+    interactions: {
+      initial,
+      hover,
+      focus,
+      title,
+      forcedPointer,
+      switchedKeyboard,
+      clicked,
+      buttonFocus,
+    },
+  })
   await navigate('/works')
   await tabTo('.nav-image-link[href="/"]')
   assert.equal((await interactionStyle('.nav-image-link[href="/"]')).outlineColor, blue)
@@ -1208,6 +1285,19 @@ try {
   await navigate('/works')
   await tap(card)
   await waitFor(`document.querySelector('.project-modal h2')===document.activeElement`)
+  assert.equal(
+    (await interactionStyle('.project-modal h2')).outline,
+    'none',
+    '觸控開啟後標題不畫焦點框',
+  )
+  await tap('.project-modal-close')
+  await assertRestored(false)
+  await tap(card)
+  await waitFor(`document.querySelector('.project-modal h2')===document.activeElement`)
+  await key('Escape')
+  await assertRestored(true)
+  await key('Enter')
+  await waitFor(`document.querySelector('.project-modal h2')===document.activeElement`)
   await tap('.project-modal-close')
   await assertRestored(false)
   await navigate('/')
@@ -1221,7 +1311,7 @@ try {
     features: [{ name: 'prefers-reduced-motion', value: 'reduce' }],
   })
   console.log(
-    'PASS 滑鼠 Hover 與移開、單層藍色鍵盤焦點、四種開關操作組合、VIEW MORE、導覽、捲動區、標籤與觸控狀態',
+    'PASS 無框標題焦點、明確的焦點還原狀態、強制 focus-visible 誤判、輸入切換與 blur 清理、Hover、四種開關組合、VIEW MORE 與觸控狀態（不代表 Safari 實測）',
   )
   const sizes = [
     [1920, 1080],

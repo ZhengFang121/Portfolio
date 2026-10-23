@@ -7,6 +7,19 @@ import type { PortfolioProject } from '../data/projects'
 defineProps<{ project: PortfolioProject; expanded?: boolean; dialogId?: string }>()
 const emit = defineEmits<{ open: [event: MouseEvent] }>()
 
+function clearRestoredFocus(event: FocusEvent) {
+  if (event.currentTarget instanceof HTMLElement) delete event.currentTarget.dataset.restoredFocus
+}
+
+function updateRestoredFocus(event: KeyboardEvent | PointerEvent) {
+  const card = event.currentTarget
+  if (!(card instanceof HTMLElement) || !card.hasAttribute('data-restored-focus')) return
+  if (event instanceof KeyboardEvent) {
+    if (['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) return
+    card.dataset.restoredFocus = 'keyboard'
+  } else card.dataset.restoredFocus = 'pointer'
+}
+
 function openProject(event: MouseEvent) {
   // 只攔截一般點擊；修飾鍵、滑鼠中鍵與右鍵仍使用原生作品連結。
   if (
@@ -35,6 +48,9 @@ function openProject(event: MouseEvent) {
       :aria-expanded="expanded ?? false"
       :aria-controls="expanded ? dialogId : undefined"
       @click="openProject"
+      @blur="clearRestoredFocus"
+      @keydown="updateRestoredFocus"
+      @pointerdown="updateRestoredFocus"
     >
       <img
         v-if="project.cover"
@@ -101,22 +117,29 @@ function openProject(event: MouseEvent) {
 
 /* Hover 只給可精準指向的裝置；鍵盤焦點不套用放大與內框。 */
 @media (hover: hover) and (pointer: fine) {
-  .work-card:hover:where(:not(:focus-visible):not([aria-expanded='true'])) {
+  .work-card:hover:where(:not([aria-expanded='true'])) {
     box-shadow: inset 0 0 0 6px var(--card-focus-color);
     transform: scale(1.04);
   }
 }
 
-.work-card:focus-visible {
+.work-card:active {
+  box-shadow: inset 0 0 0 6px var(--card-focus-color);
+  transform: none;
+}
+
+/* 原生鍵盤焦點與明確的鍵盤還原狀態共用單層外框；指標還原不受 Safari 誤判影響。 */
+.work-card:where(:focus-visible, [data-restored-focus='keyboard']:focus):not(
+    [data-restored-focus='pointer']
+  ) {
   box-shadow: none;
   transform: none;
   outline: 3px solid var(--card-focus-color);
   outline-offset: 4px;
 }
 
-.work-card:active:not(:focus-visible) {
-  box-shadow: inset 0 0 0 6px var(--card-focus-color);
-  transform: none;
+.work-card[data-restored-focus='pointer']:focus {
+  outline: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
