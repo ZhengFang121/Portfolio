@@ -41,13 +41,13 @@ const elementProps = computed(() => {
   box-sizing: border-box;
   min-block-size: 3.125rem;
   max-inline-size: 100%;
-  padding: var(--space-2) var(--space-12);
+  padding: var(--space-2) var(--space-8);
   border: 0;
   border-radius: var(--radius-full);
   background: var(--button-background);
   color: var(--button-color);
   font-family: var(--font-family-body);
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-md);
   font-weight: var(--font-weight-regular);
   line-height: 1.5;
   text-align: center;
