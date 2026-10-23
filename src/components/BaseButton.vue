@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink, type RouteLocationRaw } from 'vue-router'
+import { ArrowRight } from '@lucide/vue'
 
 const props = withDefaults(
   defineProps<{
@@ -29,12 +30,14 @@ const elementProps = computed(() => {
     class="view-more-button"
     :class="`view-more-button--${variant}`"
   >
-    {{ label }}
+    <span class="view-more-button-label">{{ label }}</span>
+    <ArrowRight class="view-more-button-icon" :size="18" aria-hidden="true" />
   </component>
 </template>
 
 <style scoped>
 .view-more-button {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -55,6 +58,29 @@ const elementProps = computed(() => {
   cursor: pointer;
 }
 
+.view-more-button-icon {
+  display: none;
+  pointer-events: none;
+}
+
+/* 文字移出排版，讓膠囊隨箭頭變窄；保留滑鼠感應範圍與無障礙名稱。 */
+.view-more-button:is(:hover, :focus) .view-more-button-label {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  display: inline-flex;
+  align-items: center;
+  inline-size: max-content;
+  min-block-size: 100%;
+  padding: inherit;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+}
+
+.view-more-button:is(:hover, :focus) .view-more-button-icon {
+  display: block;
+}
+
 .view-more-button--cream {
   --button-background: var(--palette-yellow);
   --button-color: var(--palette-red);
@@ -63,12 +89,6 @@ const elementProps = computed(() => {
 .view-more-button--red {
   --button-background: var(--palette-red);
   --button-color: var(--palette-yellow);
-}
-
-@media (hover: hover) {
-  .view-more-button:hover {
-    text-decoration: underline;
-  }
 }
 
 .view-more-button:active {
