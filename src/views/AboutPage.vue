@@ -66,14 +66,7 @@ const likes = [
 
 <template>
   <div class="page-sections">
-    <header class="content-section stack">
-      <div class="about-heading">
-        <h1 class="about-title">正芳 Fang</h1>
-        <a class="text-link contact-link" href="mailto:skin84121@gmail.com">
-          <Mail class="contact-icon" aria-hidden="true" />
-          <span>skin84121@gmail.com</span>
-        </a>
-      </div>
+    <header class="content-section">
       <div class="about-introduction">
         <img
           class="about-portrait"
@@ -83,8 +76,15 @@ const likes = [
           height="4032"
           decoding="async"
         />
+        <div class="about-heading">
+          <h1 class="about-title">正芳 Fang</h1>
+          <a class="text-link contact-link" href="mailto:skin84121@gmail.com">
+            <Mail class="contact-icon" aria-hidden="true" />
+            <span>skin84121@gmail.com</span>
+          </a>
+        </div>
         <p class="about-intro">
-          我是一名平面設計師，過去累積約八年的品牌視覺、包裝與插畫設計經驗，近年開始學習前端網頁設計技術，透過開發網站專案，將視覺設計延伸至數位介面、互動體驗與功能實作。我特別重視設計系統與互動細節，希望讓設計不只具有鮮明的視覺風格，也能帶來直覺、實用的使用體驗。
+          我是一名平面設計師，過去累積約八年的品牌視覺、包裝與插畫設計經驗，近年開始學習前端網頁設計，透過開發網站專案，將視覺設計延伸至數位介面、互動體驗與功能實作。我特別重視設計系統與互動細節，希望讓設計不只具有鮮明的視覺風格，也能帶來直覺、實用的使用體驗。
         </p>
       </div>
     </header>
@@ -162,12 +162,18 @@ const likes = [
 <style scoped>
 @layer components {
   .about-heading {
+    grid-area: heading;
     display: grid;
     gap: var(--space-3);
   }
 
   .about-title {
     text-align: center;
+  }
+
+  .about-heading .about-title,
+  .about-intro {
+    color: var(--palette-blue);
   }
 
   .about-section-title {
@@ -177,25 +183,30 @@ const likes = [
   .about-introduction {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    grid-template-areas:
+      'portrait heading'
+      'portrait intro';
     align-items: center;
-    gap: var(--space-8);
+    gap: var(--space-6) var(--space-8);
     max-width: var(--layout-text-width);
     margin-inline: auto;
   }
 
   .about-portrait {
+    grid-area: portrait;
     width: 100%;
     max-width: 14rem;
     height: auto;
-    aspect-ratio: 7 / 8;
+    aspect-ratio: 7 / 10;
     border-radius: var(--radius-full);
     object-fit: cover;
     object-position: center 60%;
   }
 
   .about-intro {
-    text-align: justify;
-    text-align-last: start;
+    grid-area: intro;
+    min-width: 0;
+    text-align: center;
   }
 
   /* 與作品介紹內文共用閱讀寬度，置中後保留兩側留白。 */
@@ -341,6 +352,18 @@ const likes = [
   }
 
   @media (max-width: 899px) {
+    .about-introduction {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        'portrait'
+        'heading'
+        'intro';
+    }
+
+    .about-portrait {
+      justify-self: center;
+    }
+
     .about-background,
     .about-experience {
       padding-inline: var(--space-12);
@@ -363,14 +386,6 @@ const likes = [
     .about-background,
     .about-experience {
       padding-inline: var(--space-6);
-    }
-
-    .about-introduction {
-      grid-template-columns: minmax(0, 1fr);
-    }
-
-    .about-portrait {
-      justify-self: center;
     }
 
     .education-entry {
