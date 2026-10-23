@@ -41,7 +41,7 @@ defineProps<{ categories: readonly string[]; singleLine?: boolean }>()
   border-radius: var(--radius-full);
   background: var(--palette-yellow);
   color: var(--palette-red);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   white-space: nowrap;
 }
 

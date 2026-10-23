@@ -366,7 +366,7 @@ export const projects: PortfolioProject[] = [
     designYear: '2022 - 2025',
     year: null,
     role: null,
-    summary: '咖啡品牌包裝設計與原創插畫',
+    summary: '咖啡品牌視覺設計',
     cover: {
       src: '/images/projects/apollo/cover.webp',
       alt: 'APOLLO 作品封面',
@@ -537,7 +537,7 @@ export const projects: PortfolioProject[] = [
     designYear: '2021 - 2024',
     year: null,
     role: null,
-    summary: '甜點品牌包裝設計與原創插畫',
+    summary: '甜點品牌視覺設計',
     cover: {
       src: '/images/projects/r4d/cover.webp',
       alt: 'R4D 作品封面',
