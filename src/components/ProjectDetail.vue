@@ -798,7 +798,12 @@ function hasItemContent(item: ProjectSection) {
     /* 以細白邊保留深色畫面上的辨識度，不增加按鈕底色。 */
     filter: drop-shadow(0 0 1px var(--palette-white));
   }
-  .project-video-toggle:hover,
+  @media (hover: hover) and (pointer: fine) {
+    .project-video-toggle:hover {
+      color: var(--palette-red);
+    }
+  }
+
   .project-video-toggle:active {
     color: var(--palette-red);
   }
@@ -810,7 +815,6 @@ function hasItemContent(item: ProjectSection) {
     --color-text: var(--palette-black);
     --color-text-muted: var(--palette-black);
     --color-border: var(--palette-black);
-    --color-focus: var(--palette-black);
     /* 原水平留白最大為 space-12，增加至下一級 space-16。 */
     padding: var(--content-section-padding-block) var(--space-16);
     color: var(--palette-black);
@@ -852,7 +856,6 @@ function hasItemContent(item: ProjectSection) {
   }
   .project-detail > .project-chapter {
     --color-text: var(--palette-black);
-    --color-focus: var(--palette-black);
     color: var(--palette-black);
     background: var(--palette-white);
   }

@@ -63,22 +63,25 @@ const elementProps = computed(() => {
   pointer-events: none;
 }
 
-/* 文字移出排版，讓膠囊隨箭頭變窄；保留滑鼠感應範圍與無障礙名稱。 */
-.view-more-button:is(:hover, :focus) .view-more-button-label {
-  position: absolute;
-  inset-block-start: 50%;
-  inset-inline-start: 50%;
-  display: inline-flex;
-  align-items: center;
-  inline-size: max-content;
-  min-block-size: 100%;
-  padding: inherit;
-  transform: translate(-50%, -50%);
-  opacity: 0;
-}
+/* 箭頭只回應滑鼠 Hover；一般點擊留下的 focus 不改變按鈕內容。
+   文字移出排版，讓膠囊隨箭頭變窄，並保留感應範圍與無障礙名稱。 */
+@media (hover: hover) and (pointer: fine) {
+  .view-more-button:hover .view-more-button-label {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    display: inline-flex;
+    align-items: center;
+    inline-size: max-content;
+    min-block-size: 100%;
+    padding: inherit;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+  }
 
-.view-more-button:is(:hover, :focus) .view-more-button-icon {
-  display: block;
+  .view-more-button:hover .view-more-button-icon {
+    display: block;
+  }
 }
 
 .view-more-button--cream {
@@ -98,7 +101,7 @@ const elementProps = computed(() => {
 }
 
 .view-more-button:focus-visible {
-  outline: 2px solid var(--button-background);
+  outline: 2px solid var(--palette-blue);
   outline-offset: 4px;
   text-decoration: underline;
 }

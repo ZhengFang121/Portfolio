@@ -179,7 +179,7 @@ body.p-overflow-hidden:has(.project-modal-mask) {
   }
 
   .project-modal-panel:focus-visible {
-    outline: 2px solid var(--palette-black);
+    outline: 2px solid var(--palette-blue);
     outline-offset: -4px;
   }
 
@@ -196,7 +196,13 @@ body.p-overflow-hidden:has(.project-modal-mask) {
     cursor: pointer;
   }
 
-  .project-modal-close:hover,
+  @media (hover: hover) and (pointer: fine) {
+    .project-modal-close:hover {
+      outline: 2px solid var(--palette-blue);
+      outline-offset: 2px;
+    }
+  }
+
   .project-modal-close:active {
     outline: 2px solid var(--palette-blue);
     outline-offset: 2px;

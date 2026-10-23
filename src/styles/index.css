@@ -183,7 +183,6 @@
     --color-border: var(--palette-white);
     --color-link: var(--palette-yellow);
     --color-link-hover: var(--palette-blue);
-    --color-focus: var(--palette-yellow);
     min-width: 0;
     padding: var(--content-section-padding-block) var(--content-section-padding-inline);
     border-radius: var(--content-section-radius);
@@ -197,7 +196,6 @@
     --color-border: var(--palette-black);
     --color-link: var(--palette-red);
     --color-link-hover: var(--palette-black);
-    --color-focus: var(--palette-red);
     background: var(--content-section-alternate-background);
   }
   .content-section .p-button {
@@ -210,7 +208,6 @@
     --color-border: var(--palette-black);
     --color-link: var(--palette-red);
     --color-link-hover: var(--palette-black);
-    --color-focus: var(--palette-red);
     color: var(--color-text);
   }
   .stack {
@@ -251,9 +248,13 @@
     min-height: 44px;
     width: fit-content;
   }
-  .text-link:hover,
   .text-link:active {
     color: var(--color-link-hover);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .text-link:hover {
+      color: var(--color-link-hover);
+    }
   }
   .skip-link {
     position: fixed;

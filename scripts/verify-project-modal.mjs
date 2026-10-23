@@ -1043,6 +1043,186 @@ try {
   await cdp('Emulation.setEmulatedMedia', {
     features: [{ name: 'prefers-reduced-motion', value: 'reduce' }],
   })
+  // 以真實指標與按鍵驗證狀態，避免只呼叫 focus() 而漏掉操作方式差異。
+  async function interactionStyle(selector) {
+    await evaluate(
+      `Promise.all(document.querySelector(${JSON.stringify(selector)}).getAnimations().map(animation=>animation.finished.catch(()=>{})))`,
+    )
+    return evaluate(`(() => {
+      const el=document.querySelector(${JSON.stringify(selector)}),s=getComputedStyle(el);
+      return {focused:document.activeElement===el,visible:el.matches(':focus-visible'),
+        outline:s.outlineStyle,outlineColor:s.outlineColor,shadow:s.boxShadow,transform:s.transform,
+        background:s.backgroundColor,icon:el.querySelector('.view-more-button-icon') ? getComputedStyle(el.querySelector('.view-more-button-icon')).display : null,
+        label:el.querySelector('.view-more-button-label') ? getComputedStyle(el.querySelector('.view-more-button-label')).opacity : null};
+    })()`)
+  }
+  async function tabTo(selector) {
+    for (let index = 0; index < 20; index++) {
+      await key('Tab')
+      if (
+        await evaluate(
+          `document.activeElement===document.querySelector(${JSON.stringify(selector)})`,
+        )
+      )
+        return
+    }
+    throw new Error(`Tab 無法到達 ${selector}`)
+  }
+  const blue = 'rgb(185, 218, 232)'
+  const card = '.work-card'
+  const moveAway = () => cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 2, y: 2 })
+  async function assertRestored(keyboard) {
+    await waitFor(`!document.querySelector('.project-modal')`)
+    await moveAway()
+    await waitFor(`getComputedStyle(document.querySelector('${card}')).transform==='none'`)
+    const state = await interactionStyle(card)
+    assert.ok(state.focused, '關閉後仍將焦點交還原卡片')
+    assert.equal(state.visible, keyboard, '焦點提示依最後操作方式顯示')
+    assert.equal(state.transform, 'none', '還原焦點不放大卡片')
+    assert.ok(!state.shadow.includes('6px'), '還原焦點不殘留 Hover 內框')
+    if (keyboard) {
+      assert.equal(state.outline, 'solid')
+      assert.equal(state.outlineColor, blue)
+    } else assert.equal(state.outline, 'none')
+  }
+  await cdp('Emulation.setDeviceMetricsOverride', {
+    width: 1440,
+    height: 1024,
+    deviceScaleFactor: 1,
+    mobile: false,
+  })
+  await cdp('Emulation.setEmulatedMedia', {
+    features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }],
+  })
+  await navigate('/works')
+  await moveAway()
+  const initial = await interactionStyle(card)
+  assert.equal(initial.outline, 'none', '初次載入卡片沒有焦點框')
+  assert.equal(initial.transform, 'none')
+  assert.ok(!initial.shadow.includes('6px'))
+  await evaluate(
+    `document.querySelector('${card}').scrollIntoView({block:'center',behavior:'instant'})`,
+  )
+  const point = await evaluate(
+    `(() => {const r=document.querySelector('${card}').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`,
+  )
+  await cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point })
+  await waitFor(
+    `getComputedStyle(document.querySelector('${card}')).transform==='matrix(1.04, 0, 0, 1.04, 0, 0)'`,
+  )
+  const hover = await interactionStyle(card)
+  assert.ok(
+    hover.shadow.includes('6px') && hover.shadow.includes(blue),
+    '滑鼠 Hover 保留藍色粗內框',
+  )
+  assert.equal(hover.transform, 'matrix(1.04, 0, 0, 1.04, 0, 0)', 'Hover 保留微放大')
+  await moveAway()
+  await waitFor(`getComputedStyle(document.querySelector('${card}')).transform==='none'`)
+  assert.deepEqual(await interactionStyle(card), initial, '移開滑鼠完全恢復卡片樣式')
+  await cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point })
+  await cdp('Input.dispatchMouseEvent', {
+    type: 'mousePressed',
+    ...point,
+    button: 'left',
+    clickCount: 1,
+  })
+  assert.equal((await interactionStyle(card)).transform, 'none', '滑鼠按下時保留 Active 回饋')
+  await moveAway()
+  await cdp('Input.dispatchMouseEvent', {
+    type: 'mouseReleased',
+    x: 2,
+    y: 2,
+    button: 'left',
+    clickCount: 1,
+  })
+  assert.equal((await interactionStyle(card)).transform, 'none', '放開後不殘留 Active 放大')
+  await click(card)
+  await waitFor(`document.querySelector('.project-modal h2')===document.activeElement`)
+  await click('.project-modal-close')
+  await assertRestored(false)
+  await tabTo('.work-card:nth-child(2)')
+  await key('Tab', 8)
+  const focus = await interactionStyle(card)
+  assert.ok(focus.visible)
+  assert.equal(focus.outlineColor, blue)
+  assert.equal(focus.shadow, 'none', '鍵盤焦點只有一層框線')
+  assert.equal(focus.transform, 'none', '鍵盤焦點不放大')
+  await key('Enter')
+  await waitFor(`document.querySelector('.project-modal h2')===document.activeElement`)
+  const title = await interactionStyle('.project-modal h2')
+  assert.ok(title.visible)
+  assert.equal(title.outlineColor, blue, '作品標題的焦點框改成藍色')
+  await tabTo('.project-modal-close')
+  assert.equal((await interactionStyle('.project-modal-close')).outlineColor, blue)
+  await tabTo('.project-modal-panel')
+  assert.equal((await interactionStyle('.project-modal-panel')).outlineColor, blue)
+  await tabTo('.project-modal .project-categories')
+  assert.equal((await interactionStyle('.project-modal .project-categories')).outlineColor, blue)
+  await key('Escape')
+  await assertRestored(true)
+  // 鍵盤開啟、滑鼠關閉；滑鼠開啟、Escape 關閉，也必須依最後操作切換。
+  await key('Enter')
+  await waitFor(`!!document.querySelector('.project-modal')`)
+  await click('.project-modal-close')
+  await assertRestored(false)
+  await click(card)
+  await waitFor(`document.querySelector('.project-modal h2')===document.activeElement`)
+  await key('Escape')
+  await assertRestored(true)
+  await navigate('/')
+  const button = '.view-more-button'
+  await evaluate(
+    `document.querySelector('${button}').scrollIntoView({block:'center',behavior:'instant'});document.querySelector('${button}').addEventListener('click',event=>event.preventDefault(),{once:true,capture:true})`,
+  )
+  await click(button)
+  assert.equal((await interactionStyle(button)).icon, 'block', '滑鼠 Hover 保留箭頭')
+  await moveAway()
+  const clicked = await interactionStyle(button)
+  assert.ok(clicked.focused)
+  assert.equal(clicked.icon, 'none', '滑鼠移開後一般 focus 不保留箭頭')
+  assert.equal(clicked.label, '1')
+  await tabTo(card)
+  await key('Tab', 8)
+  const buttonFocus = await interactionStyle(button)
+  assert.ok(buttonFocus.visible)
+  assert.equal(buttonFocus.outlineColor, blue)
+  assert.equal(buttonFocus.icon, 'none', '鍵盤焦點保留按鈕文字')
+  report.push({ interactions: { initial, hover, focus, title, clicked, buttonFocus } })
+  await navigate('/works')
+  await tabTo('.nav-image-link[href="/"]')
+  assert.equal((await interactionStyle('.nav-image-link[href="/"]')).outlineColor, blue)
+  await cdp('Emulation.setDeviceMetricsOverride', {
+    width: 390,
+    height: 844,
+    deviceScaleFactor: 1,
+    mobile: true,
+  })
+  await cdp('Emulation.setTouchEmulationEnabled', { enabled: true })
+  async function tap(selector) {
+    const point = await evaluate(
+      `(() => {const el=document.querySelector(${JSON.stringify(selector)});el.scrollIntoView({block:'center',behavior:'instant'});const r=el.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`,
+    )
+    await cdp('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] })
+    await cdp('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  }
+  await navigate('/works')
+  await tap(card)
+  await waitFor(`document.querySelector('.project-modal h2')===document.activeElement`)
+  await tap('.project-modal-close')
+  await assertRestored(false)
+  await navigate('/')
+  await evaluate(
+    `document.querySelector('${button}').addEventListener('click',event=>event.preventDefault(),{once:true,capture:true})`,
+  )
+  await tap(button)
+  assert.equal((await interactionStyle(button)).icon, 'none', '觸控點擊不殘留箭頭')
+  await cdp('Emulation.setTouchEmulationEnabled', { enabled: false })
+  await cdp('Emulation.setEmulatedMedia', {
+    features: [{ name: 'prefers-reduced-motion', value: 'reduce' }],
+  })
+  console.log(
+    'PASS 滑鼠 Hover 與移開、單層藍色鍵盤焦點、四種開關操作組合、VIEW MORE、導覽、捲動區、標籤與觸控狀態',
+  )
   const sizes = [
     [1920, 1080],
     [1440, 716],

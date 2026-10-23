@@ -90,7 +90,7 @@ function isActive(path: string) {
   .nav-image-link:focus-visible .nav-image-default {
     visibility: hidden;
   }
-  @media (hover: hover) {
+  @media (hover: hover) and (pointer: fine) {
     .nav-image-link:hover .nav-image-selected {
       visibility: visible;
     }

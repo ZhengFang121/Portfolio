@@ -99,21 +99,22 @@ function openProject(event: MouseEvent) {
   margin-block-start: auto;
 }
 
-@media (hover: hover) {
-  .work-card:hover {
+/* Hover 只給可精準指向的裝置；鍵盤焦點不套用放大與內框。 */
+@media (hover: hover) and (pointer: fine) {
+  .work-card:hover:where(:not(:focus-visible):not([aria-expanded='true'])) {
     box-shadow: inset 0 0 0 6px var(--card-focus-color);
     transform: scale(1.04);
   }
 }
 
 .work-card:focus-visible {
-  box-shadow: inset 0 0 0 6px var(--card-focus-color);
-  transform: scale(1.04);
-  outline: 6px solid var(--card-focus-color);
+  box-shadow: none;
+  transform: none;
+  outline: 3px solid var(--card-focus-color);
   outline-offset: 4px;
 }
 
-.work-card:active {
+.work-card:active:not(:focus-visible) {
   box-shadow: inset 0 0 0 6px var(--card-focus-color);
   transform: none;
 }

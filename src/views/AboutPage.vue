@@ -334,12 +334,15 @@ const likes = [
     height: 1.25em;
   }
 
-  .contact-link:hover,
   .contact-link:focus-visible {
     text-decoration: underline;
   }
 
   @media (hover: hover) and (pointer: fine) {
+    .contact-link:hover {
+      text-decoration: underline;
+    }
+
     .like-image:hover .like-image-hover {
       opacity: 1;
     }

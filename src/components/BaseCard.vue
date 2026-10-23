@@ -21,7 +21,7 @@ withDefaults(
   --card-border-color: var(--palette-black);
   --card-action-color: var(--color-action);
   --card-action-hover-color: var(--color-action-hover);
-  --card-focus-color: var(--palette-red);
+  --card-focus-color: var(--palette-blue);
   --color-text: var(--card-color);
   --color-text-muted: var(--card-color);
   --color-border: var(--card-border-color);
