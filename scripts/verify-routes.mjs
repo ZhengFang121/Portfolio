@@ -855,22 +855,34 @@ try {
         assert.ok(html.includes(text), `Profile 資料完整：${text}`)
       }
       assert.deepEqual(
-        [...html.matchAll(/<li\b[^>]*class="skill-tag"[^>]*>(.*?)<\/li>/gs)].map(
+        [...html.matchAll(/<h3\b[^>]*class="skill-group-title"[^>]*>(.*?)<\/h3>/gs)].map(
+          (match) => match[1],
+        ),
+        ['視覺設計', '前端開發', '數位工具'],
+      )
+      assert.deepEqual(
+        [...html.matchAll(/<span\b[^>]*class="skill-group-number"[^>]*>(.*?)<\/span>/gs)].map(
+          (match) => match[1],
+        ),
+        ['01', '02', '03'],
+      )
+      assert.deepEqual(
+        [...html.matchAll(/<li\b[^>]*class="skill-item"[^>]*>(.*?)<\/li>/gs)].map(
           (match) => match[1],
         ),
         [
-          'Ai',
-          'Ps',
-          'Procreate',
-          'html',
-          'css',
-          'javascript',
+          'Illustrator',
+          'Photoshop',
           'Figma',
+          'Procreate',
+          'HTML',
+          'CSS',
+          'JavaScript',
+          'Vue 3',
           'ChatGPT',
           'Word',
           'PowerPoint',
           'Excel',
-          '陶瓷',
         ],
       )
       const likeImages = [
