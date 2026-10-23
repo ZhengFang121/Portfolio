@@ -3,7 +3,21 @@ import { gsap } from 'gsap'
 
 type IntroStage = 'intro' | 'reveal' | 'content'
 
-/** Vue 管理階段與手勢，GSAP 只負責圖片及外框的視覺轉換。 */
+const INTRO_HOLD_MS = 2500
+// APNG 持續播放、不重新建立；自動停留依需求為 3 秒，手動操作只保留短暫防誤觸時間。
+const REVEAL_AUTO_HOLD_MS = 3000
+const REVEAL_MANUAL_HOLD_MS = 550
+const IMAGE_LOAD_TIMEOUT_MS = 10000
+const CONTENT_TRANSITION_SECONDS = 0.75
+const CONTENT_FADE_SECONDS = 0.55
+const CONTENT_FADE_DELAY_SECONDS = 0.15
+const GESTURE_IDLE_MS = 320
+const TOUCH_CLICK_SUPPRESSION_MS = 800
+const WHEEL_THRESHOLD = 64
+const TOUCH_THRESHOLD = 48
+const TAP_MOVEMENT_LIMIT = 12
+
+/** Vue 共用同一套自動／手動階段控制，GSAP 只負責既有視覺轉換。 */
 export function useIntro(
   shell: Ref<HTMLElement | null>,
   viewport: Ref<HTMLElement | null>,
@@ -24,16 +38,33 @@ export function useIntro(
   let previousScrollLock: string | null = null
   let locked = false
   let disposed = false
+  let pendingAdvance = false
+  let imageSettled = false
+  let autoTimer: ReturnType<typeof setTimeout> | undefined
+  let imageLoadTimer: ReturnType<typeof setTimeout> | undefined
   let revealTimer: ReturnType<typeof setTimeout> | undefined
+  let revealFrame: number | undefined
   let wheelTimer: ReturnType<typeof setTimeout> | undefined
+  let clickTimer: ReturnType<typeof setTimeout> | undefined
   let wheelDistance = 0
   let wheelConsumed = false
+  let clickConsumed = false
+  let suppressClickUntil = 0
+  let touchStartX = 0
   let touchStartY = 0
-  let touchConsumed = false
-  const WHEEL_THRESHOLD = 64
-  const TOUCH_THRESHOLD = 48
-  const GESTURE_IDLE_MS = 320
-  const REVEAL_HOLD_MS = 550
+  let touchStage: IntroStage | undefined
+  let touchConsumed = true
+  let touchMoved = false
+
+  function clearStageTimers() {
+    clearTimeout(autoTimer)
+    clearTimeout(imageLoadTimer)
+    clearTimeout(revealTimer)
+    if (revealFrame !== undefined) cancelAnimationFrame(revealFrame)
+    autoTimer = imageLoadTimer = revealTimer = undefined
+    revealFrame = undefined
+    pendingAdvance = false
+  }
 
   function targetTransform() {
     if (!viewport.value || !brand.value || !anchor.value) return { x: 0, y: 0, scale: 1 }
@@ -60,14 +91,16 @@ export function useIntro(
   }
 
   function detachGestures() {
+    window.removeEventListener('click', onClick)
     window.removeEventListener('wheel', onWheel)
     window.removeEventListener('keydown', onKeyDown)
     window.removeEventListener('touchstart', onTouchStart)
     window.removeEventListener('touchmove', onTouchMove)
     window.removeEventListener('touchend', onTouchEnd)
-    window.removeEventListener('touchcancel', onTouchEnd)
+    window.removeEventListener('touchcancel', onTouchCancel)
     clearTimeout(wheelTimer)
-    clearTimeout(revealTimer)
+    clearTimeout(clickTimer)
+    clearStageTimers()
   }
 
   function completeContent() {
@@ -77,6 +110,8 @@ export function useIntro(
   }
 
   function showContent() {
+    if (disposed) return
+    clearStageTimers()
     transition?.kill()
     stage.value = 'content'
     placeBrand()
@@ -86,26 +121,55 @@ export function useIntro(
     completeContent()
   }
 
-  function onBrandLoad() {
+  async function onBrandLoad() {
+    if (disposed || imageSettled) return
+    imageSettled = true
     animatedReady.value = true
     if (stage.value !== 'reveal') return
-    // 等圖片真正載入才開始短暫鎖定，慢速連線也不會跳過第二階段。
-    clearTimeout(revealTimer)
-    revealTimer = setTimeout(() => {
-      locked = false
-    }, REVEAL_HOLD_MS)
+    clearTimeout(imageLoadTimer)
+    imageLoadTimer = undefined
+    // v-show 先更新，再於顯示影格開始計時；下載時間不算停留時間。
+    await nextTick()
+    if (disposed || stage.value !== 'reveal') return
+    revealFrame = requestAnimationFrame(() => {
+      revealFrame = undefined
+      revealTimer = setTimeout(() => {
+        revealTimer = undefined
+        locked = false
+        if (pendingAdvance) void advance()
+      }, REVEAL_MANUAL_HOLD_MS)
+      if (!pendingAdvance) {
+        autoTimer = setTimeout(() => void advance(), REVEAL_AUTO_HOLD_MS)
+      }
+    })
   }
 
   function onBrandError() {
+    if (disposed || imageSettled) return
+    imageSettled = true
     // 素材載入失敗仍可繼續使用網站，保留第一張圖作為替代。
+    if (stage.value !== 'reveal') return
+    clearStageTimers()
     locked = false
+    void advance()
   }
 
   async function advance() {
-    if (locked || stage.value === 'content') return
+    if (disposed || stage.value === 'content') return
+    // 手動請求取消自動排程；短暫保護時間內最多暫存一次，解鎖後立即接續。
+    clearTimeout(autoTimer)
+    autoTimer = undefined
+    if (locked) {
+      if (stage.value === 'reveal') pendingAdvance = true
+      return
+    }
+    clearStageTimers()
     locked = true
     if (stage.value === 'intro') {
       stage.value = 'reveal'
+      wheelDistance = 0
+      wheelConsumed = wheelTimer !== undefined
+      imageLoadTimer = setTimeout(onBrandError, IMAGE_LOAD_TIMEOUT_MS)
       return
     }
 
@@ -118,12 +182,16 @@ export function useIntro(
     }
     context.add(() => {
       transition = gsap.timeline({
-        defaults: { duration: 0.75, ease: 'power2.inOut' },
+        defaults: { duration: CONTENT_TRANSITION_SECONDS, ease: 'power2.inOut' },
         onComplete: completeContent,
       })
       transition
         .to(brand.value, targetTransform(), 0)
-        .to('.shell-reveal', { autoAlpha: 1, duration: 0.55 }, 0.15)
+        .to(
+          '.shell-reveal',
+          { autoAlpha: 1, duration: CONTENT_FADE_SECONDS },
+          CONTENT_FADE_DELAY_SECONDS,
+        )
     })
   }
 
@@ -132,11 +200,11 @@ export function useIntro(
     event.preventDefault()
     clearTimeout(wheelTimer)
     wheelTimer = setTimeout(() => {
+      wheelTimer = undefined
       wheelConsumed = false
       wheelDistance = 0
     }, GESTURE_IDLE_MS)
-    if (locked || wheelConsumed || event.deltaY <= 0 || Math.abs(event.deltaX) > event.deltaY)
-      return
+    if (wheelConsumed || event.deltaY <= 0 || Math.abs(event.deltaX) > event.deltaY) return
     const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1
     wheelDistance += event.deltaY * unit
     if (wheelDistance >= WHEEL_THRESHOLD) {
@@ -147,32 +215,75 @@ export function useIntro(
 
   function onKeyDown(event: KeyboardEvent) {
     if (contentReady.value || !['ArrowDown', 'PageDown', ' ', 'End'].includes(event.key)) return
-    if (
-      event.target instanceof Element &&
-      event.target.closest('a, button, input, textarea, select, [contenteditable]')
-    )
-      return
+    if (isInteractive(event.target)) return
     event.preventDefault()
     if (!event.repeat) void advance()
   }
 
+  function isInteractive(target: EventTarget | null) {
+    return (
+      target instanceof Element &&
+      target.closest('a, button, input, textarea, select, [contenteditable], [role="button"]')
+    )
+  }
+
+  function onClick(event: MouseEvent) {
+    if (
+      contentReady.value ||
+      event.button !== 0 ||
+      performance.now() < suppressClickUntil ||
+      isInteractive(event.target)
+    )
+      return
+    const consumed = clickConsumed || event.detail > 1
+    clickConsumed = true
+    clearTimeout(clickTimer)
+    clickTimer = setTimeout(() => {
+      clickConsumed = false
+    }, GESTURE_IDLE_MS)
+    if (!consumed) void advance()
+  }
+
   function onTouchStart(event: TouchEvent) {
+    suppressClickUntil = performance.now() + TOUCH_CLICK_SUPPRESSION_MS
+    touchStartX = event.touches[0]?.clientX ?? 0
     touchStartY = event.touches[0]?.clientY ?? 0
-    touchConsumed = locked || event.touches.length !== 1
+    touchStage = stage.value
+    touchConsumed = event.touches.length !== 1 || Boolean(isInteractive(event.target))
+    touchMoved = false
   }
 
   function onTouchMove(event: TouchEvent) {
-    if (contentReady.value || event.touches.length !== 1) return
+    if (contentReady.value) return
+    if (event.touches.length !== 1) {
+      touchConsumed = true
+      return
+    }
     event.preventDefault()
-    if (locked || touchConsumed) return
-    if (touchStartY - (event.touches[0]?.clientY ?? touchStartY) >= TOUCH_THRESHOLD) {
+    const dx = (event.touches[0]?.clientX ?? touchStartX) - touchStartX
+    const dy = touchStartY - (event.touches[0]?.clientY ?? touchStartY)
+    if (Math.abs(dx) > TAP_MOVEMENT_LIMIT || Math.abs(dy) > TAP_MOVEMENT_LIMIT) touchMoved = true
+    if (touchConsumed || touchStage !== stage.value) return
+    if (dy >= TOUCH_THRESHOLD && dy > Math.abs(dx)) {
       touchConsumed = true
       void advance()
     }
   }
 
-  function onTouchEnd() {
-    touchConsumed = false
+  function onTouchEnd(event: TouchEvent) {
+    suppressClickUntil = performance.now() + TOUCH_CLICK_SUPPRESSION_MS
+    if (!contentReady.value && !touchConsumed && !touchMoved && touchStage === stage.value) {
+      event.preventDefault()
+      void advance()
+    }
+    touchConsumed = true
+    touchStage = undefined
+  }
+
+  function onTouchCancel() {
+    suppressClickUntil = performance.now() + TOUCH_CLICK_SUPPRESSION_MS
+    touchConsumed = true
+    touchStage = undefined
   }
 
   onMounted(() => {
@@ -198,6 +309,7 @@ export function useIntro(
         else placeBrand()
         // 事件回呼建立的 timeline 也加入此 context，偏好改變與卸載時一併清理。
         return () => {
+          clearStageTimers()
           transition?.kill()
           context = undefined
         }
@@ -206,12 +318,14 @@ export function useIntro(
     )
 
     if (!contentReady.value) {
+      autoTimer = setTimeout(() => void advance(), INTRO_HOLD_MS)
+      window.addEventListener('click', onClick)
       window.addEventListener('wheel', onWheel, { passive: false })
       window.addEventListener('keydown', onKeyDown)
       window.addEventListener('touchstart', onTouchStart, { passive: true })
       window.addEventListener('touchmove', onTouchMove, { passive: false })
-      window.addEventListener('touchend', onTouchEnd)
-      window.addEventListener('touchcancel', onTouchEnd)
+      window.addEventListener('touchend', onTouchEnd, { passive: false })
+      window.addEventListener('touchcancel', onTouchCancel)
     }
     observer = new ResizeObserver(() => {
       if (stage.value !== 'content') return

@@ -53,8 +53,8 @@ watch(
     <p v-if="!contentReady" class="sr-only" role="status">
       {{
         stage === 'intro'
-          ? '向下捲動、向上滑動或按向下鍵，展開自我介紹。'
-          : '再次向下捲動、向上滑動或按向下鍵，進入網站。'
+          ? '開場將自動播放，也可點擊、輕觸、向下捲動、向上滑動或按向下鍵繼續。'
+          : '稍後將自動進入網站，也可點擊、輕觸、向下捲動、向上滑動或按向下鍵繼續。'
       }}
     </p>
 
@@ -62,25 +62,32 @@ watch(
     <div ref="viewport" class="intro-viewport">
       <div ref="brandAnchor" class="brand-anchor" aria-hidden="true"></div>
       <div ref="brand" class="intro-brand">
-        <img
-          v-show="!animatedReady || reducedMotion"
-          :src="`${imageBase}${reducedMotion ? 'hello-2-still.png' : 'hello-1.png'}`"
-          alt="你好，我是 Fang，這是我的作品集"
-          width="1800"
-          height="2500"
-          draggable="false"
-        />
-        <img
-          v-if="motionReady && stage !== 'intro' && !reducedMotion"
-          v-show="animatedReady"
-          :src="`${imageBase}hello-2.png`"
-          alt="你好，我是 Fang，這是我的作品集"
-          width="346"
-          height="480"
-          draggable="false"
-          @load="onBrandLoad"
-          @error="onBrandError"
-        />
+        <!-- 圖片載入成功後交叉淡入淡出，避免直接換圖或等待時出現空白。 -->
+        <Transition name="intro-illustration" :css="!reducedMotion">
+          <img
+            v-show="!animatedReady || reducedMotion"
+            :src="`${imageBase}${reducedMotion ? 'hello-2-still.png' : 'hello-1.png'}`"
+            :aria-hidden="animatedReady && !reducedMotion"
+            alt="你好，我是 Fang，這是我的作品集"
+            width="1800"
+            height="2500"
+            draggable="false"
+          />
+        </Transition>
+        <Transition name="intro-illustration" :css="!reducedMotion">
+          <img
+            v-if="motionReady && stage !== 'intro' && !reducedMotion"
+            v-show="animatedReady"
+            :src="`${imageBase}hello-2.png`"
+            :aria-hidden="!animatedReady"
+            alt="你好，我是 Fang，這是我的作品集"
+            width="346"
+            height="480"
+            draggable="false"
+            @load="onBrandLoad"
+            @error="onBrandError"
+          />
+        </Transition>
       </div>
     </div>
 
@@ -95,3 +102,15 @@ watch(
     </div>
   </div>
 </template>
+
+<style scoped>
+.intro-illustration-enter-active,
+.intro-illustration-leave-active {
+  transition: opacity 450ms ease-in-out;
+}
+
+.intro-illustration-enter-from,
+.intro-illustration-leave-to {
+  opacity: 0;
+}
+</style>
