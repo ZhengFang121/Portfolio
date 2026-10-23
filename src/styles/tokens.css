@@ -54,8 +54,8 @@
   --line-height-heading: 1.25;
 
   /* Letter Spacing */
-  --letter-spacing-body: 0.015em;
-  --letter-spacing-heading: 0;
+  --letter-spacing-body: 0.05em;
+  --letter-spacing-heading: 0.03em;
 
   /* =========================
      03. Spacing
