@@ -47,7 +47,7 @@ const skillGroups = [
     title: '前端開發',
     skills: ['HTML', 'CSS', 'JavaScript', 'Vue 3', 'Git','GitHub'],
   },
-  { id: 'digital-tools', title: '數位工具', skills: ['ChatGPT', 'Codex', 'Microsoft Office桌'] },
+  { id: 'digital-tools', title: '數位工具', skills: ['ChatGPT', 'Codex', 'Microsoft Office'] },
 ]
 const likes = [
   { id: 'baseball', alt: '棒球', defaultImage: 'baseball-1.png', hoverImage: 'baseball-2.JPG' },
