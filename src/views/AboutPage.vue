@@ -83,7 +83,7 @@ const likes = [
             <span>skin84121@gmail.com</span>
           </a>
         </div>
-        <p class="about-intro">
+        <p class="about-intro body-copy">
           我是一名平面設計師，過去累積約八年的品牌視覺、包裝與插畫設計經驗，近期開始學習前端網頁設計，透過開發網站專案，將視覺設計延伸至數位介面、互動體驗與功能實作。我特別重視設計系統與互動細節，希望讓設計不只具有鮮明的視覺風格，也能帶來直覺、實用的使用體驗。
         </p>
       </div>
@@ -206,7 +206,6 @@ const likes = [
   .about-intro {
     grid-area: intro;
     min-width: 0;
-    text-align: center;
   }
 
   /* 與作品介紹內文共用閱讀寬度，置中後保留兩側留白。 */

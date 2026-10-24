@@ -222,10 +222,51 @@ try {
     )
   }
   let headerReference
+  async function checkBodyCopy() {
+    const result = await evaluate(`(() => {
+      const expected = [...document.querySelectorAll('.project-detail-summary,.project-item-body,.about-intro,.experience-items > li,[aria-labelledby="not-found-title"] > .muted')]
+        .filter(el=>el.textContent.trim()!=='內容準備中');
+      const copies=[...document.querySelectorAll('.body-copy')];
+      const preserved=['fontFamily','fontSize','fontWeight','letterSpacing','wordSpacing','lineHeight','color','width','maxWidth','height','marginTop','marginBottom','marginLeft','marginRight','paddingTop','paddingBottom','paddingLeft','paddingRight'];
+      const snapshot=el=>{const style=getComputedStyle(el);return Object.fromEntries(preserved.map(key=>[key,style[key]]))};
+      return {
+        coverage:expected.length===copies.length && expected.every(el=>el.classList.contains('body-copy')),
+        paragraphs:copies.map(el=>{
+          const style=getComputedStyle(el),align=style.textAlign,last=style.textAlignLast;
+          const rect=el.getBoundingClientRect(),contentLeft=rect.left+parseFloat(style.paddingLeft)+parseFloat(style.borderLeftWidth);
+          const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);let node,lastRect;
+          while((node=walker.nextNode()))if(node.textContent.trim()){
+            const range=document.createRange();range.selectNodeContents(node);
+            const lines=[...range.getClientRects()].filter(r=>r.width>0);if(lines.length)lastRect=lines.at(-1);
+          }
+          const active=snapshot(el);el.classList.remove('body-copy');const original=snapshot(el);el.classList.add('body-copy');
+          return {text:el.textContent.trim(),align,last,active,original,
+            lastLineStart:lastRect ? Math.abs(lastRect.left-contentLeft)<1.5 : true,
+            overflow:el.scrollWidth>el.clientWidth+1};
+        }),
+        exceptions:[...document.querySelectorAll('h1,h2,h3,h4,h5,h6,.home-intro,.work-card-summary,.project-item-label,.project-item-tagline,.project-chapter-subtitle,.project-design-year,.project-category,.project-awards-label,.experience-year,.skill-item,.license-list li,.project-item-flow span,.site-footer p,.eyebrow')]
+          .every(el=>!el.classList.contains('body-copy')),
+        centered:[...document.querySelectorAll('.home-intro,.work-card-summary')].every(el=>getComputedStyle(el).textAlign==='center'),
+      };
+    })()`)
+    assert.ok(result.coverage, '全站所有正式敘述段落均套用 body-copy，包含備註及產品介紹')
+    assert.ok(result.exceptions && result.centered, '標題、短標籤及作品卡片簡介保留原設計')
+    for (const paragraph of result.paragraphs) {
+      assert.equal(paragraph.align, 'justify', paragraph.text)
+      assert.equal(paragraph.last, 'start', '最後一行自然靠左')
+      assert.ok(paragraph.lastLineStart, `最後一行未被撐開或置中：${paragraph.text}`)
+      assert.ok(!paragraph.overflow, '內文沒有水平溢出')
+      assert.deepEqual(
+        paragraph.active,
+        paragraph.original,
+        '共用規則只改對齊，不改字體、字距、行距、尺寸與間距',
+      )
+    }
+  }
   async function checkSharedHeader(index, width) {
     const header = await evaluate(`(() => {
       const root=document.querySelector('.project-detail--modal'),header=root.querySelector(':scope > header');
-      const classes=['project-design-year','project-detail-title','project-detail-summary','project-categories','project-cover'];
+      const classes=['project-design-year','project-detail-title','project-detail-summary','project-awards','project-categories','project-cover'];
       const children=[...header.children].filter(el=>classes.some(name=>el.classList.contains(name)));
       const style=el=>{const s=getComputedStyle(el);return {font:s.fontFamily,size:s.fontSize,weight:s.fontWeight,lineHeight:s.lineHeight,spacing:s.letterSpacing,color:s.color,align:s.textAlign}};
       const bounds=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}};
@@ -249,6 +290,7 @@ try {
       'project-detail-title',
       'project-detail-summary',
       'project-categories',
+      ...(index === 5 ? ['project-awards'] : []),
       'project-cover',
     ])
     assert.equal(header.yearCount, 1)
@@ -295,6 +337,7 @@ try {
     }
   }
   async function checkDetail(index, width) {
+    await checkBodyCopy()
     await checkSharedHeader(index, width)
     if (index === 4) {
       const gallery = await evaluate(`(() => {
@@ -329,8 +372,8 @@ try {
         '客製化肖像插畫',
         'ILLUSTRATION',
       ])
-      assert.deepEqual(gallery.headings, ['作品介紹'])
-      assert.deepEqual(gallery.subtitles, ['PROJECT OVERVIEW'])
+      assert.deepEqual(gallery.headings, ['設計理念', '作品介紹'])
+      assert.deepEqual(gallery.subtitles, ['DESIGN CONCEPT', 'PROJECT OVERVIEW'])
       assert.equal(gallery.textBlocks, 1)
       assert.equal(
         gallery.introduction,
@@ -387,12 +430,12 @@ try {
       const rect=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}};
       const type=el=>{const s=getComputedStyle(el);return {size:parseFloat(s.fontSize),weight:s.fontWeight,lineHeight:s.lineHeight,color:s.color,align:s.textAlign}};
       const pillStyle=el=>{const s=getComputedStyle(el);return {background:s.backgroundColor,color:s.color,fontSize:s.fontSize,padding:s.padding,borderRadius:s.borderRadius}};
-      const centeredTexts=[...root.querySelectorAll(':scope > header h2,:scope > header p,.project-chapter-heading > *')];
+      const centeredTexts=[...root.querySelectorAll(':scope > header h2,:scope > header p:not(.body-copy),.project-chapter-heading > *')];
       return {
         text:root.textContent,year:root.querySelector('.project-design-year').textContent,
         padding:getComputedStyle(root).paddingLeft,root:rect(root),categories:rect(categories),list:rect(list),
         overflow:categories.scrollWidth>categories.clientWidth,
-        pills:[...root.querySelectorAll('.project-category')].map(el=>({text:el.textContent.trim(),rect:rect(el),style:pillStyle(el)})),
+        pills:[...categories.querySelectorAll('.project-category')].map(el=>({text:el.textContent.trim(),rect:rect(el),style:pillStyle(el)})),
         cardPills:[...card.querySelectorAll('.project-category')].map(el=>({text:el.textContent.trim(),style:pillStyle(el)})),
         texts:centeredTexts.map(el=>({align:getComputedStyle(el).textAlign,rect:rect(el)})),
         blue:[...root.querySelectorAll('.project-design-year,.project-detail-summary')].map(el=>getComputedStyle(el).color),
@@ -417,7 +460,7 @@ try {
             textGap:getComputedStyle(item.querySelector('.project-item-text')).rowGap,
             title:item.querySelector('h4').textContent,label:item.querySelector('.project-item-label')?.textContent ?? null,
             titleType:type(item.querySelector('h4')),labelType:item.querySelector('.project-item-label') ? type(item.querySelector('.project-item-label')) : null,
-            children:[...item.querySelector('.project-item-text').children].map(el=>({tag:el.tagName,content:el.textContent.trim(),type:type(el),rect:rect(el)})),
+            children:[...item.querySelector('.project-item-text').children].map(el=>({tag:el.tagName,content:el.textContent.trim(),bodyCopy:el.classList.contains('body-copy'),type:type(el),rect:rect(el)})),
             media:[...item.querySelectorAll('video')].map(el=>({
               rect:rect(el),container:rect(el.parentElement),fit:getComputedStyle(el).objectFit,
               src:el.querySelector('source')?.dataset.src,type:el.querySelector('source')?.type,
@@ -434,26 +477,42 @@ try {
     const awards = await evaluate(`(() => {
       const root=document.querySelector('.project-detail--modal'),block=root.querySelector('.project-awards');
       if (!block) return null;
-      const label=block.querySelector('.project-awards-label'),icon=label.querySelector('svg'),list=block.querySelector('ul');
+      const pill=block.querySelector('.project-category'),category=root.querySelector('.project-categories .project-category');
       const rect=el=>el.getBoundingClientRect(),center=el=>rect(el).left+rect(el).width/2;
-      return {label:label.textContent.trim(),iconSize:[rect(icon).width,rect(icon).height],
-        colors:[label,icon,list].map(el=>getComputedStyle(el).color),
-        weights:[label,list].map(el=>getComputedStyle(el).fontWeight),
-        sizes:[label,list].map(el=>getComputedStyle(el).fontSize),
-        undecorated:[block,label,list,...list.children].every(el=>{const s=getComputedStyle(el);return s.backgroundColor==='rgba(0, 0, 0, 0)' && s.borderTopWidth==='0px' && s.borderRadius==='0px' && s.boxShadow==='none' && s.padding==='0px'}),
-        centered:Math.abs(center(block)-center(root))<1 && Math.abs(center(label)-center(block))<1 && getComputedStyle(list).textAlign==='center',
+      const sharedStyle=el=>{const s=getComputedStyle(el);return {font:s.fontFamily,size:s.fontSize,weight:s.fontWeight,lineHeight:s.lineHeight,spacing:s.letterSpacing,padding:s.padding,radius:s.borderRadius}};
+      const style=getComputedStyle(pill);
+      return {text:pill.textContent.trim(),background:style.backgroundColor,color:style.color,
+        iconCount:block.querySelectorAll('svg').length,
+        style:sharedStyle(pill),categoryStyle:sharedStyle(category),
+        undecorated:!block.querySelector('.project-awards-label,.project-awards-list') && [block,...block.querySelectorAll('*')].every(el=>{const s=getComputedStyle(el);return ['borderTopWidth','borderRightWidth','borderBottomWidth','borderLeftWidth'].every(key=>s[key]==='0px') && s.boxShadow==='none'}),
+        centered:Math.abs(center(block)-center(root))<1 && Math.abs(center(pill)-center(block))<1 && style.textAlign==='center',
         ordered:root.querySelector('.project-categories').compareDocumentPosition(block)===Node.DOCUMENT_POSITION_FOLLOWING && block.compareDocumentPosition(root.querySelector('.project-cover'))===Node.DOCUMENT_POSITION_FOLLOWING,
-        overflow:[block,label,list,...list.children].some(el=>el.scrollWidth>el.clientWidth+1),
-        linesBelow:rect(label).bottom<rect(list).top,
+        overflow:[block,...block.querySelectorAll('*')].some(el=>el.scrollWidth>el.clientWidth+1),
+        wrapping:style.whiteSpace==='normal',
+        fitsContent:rect(pill).width<rect(block).width,
       };
     })()`)
     if (index === 5) {
-      assert.equal(awards.label, 'AWARD · 獲獎紀錄')
-      assert.deepEqual(awards.iconSize, [18, 18])
-      assert.deepEqual(awards.colors, ['rgb(167, 31, 36)', 'rgb(167, 31, 36)', 'rgb(0, 0, 0)'])
-      assert.deepEqual(awards.weights, ['500', '500'])
-      assert.deepEqual(awards.sizes, ['12px', '16px'])
-      assert.ok(awards.undecorated && awards.centered && awards.ordered && awards.linesBelow)
+      assert.equal(awards.text, '獲獎 AWARD | 文創之星 創意概念組傳承創新 金獎')
+      assert.equal(awards.background, 'rgb(167, 31, 36)')
+      assert.equal(awards.color, 'rgb(251, 237, 179)')
+      assert.equal(awards.iconCount, 0, '獲獎膠囊不顯示圖示')
+      const { size: awardSize, lineHeight: awardLineHeight, ...awardStyle } = awards.style
+      const {
+        size: categorySize,
+        lineHeight: categoryLineHeight,
+        ...categoryStyle
+      } = awards.categoryStyle
+      assert.equal(awardSize, '12px', '獲獎標籤使用 sm 字級')
+      assert.equal(categorySize, '10px', '作品類型維持 xs 字級')
+      assert.equal(
+        parseFloat(awardLineHeight) / parseFloat(awardSize),
+        parseFloat(categoryLineHeight) / parseFloat(categorySize),
+        '兩種標籤沿用相同行高比例，依字級自然縮放',
+      )
+      assert.deepEqual(awardStyle, categoryStyle, '獲獎與類型共用字體、內距與圓角')
+      assert.ok(awards.undecorated && awards.centered && awards.ordered && awards.wrapping)
+      if (width >= 768) assert.ok(awards.fitsContent, '寬版獲獎膠囊寬度隨文字內容延伸')
       assert.ok(!awards.overflow, '獎項自然換行且不溢出')
     } else assert.equal(awards, null, '沒有獎項時不產生標籤、圖示或空白區塊')
     const contentMedia = await evaluate(`(() => {
@@ -479,7 +538,7 @@ try {
     assert.equal(detail.padding, width <= 480 ? '24px' : width <= 899 ? '48px' : '64px')
     assert.match(
       detail.year,
-      new RegExp(['2026', '2026', '2022 - 2025', '2021 - 2024', '2022 - 2023', '2017'][index]),
+      new RegExp(['2026', '2026', '2021 - 2025', '2021 - 2025', '2022 - 2023', '2017'][index]),
     )
     for (const removed of ['作品內容整理中', '設計年份', '製作年份', '負責角色'])
       assert.ok(!detail.text.includes(removed))
@@ -528,8 +587,10 @@ try {
           assert.ok(item.labelType.size < item.titleType.size)
         }
         assert.ok(
-          item.children.every((child) => child.type.align === 'left'),
-          '所有內容文字靠左',
+          item.children.every(
+            (child) => child.type.align === (child.bodyCopy ? 'justify' : 'left'),
+          ),
+          '正式內文左右對齊，標題與標籤維持靠左',
         )
         assert.ok(
           item.children.every(
@@ -911,7 +972,7 @@ try {
         const grid=catalog.querySelector('.project-catalog-groups');
         const rect=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}};
         return {
-          award:root.querySelector('.project-awards-list').textContent.trim(),
+          award:root.querySelector('.project-awards .project-category').textContent.trim(),
           title:catalog.previousElementSibling.querySelector('.project-item-title').textContent,
           columns:getComputedStyle(grid).gridTemplateColumns.split(' ').length,
           containerWidth:catalog.clientWidth,
@@ -944,7 +1005,7 @@ try {
           website:!!root.querySelector('.project-website-link'),
         };
       })()`)
-      assert.equal(noodle.award, '文創之星｜創意概念組・傳承創新 金獎')
+      assert.equal(noodle.award, '獲獎 AWARD | 文創之星 創意概念組傳承創新 金獎')
       assert.equal(noodle.title, '麵食造型肥皂圖鑑')
       assert.equal(noodle.columns, noodle.containerWidth >= 640 ? 2 : 1)
       assert.ok(!noodle.duplicateGrid, '圖鑑不重複顯示原本圖片網格')
@@ -1067,6 +1128,26 @@ try {
   await cdp('Emulation.setEmulatedMedia', {
     features: [{ name: 'prefers-reduced-motion', value: 'reduce' }],
   })
+  for (const width of [1440, 768, 390]) {
+    await cdp('Emulation.setDeviceMetricsOverride', {
+      width,
+      height: 900,
+      deviceScaleFactor: 1,
+      mobile: false,
+    })
+    for (const path of ['/', '/about', '/works', '/missing-page']) {
+      await navigate(path)
+      await checkBodyCopy()
+      if (path === '/about') {
+        await evaluate(
+          `document.querySelector('.about-intro').scrollIntoView({block:'center',behavior:'instant'})`,
+        )
+        const { data } = await cdp('Page.captureScreenshot', { format: 'png' })
+        await writeFile(join(output, `${width}-body-copy-profile.png`), Buffer.from(data, 'base64'))
+      }
+    }
+    console.log(`PASS ${width}px: Home、Profile、Works、404 的正式內文、最後一行與排除項目`)
+  }
   // 以真實指標與按鍵驗證狀態，避免只呼叫 focus() 而漏掉操作方式差異。
   async function interactionStyle(selector) {
     await evaluate(

@@ -217,6 +217,11 @@
   .intro {
     max-width: var(--layout-text-width);
   }
+  /* 正式敘述性內文共用；標題、標籤與置中短文字不套用。 */
+  .body-copy {
+    text-align: justify;
+    text-align-last: start;
+  }
   .muted {
     color: var(--color-text-muted);
   }

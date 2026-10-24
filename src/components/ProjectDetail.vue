@@ -1,10 +1,18 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, useTemplateRef, watch } from 'vue'
-import { ArrowRight, Award, ExternalLink, Pause, Play } from '@lucide/vue'
+import { ArrowRight, ExternalLink, Pause, Play } from '@lucide/vue'
 import BaseButton from './BaseButton.vue'
 import ProjectCategories from './ProjectCategories.vue'
 import type { PortfolioProject, ProjectSection } from '../data/projects'
 const props = defineProps<{ project: PortfolioProject; titleId?: string }>()
+
+// 膠囊標籤省略分類中的裝飾分隔點，保留原始獲獎資料。
+const awardLabels = computed(() =>
+  (props.project.awards ?? []).map(
+    (award) =>
+      `獲獎 AWARD | ${award.name} ${award.category.replaceAll('・', '')} ${award.recognition}`,
+  ),
+)
 
 // 作品網站僅接受完整的 HTTP／HTTPS 網址；空值或無效格式不產生按鈕與留白。
 const websiteUrl = computed(() => {
@@ -187,7 +195,7 @@ function hasItemContent(item: ProjectSection) {
     <header class="stack">
       <p class="project-design-year"># {{ project.designYear }}</p>
       <h2 :id="titleId" tabindex="-1" class="project-detail-title">{{ project.title }}</h2>
-      <p class="project-detail-summary intro muted">
+      <p class="project-detail-summary intro muted body-copy">
         {{ project.summary ?? '作品簡介尚未提供，將於內容確認後補上。' }}
       </p>
       <ProjectCategories
@@ -196,22 +204,12 @@ function hasItemContent(item: ProjectSection) {
         single-line
       />
       <p v-else class="muted">作品類型待提供</p>
-      <div
-        v-if="project.awards?.length"
+      <ProjectCategories
+        v-if="awardLabels.length"
         class="project-awards"
-        role="group"
-        aria-label="作品獲獎資訊"
-      >
-        <p class="project-awards-label">
-          <Award :size="18" aria-hidden="true" />
-          <span>AWARD · 獲獎紀錄</span>
-        </p>
-        <ul class="project-awards-list">
-          <li v-for="award in project.awards" :key="`${award.name}-${award.category}`">
-            {{ award.name }}｜{{ award.category }} {{ award.recognition }}
-          </li>
-        </ul>
-      </div>
+        :categories="awardLabels"
+        variant="award"
+      />
       <img
         v-if="project.cover"
         class="project-cover"
@@ -269,10 +267,14 @@ function hasItemContent(item: ProjectSection) {
               {{ item.title }}
             </h4>
             <p v-if="item.tagline" class="project-item-tagline">{{ item.tagline }}</p>
-            <p v-for="paragraph in item.paragraphs" :key="paragraph" class="project-item-body">
+            <p
+              v-for="paragraph in item.paragraphs"
+              :key="paragraph"
+              class="project-item-body body-copy"
+            >
               {{ paragraph }}
             </p>
-            <p v-if="item.content" class="project-item-body">{{ item.content }}</p>
+            <p v-if="item.content" class="project-item-body body-copy">{{ item.content }}</p>
             <p v-if="!hasItemContent(item)" class="project-item-body">內容準備中</p>
           </div>
           <div
@@ -374,7 +376,7 @@ function hasItemContent(item: ProjectSection) {
                     />
                     <div class="project-catalog-text">
                       <h6 class="project-catalog-item-title">{{ product.title }}</h6>
-                      <p class="project-item-body">{{ product.description }}</p>
+                      <p class="project-item-body body-copy">{{ product.description }}</p>
                     </div>
                   </li>
                 </ul>
@@ -386,7 +388,7 @@ function hasItemContent(item: ProjectSection) {
               <div class="project-item-text stack">
                 <p class="project-item-label">{{ block.label }}</p>
                 <h5 v-if="block.title" class="project-block-title">{{ block.title }}</h5>
-                <p class="project-item-body">{{ block.content }}</p>
+                <p class="project-item-body body-copy">{{ block.content }}</p>
               </div>
               <div
                 v-if="block.images?.length"
@@ -415,7 +417,9 @@ function hasItemContent(item: ProjectSection) {
               <ArrowRight v-if="index < item.flow.steps.length - 1" :size="20" aria-hidden="true" />
             </li>
           </ol>
-          <p v-if="item.note" class="project-item-note project-item-body">{{ item.note }}</p>
+          <p v-if="item.note" class="project-item-note project-item-body body-copy">
+            {{ item.note }}
+          </p>
           <div v-if="item.links?.length" class="project-item-links">
             <a
               v-for="link in item.links"
@@ -450,38 +454,6 @@ function hasItemContent(item: ProjectSection) {
     justify-content: center;
     min-inline-size: 0;
     padding-block-end: var(--space-6);
-  }
-  .project-awards {
-    display: grid;
-    justify-self: center;
-    gap: var(--space-2);
-    min-inline-size: 0;
-    max-inline-size: min(100%, var(--layout-text-width));
-    font-weight: var(--font-weight-medium);
-    text-align: center;
-    overflow-wrap: anywhere;
-  }
-  .project-awards-label {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-2);
-    color: var(--palette-red);
-    font-size: var(--font-size-sm);
-  }
-  .project-awards-list {
-    display: grid;
-    gap: var(--space-2);
-    min-inline-size: 0;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    color: var(--palette-black);
-    font-size: var(--font-size-md);
-    text-wrap: balance;
-  }
-  .project-awards svg {
-    flex-shrink: 0;
   }
   .project-section {
     row-gap: var(--space-8);
@@ -720,7 +692,6 @@ function hasItemContent(item: ProjectSection) {
     flex-shrink: 0;
     transform: rotate(90deg);
   }
-  .project-item-note,
   .project-item-links {
     text-align: left;
   }

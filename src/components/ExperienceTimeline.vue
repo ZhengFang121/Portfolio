@@ -22,7 +22,7 @@ defineProps<{ entries: ExperienceYear[] }>()
     </template>
     <template #content="{ item }: { item: ExperienceYear }">
       <ul class="experience-items">
-        <li v-for="experience in item.items" :key="experience.text">
+        <li v-for="experience in item.items" :key="experience.text" class="body-copy">
           <strong v-if="experience.type">{{ experience.text }}</strong>
           <template v-else>{{ experience.text }}</template>
         </li>

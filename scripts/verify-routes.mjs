@@ -1,6 +1,6 @@
 // 以 Vue 的記憶體 Router 與 HTML 渲染確認路由；不代表瀏覽器視覺 QA。
 import assert from 'node:assert/strict'
-import { access } from 'node:fs/promises'
+import { access, readFile } from 'node:fs/promises'
 import { createServer } from 'vite'
 import { createSSRApp } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
@@ -15,6 +15,35 @@ const server = await createServer({
 })
 
 try {
+  const globalStyles = await readFile(new URL('../src/styles/index.css', import.meta.url), 'utf8')
+  const bodyCopyRule = globalStyles.match(/\.body-copy\s*\{([^}]+)\}/)?.[1]
+  assert.ok(bodyCopyRule, '正式內文由全站 body-copy 樣式管理')
+  assert.match(bodyCopyRule, /text-align:\s*justify\s*;/)
+  assert.match(bodyCopyRule, /text-align-last:\s*start\s*;/)
+  assert.equal((globalStyles.match(/\.body-copy\s*\{/g) ?? []).length, 1)
+
+  function bodyCopyText(html) {
+    return [...html.matchAll(/<(p|li)\b[^>]*class="[^"]*\bbody-copy\b[^"]*"[^>]*>(.*?)<\/\1>/gs)]
+      .map((match) =>
+        match[2]
+          .replace(/<[^>]+>/g, '')
+          .replace(/\s+/g, ' ')
+          .trim(),
+      )
+      .map((text) =>
+        text.replace(
+          /&(?:amp|lt|gt|quot|#39);/g,
+          (entity) =>
+            ({
+              '&amp;': '&',
+              '&lt;': '<',
+              '&gt;': '>',
+              '&quot;': '"',
+              '&#39;': "'",
+            })[entity],
+        ),
+      )
+  }
   const { routes } = await server.ssrLoadModule('/src/router/routes.ts')
   const { projects } = await server.ssrLoadModule('/src/data/projects.ts')
   const { experiences } = await server.ssrLoadModule('/src/data/experiences.ts')
@@ -46,7 +75,7 @@ try {
   )
   assert.deepEqual(
     projects.map((project) => project.designYear),
-    ['2026', '2026', '2022 - 2025', '2021 - 2024', '2022 - 2023', '2017'],
+    ['2026', '2026', '2021 - 2025', '2021 - 2025', '2022 - 2023', '2017'],
   )
   const pheidiSections = [
     [
@@ -259,7 +288,7 @@ try {
       project.sections[0].items.map((item) => item.label),
       ['設計洞察 INSIGHT', '設計概念 CONCEPT', '設計目標 VISION'],
     )
-    assert.equal(project.sections[0].items[1].paragraphs.length, index ? 2 : 1)
+    assert.equal(project.sections[0].items[1].paragraphs.length, 1)
     const ids = project.sections.flatMap((section) => [
       section.id,
       ...section.items.map((item) => item.id),
@@ -309,6 +338,30 @@ try {
     await access(new URL(`../public${project.cover.src}`, import.meta.url))
     const titleId = `verify-${project.slug}-title`
     const modalContent = await renderToString(createSSRApp(ProjectDetail, { project, titleId }))
+    const expectedCopy = [
+      project.summary ?? '作品簡介尚未提供，將於內容確認後補上。',
+      ...project.sections.flatMap((section) =>
+        (section.items ?? [section]).flatMap((item) => [
+          ...(item.paragraphs ?? []),
+          ...(item.content ? [item.content] : []),
+          ...(item.catalog ?? []).flatMap((group) =>
+            group.items.map((product) => product.description),
+          ),
+          ...(item.blocks ?? []).map((block) => block.content),
+          ...(item.note ? [item.note] : []),
+        ]),
+      ),
+    ]
+    assert.deepEqual(
+      bodyCopyText(modalContent),
+      expectedCopy.map((text) => text.replace(/\s+/g, ' ').trim()),
+      `${project.slug}: 所有正式段落由共用渲染層套用 body-copy，保留完整文字及順序`,
+    )
+    assert.ok(
+      !/<(?:h[1-6]|p)\b[^>]*class="[^"]*\b(?:project-item-label|project-item-tagline|project-chapter-subtitle|project-design-year)\b[^"]*\bbody-copy\b/.test(
+        modalContent,
+      ),
+    )
     assert.match(modalContent, new RegExp(`<h2[^>]*id="${titleId}"`))
     assert.ok(!modalContent.includes('<h1'), `${project.slug}: Modal 不重複頁面 H1`)
     assert.ok(!modalContent.includes('content-section'), `${project.slug}: Modal 不套紅黃分區`)
@@ -337,9 +390,11 @@ try {
       assert.ok(!modalContent.includes(removed), `${project.slug}: 移除 ${removed}`)
     }
     assert.deepEqual(
-      [...modalContent.matchAll(/<li\b[^>]*class="project-category"[^>]*>(.*?)<\/li>/gs)].map(
-        (match) => match[1].trim(),
-      ),
+      [
+        ...header
+          .match(/<ul\b[^>]*>(.*?)<\/ul>/s)[1]
+          .matchAll(/<li\b[^>]*class="project-category"[^>]*>(.*?)<\/li>/gs),
+      ].map((match) => match[1].replace(/<[^>]*>/g, '').trim()),
       project.categories,
     )
     for (const section of project.sections) {
@@ -397,11 +452,14 @@ try {
           )
       }
     }
-    assert.equal(modalContent.includes('class="project-awards"'), Boolean(project.awards?.length))
+    assert.equal(header.includes('project-awards'), Boolean(project.awards?.length))
+    assert.ok(!header.includes('project-awards-label') && !header.includes('project-awards-list'))
     if (project.awards?.length) {
       assert.ok(modalContent.indexOf('project-categories') < modalContent.indexOf('project-awards'))
       assert.ok(modalContent.indexOf('project-awards') < modalContent.indexOf('project-cover'))
-      assert.ok(modalContent.includes('文創之星｜創意概念組・傳承創新 金獎'))
+      assert.ok(header.includes('project-categories--award'))
+      assert.ok(header.includes('獲獎 AWARD | 文創之星 創意概念組傳承創新 金獎'))
+      assert.ok(!header.includes('<svg'), '獲獎膠囊不顯示圖示')
     }
     for (const item of project.sections.flatMap((section) => section.items ?? [section])) {
       for (const block of item.blocks ?? []) {
@@ -458,11 +516,12 @@ try {
       }
       assert.equal(project.sections.length, 2)
       assert.equal(project.sections[0].id, 'project-introduction')
-      assert.equal(project.sections[0].title, undefined)
+      assert.equal(project.sections[0].title, '設計理念')
+      assert.equal(project.sections[0].subtitle, 'DESIGN CONCEPT')
       assert.equal(project.sections[1].id, 'project-gallery')
       assert.equal(project.sections[1].title, '作品介紹')
       assert.equal(project.sections[1].subtitle, 'PROJECT OVERVIEW')
-      assert.equal((modalContent.match(/class="project-chapter-heading"/g) ?? []).length, 1)
+      assert.equal((modalContent.match(/class="project-chapter-heading"/g) ?? []).length, 2)
       assert.ok(modalContent.includes('依照客戶提供的照片'))
       assert.ok(!modalContent.includes('作品展示'))
       assert.equal(project.sections[1].imageLayout, 'stack')
@@ -830,6 +889,13 @@ try {
     assert.equal(activeLinks.length, activeImage ? 1 : 0, `${path}: 正確的導覽狀態`)
     if (activeImage) assert.ok(activeLinks[0][1].includes(`${activeImage}-2.png`))
     if (expectedName === 'about') {
+      assert.match(html, /<p\b[^>]*class="about-intro body-copy"/)
+      const narrative = bodyCopyText(html)
+      assert.equal(narrative.length, 1 + experiences.flatMap((entry) => entry.items).length)
+      assert.deepEqual(
+        narrative.slice(1),
+        experiences.flatMap((entry) => entry.items.map((item) => item.text)),
+      )
       assert.deepEqual(
         [...html.matchAll(/<h2\b[^>]*>(.*?)<\/h2>/gs)].map((match) => match[1]),
         ['學歷 Education', '證照 License', '技能 Skills', '喜愛 Likes'],
@@ -957,6 +1023,7 @@ try {
       const cards = [...html.matchAll(/<a\b[^>]*class="[^"]*\bwork-card\b[^"]*"[^>]*>(.*?)<\/a>/gs)]
       assert.equal(cards.length, visibleProjects.length, `${path}: 每張作品卡片有一個連結`)
       for (const [index, card] of cards.entries()) {
+        assert.ok(!card[1].includes('body-copy'), '作品卡片簡介與短標籤保留置中設計')
         const project = visibleProjects[index]
         assert.ok(card[0].includes(`href="/works/${project.routeSlug}"`), `${path}: 卡片順序正確`)
         assert.ok(card[0].includes('aria-haspopup="dialog"'), `${path}: 宣告開啟 Dialog`)
@@ -970,7 +1037,7 @@ try {
           ...card[1].matchAll(/<li\b[^>]*class="project-category"[^>]*>(.*?)<\/li>/gs),
         ]
         assert.deepEqual(
-          categories.map((match) => match[1].trim()),
+          categories.map((match) => match[1].replace(/<[^>]*>/g, '').trim()),
           project.categories,
         )
         assert.ok(card[1].indexOf('work-card-categories') > card[1].indexOf('work-card-summary'))
@@ -985,6 +1052,7 @@ try {
       assert.ok(!html.includes('返回主要作品'))
     }
     if (expectedName === 'not-found') {
+      assert.deepEqual(bodyCopyText(html), ['這個網址沒有對應的頁面，你可以回到首頁繼續瀏覽作品。'])
       assert.ok(html.includes('href="/"'))
       assert.ok(html.includes('返回首頁'))
     }
