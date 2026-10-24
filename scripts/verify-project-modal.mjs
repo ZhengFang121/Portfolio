@@ -959,7 +959,7 @@ try {
       )
       assert.deepEqual(
         detail.chapters.map((chapter) => chapter.items.length),
-        [3, 5],
+        [3, 4],
       )
       assert.ok(!detail.text.includes('內容準備中'))
       assert.deepEqual(
@@ -1053,11 +1053,7 @@ try {
         'soap-winter-solstice-tangyuan.png',
         'soap-grain-rain-noodle.png',
       ])
-      assert.deepEqual(noodle.blocks, [
-        'AWARD — 獲獎紀錄',
-        'MEDIA — 媒體採訪',
-        'EXHIBITION — 實體展示與交流',
-      ])
+      assert.deepEqual(noodle.blocks, [])
       assert.ok(!noodle.website && noodle.logo <= 200)
       assert.deepEqual(
         noodle.exhibition.map((image) => image.file),

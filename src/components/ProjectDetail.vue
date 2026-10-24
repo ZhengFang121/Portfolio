@@ -385,10 +385,10 @@ function hasItemContent(item: ProjectSection) {
           </div>
           <div v-if="item.blocks?.length" class="project-content-blocks">
             <div v-for="block in item.blocks" :key="block.id" class="project-content-block stack">
-              <div class="project-item-text stack">
-                <p class="project-item-label">{{ block.label }}</p>
+              <div v-if="block.label || block.title || block.content" class="project-item-text stack">
+                <p v-if="block.label" class="project-item-label">{{ block.label }}</p>
                 <h5 v-if="block.title" class="project-block-title">{{ block.title }}</h5>
-                <p class="project-item-body body-copy">{{ block.content }}</p>
+                <p v-if="block.content" class="project-item-body body-copy">{{ block.content }}</p>
               </div>
               <div
                 v-if="block.images?.length"
@@ -627,6 +627,9 @@ function hasItemContent(item: ProjectSection) {
     gap: var(--space-2);
     min-inline-size: 0;
     overflow-wrap: anywhere;
+  }
+  .project-catalog-text > .project-item-body {
+    font-size: var(--font-size-sm);
   }
   @container project-catalog (min-width: 40rem) {
     .project-catalog-groups {

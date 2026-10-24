@@ -21,9 +21,9 @@ export interface ProjectCatalogGroup {
 // 同一子段落可依序穿插文字與圖片，不必增加主要章節。
 export interface ProjectContentBlock {
   id: string
-  label: string
+  label?: string
   title?: string
-  content: string
+  content?: string
   images?: ProjectImage[]
   imageLayout?: 'feature-grid'
 }
@@ -755,15 +755,14 @@ export const projects: PortfolioProject[] = [
             label: '設計洞察 INSIGHT',
             title: '熟悉的台灣麵食，承載著生活與文化的記憶。',
             content:
-              '台灣麵食不僅是日常飲食的一部分，也蘊含各地的飲食特色與傳統節慶文化。如何透過不同的設計形式，讓人重新認識這些熟悉的文化元素，是本次創作的起點。',
+              '麵食不僅是台灣人日常飲食的一部分，也蘊含各地的飲食特色與傳統節慶文化。思考如何透過設計創作，讓台灣麵食用新的面貌貼近生活。',
           },
           {
             id: 'concept',
             label: '設計概念 CONCEPT',
             title: '當台灣麵食遇上肥皂，讓文化融入日常。',
             paragraphs: [
-              '以台灣麵食文化為靈感，將陽春麵、擔仔麵、水餃、湯圓與麵線轉化為五款造型肥皂，並結合品牌識別與系列包裝設計。',
-              '透過麵食的外觀、線條、觸感與氣味，讓使用者在日常生活中，以不同的感官重新體驗台灣麵食文化。',
+              '以台灣麵食文化為靈感，將陽春麵、擔仔麵、水餃、湯圓與麵線轉化為五款造型肥皂，並結合品牌識別與系列包裝設計。透過麵食的外觀、線條、觸感與氣味，讓使用者在日常生活中，以不同的感官體驗台灣麵食文化。',
             ],
             media: {
               type: 'image',
@@ -778,7 +777,7 @@ export const projects: PortfolioProject[] = [
             label: '設計目標 VISION',
             title: '讓日常用品，成為傳遞文化與記憶的媒介。',
             content:
-              '藉由趣味化的產品設計，讓台灣麵食不再只是餐桌上的食物，而是能被觀看、觸摸與使用的文化創意商品，喚起人們對台灣傳統飲食的熟悉感與美好記憶。',
+              '藉由趣味化的產品設計，讓台灣麵食不再只是餐桌上的食物，而是能被觀看、觸摸與使用的文化創意商品，喚起人們曾經吃過的那碗麵食的美好記憶。',
           },
         ],
       },
@@ -792,7 +791,7 @@ export const projects: PortfolioProject[] = [
             label: '01 / BRAND IDENTITY',
             title: '品牌識別',
             content:
-              '「初次見麵」以台灣麵食文化為主題，透過具有書寫感的文字設計，建立品牌識別，並將傳統飲食意象延伸至產品與包裝視覺。',
+              '「初次見麵」有第一次認識台灣麵食的含義，以台灣麵食文化為主題，透過具有書寫感的文字設計，建立品牌識別，並將傳統飲食意象延伸至產品與包裝視覺。',
             media: {
               type: 'image',
               variant: 'logo',
@@ -805,7 +804,7 @@ export const projects: PortfolioProject[] = [
           {
             id: 'product-design',
             label: '02 / PRODUCT DESIGN',
-            title: '麵食造型肥皂圖鑑',
+            title: '「初次見麵」肥皂圖鑑',
             content:
               '從台灣日常麵食與傳統節慶中汲取靈感，將陽春麵、擔仔麵、水餃、湯圓與麵線轉化為五款造型肥皂，透過外觀、觸感與使用體驗，賦予熟悉的飲食文化全新樣貌。',
             catalog: [
@@ -815,9 +814,9 @@ export const projects: PortfolioProject[] = [
                 items: [
                   {
                     id: 'yangchun-noodle',
-                    title: '01｜陽春麵的寬麵皂',
+                    title: '01 陽春麵的寬麵皂',
                     description:
-                      '陽春麵是一種不加上其他菜餚配料的簡單湯麵，常見搭配的麵條為寬麵。將樸實的麵條造型轉化為肥皂，呈現台灣日常飲食的熟悉樣貌。',
+                      '陽春麵是一種不加上其他菜餚配料的簡單湯麵，常見搭配的麵條為寬麵。將樸實的麵條造型轉化為肥皂，呈現台灣日常飲食樣貌。',
                     image: {
                       src: '/images/projects/chu-ci-jian-mian/soap-yangchun-noodle.png',
                       alt: '雙手捧著陽春麵的寬麵造型肥皂',
@@ -827,7 +826,7 @@ export const projects: PortfolioProject[] = [
                   },
                   {
                     id: 'danzai-noodle',
-                    title: '02｜擔仔麵的油麵皂',
+                    title: '02 擔仔麵的油麵皂',
                     description:
                       '擔仔麵是發源於台南的傳統小吃，「擔仔」在台語中有挑扁擔之意。以油麵的捲曲線條為靈感，呈現具有地方特色的肥皂造型。',
                     image: {
@@ -845,7 +844,7 @@ export const projects: PortfolioProject[] = [
                 items: [
                   {
                     id: 'dumpling',
-                    title: '03｜新年水餃皂',
+                    title: '03 新年水餃皂',
                     description:
                       '台灣新年有吃水餃的習俗，因水餃的形狀如同元寶，象徵吉祥與富貴。將這份年節祝福轉化為造型肥皂。',
                     image: {
@@ -857,7 +856,7 @@ export const projects: PortfolioProject[] = [
                   },
                   {
                     id: 'winter-solstice-tangyuan',
-                    title: '04｜冬至湯圓皂',
+                    title: '04 冬至湯圓皂',
                     description:
                       '冬至是二十四節氣之一，吃湯圓有團圓及象徵年長一歲的意涵。以粉白相間的湯圓造型，喚起熟悉的節慶記憶。',
                     image: {
@@ -869,9 +868,9 @@ export const projects: PortfolioProject[] = [
                   },
                   {
                     id: 'grain-rain-noodle',
-                    title: '05｜穀雨麵線皂',
+                    title: '05 穀雨麵線皂',
                     description:
-                      '取材自穀雨節氣與傳統孝親文化，以麵線作為創作元素，將祝福與敬親的文化意涵融入造型肥皂。',
+                      '穀雨是二十四節氣之一，也是台灣傳統母親節，兒女會在這個時節準備豬腳麵線孝敬母親，以麵線作為創作元素，將祝福與敬親的文化意涵融入造型肥皂。',
                     image: {
                       src: '/images/projects/chu-ci-jian-mian/soap-grain-rain-noodle.png',
                       alt: '雙手捧著穀雨麵線造型肥皂',
@@ -888,7 +887,7 @@ export const projects: PortfolioProject[] = [
             label: '03 / PACKAGING DESIGN',
             title: '系列包裝設計',
             content:
-              '以台灣傳統飲食文化為設計元素，結合插畫、產品標籤與系列圖紋，將麵食造型肥皂延伸為完整的包裝設計，呈現具有在地特色的品牌視覺。',
+              '以台灣傳古早味日常和節慶文化為設計元素，透過插畫、產品標籤與系列圖紋，設計出一系列的包裝設計，呈現具有在地特色的品牌視覺。',
             media: {
               type: 'image',
               src: '/images/projects/chu-ci-jian-mian/packaging-collection.jpg',
@@ -896,13 +895,6 @@ export const projects: PortfolioProject[] = [
               width: 2048,
               height: 1365,
             },
-          },
-          {
-            id: 'brand-photography',
-            label: '04 / BRAND PHOTOGRAPHY',
-            title: '品牌形象照',
-            content:
-              '透過產品陳列、攝影構圖與色彩搭配，呈現麵食造型肥皂的系列特色，讓產品設計與品牌包裝形成完整的視覺體驗。',
             images: [
               {
                 src: '/images/projects/chu-ci-jian-mian/brand-photo-01.jpg',
@@ -920,45 +912,12 @@ export const projects: PortfolioProject[] = [
           },
           {
             id: 'achievements-media',
-            label: '05 / ACHIEVEMENTS & MEDIA',
+            label: '04 / ACHIEVEMENTS & MEDIA',
             title: '成果與肯定',
             blocks: [
               {
-                id: 'award',
-                label: 'AWARD — 獲獎紀錄',
-                title: '文創之星｜創意概念組・傳承創新 金獎',
-                content:
-                  '「初次見麵」以台灣麵食文化為創作核心，將傳統飲食元素轉化為具有實用性與文化意涵的造型肥皂，獲得金獎肯定。',
-                images: [
-                  {
-                    src: '/images/projects/chu-ci-jian-mian/exhibition-04.jpg',
-                    alt: '初次見麵獲獎紀錄照片',
-                    width: 4096,
-                    height: 2733,
-                  },
-                ],
-              },
-              {
-                id: 'media',
-                label: 'MEDIA — 媒體採訪',
-                title: '《創藝多腦河》節目採訪',
-                content:
-                  '作品曾接受《創藝多腦河》節目採訪，透過媒體呈現「初次見麵」的設計理念與創作成果。',
-                images: [
-                  {
-                    src: '/images/projects/chu-ci-jian-mian/exhibition-05.JPG',
-                    alt: '初次見麵接受《創藝多腦河》電視節目採訪的紀錄照片',
-                    width: 1920,
-                    height: 1080,
-                  },
-                ],
-              },
-              {
                 id: 'exhibition',
-                label: 'EXHIBITION — 實體展示與交流',
                 imageLayout: 'feature-grid',
-                content:
-                  '透過實體作品展示，向觀眾介紹產品造型、設計理念與台灣麵食文化的連結，呈現從概念發想到實際成果的完整設計過程。',
                 images: [
                   {
                     src: '/images/projects/chu-ci-jian-mian/exhibition-01.JPG',
@@ -977,6 +936,30 @@ export const projects: PortfolioProject[] = [
                     alt: '初次見麵實體作品展示與交流紀錄 03',
                     width: 960,
                     height: 720,
+                  },
+                ],
+              },
+              {
+                id: 'award',
+                title: '獲得 文創之星 創意概念組傳承創新 金獎',
+                images: [
+                  {
+                    src: '/images/projects/chu-ci-jian-mian/exhibition-04.jpg',
+                    alt: '初次見麵獲獎紀錄照片',
+                    width: 4096,
+                    height: 2733,
+                  },
+                ],
+              },
+              {
+                id: 'media',
+                title: '參與 《創藝多腦河》節目採訪',
+                images: [
+                  {
+                    src: '/images/projects/chu-ci-jian-mian/exhibition-05.JPG',
+                    alt: '初次見麵接受《創藝多腦河》電視節目採訪的紀錄照片',
+                    width: 1920,
+                    height: 1080,
                   },
                 ],
               },

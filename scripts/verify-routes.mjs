@@ -183,7 +183,7 @@ try {
   assert.equal(noodle.summary, '台灣麵食文化主題肥皂設計')
   assert.deepEqual(
     noodle.sections.map((section) => section.items.length),
-    [3, 5],
+    [3, 4],
   )
   assert.deepEqual(
     noodle.sections[0].items.map((item) => item.label),
@@ -232,19 +232,19 @@ try {
     ],
   )
   assert.deepEqual(
-    noodle.sections[1].items[4].blocks.map((block) => block.id),
-    ['award', 'media', 'exhibition'],
+    noodle.sections[1].items[3].blocks.map((block) => block.id),
+    ['exhibition', 'award', 'media'],
   )
   assert.deepEqual(
-    noodle.sections[1].items[4].blocks
+    noodle.sections[1].items[3].blocks
       .flatMap((block) => block.images ?? [])
       .map((image) => image.src.split('/').at(-1)),
     [
-      'exhibition-04.jpg',
-      'exhibition-05.JPG',
       'exhibition-01.JPG',
       'exhibition-02.jpg',
       'exhibition-03.JPG',
+      'exhibition-04.jpg',
+      'exhibition-05.JPG',
     ],
   )
   const brandImages = [
@@ -347,7 +347,7 @@ try {
           ...(item.catalog ?? []).flatMap((group) =>
             group.items.map((product) => product.description),
           ),
-          ...(item.blocks ?? []).map((block) => block.content),
+          ...(item.blocks ?? []).flatMap((block) => (block.content ? [block.content] : [])),
           ...(item.note ? [item.note] : []),
         ]),
       ),
@@ -463,13 +463,16 @@ try {
     }
     for (const item of project.sections.flatMap((section) => section.items ?? [section])) {
       for (const block of item.blocks ?? []) {
-        assert.ok(modalContent.includes(block.label) && modalContent.includes(block.content))
+        if (block.label) assert.ok(modalContent.includes(block.label))
+        if (block.content) assert.ok(modalContent.includes(block.content))
         for (const image of block.images ?? []) {
           await access(new URL(`../public${image.src}`, import.meta.url))
           assert.ok(image.alt && image.width > 0 && image.height > 0)
-          assert.ok(
-            modalContent.indexOf(block.content) < modalContent.indexOf(`src="${image.src}"`),
-          )
+          if (block.content) {
+            assert.ok(
+              modalContent.indexOf(block.content) < modalContent.indexOf(`src="${image.src}"`),
+            )
+          }
         }
       }
     }
