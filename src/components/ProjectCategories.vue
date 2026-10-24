@@ -1,14 +1,23 @@
 <script setup lang="ts">
-defineProps<{ categories: readonly string[]; singleLine?: boolean }>()
+defineProps<{
+  categories: readonly string[]
+  singleLine?: boolean
+  variant?: 'category' | 'award'
+}>()
 </script>
 
 <template>
   <div
     class="project-categories"
-    :class="{ 'project-categories--single-line': singleLine }"
+    :class="{
+      'project-categories--single-line': singleLine,
+      'project-categories--award': variant === 'award',
+    }"
     :tabindex="singleLine ? 0 : undefined"
-    :role="singleLine ? 'region' : undefined"
-    :aria-label="singleLine ? '作品類型，可水平捲動' : '作品類型'"
+    :role="singleLine ? 'region' : variant === 'award' ? 'group' : undefined"
+    :aria-label="
+      variant === 'award' ? '作品獲獎資訊' : singleLine ? '作品類型，可水平捲動' : '作品類型'
+    "
   >
     <ul class="project-categories-list">
       <li v-for="category in categories" :key="category" class="project-category">
@@ -43,6 +52,16 @@ defineProps<{ categories: readonly string[]; singleLine?: boolean }>()
   color: var(--palette-red);
   font-size: var(--font-size-xs);
   white-space: nowrap;
+}
+
+.project-categories--award .project-category {
+  max-inline-size: 100%;
+  background: var(--palette-red);
+  color: var(--palette-yellow);
+  font-size: var(--font-size-sm);
+  white-space: normal;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
 /* 內容比容器寬時從第一顆開始捲動；放得下時整組置中。 */
