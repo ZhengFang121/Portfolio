@@ -1,17 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, useTemplateRef, watch } from 'vue'
-import { RouterLink } from 'vue-router'
-import { ArrowLeft, ArrowRight, Award, ExternalLink, Pause, Play } from '@lucide/vue'
+import { ArrowRight, Award, ExternalLink, Pause, Play } from '@lucide/vue'
 import BaseButton from './BaseButton.vue'
 import ProjectCategories from './ProjectCategories.vue'
 import type { PortfolioProject, ProjectSection } from '../data/projects'
-const props = withDefaults(
-  defineProps<{ project: PortfolioProject; mode?: 'page' | 'modal'; titleId?: string }>(),
-  {
-    mode: 'page',
-    titleId: undefined,
-  },
-)
+const props = defineProps<{ project: PortfolioProject; titleId?: string }>()
 
 // 作品網站僅接受完整的 HTTP／HTTPS 網址；空值或無效格式不產生按鈕與留白。
 const websiteUrl = computed(() => {
@@ -153,7 +146,7 @@ onMounted(() => {
   motionPreference.addEventListener('change', onMotionChange)
   setupVideos()
 })
-// 獨立作品頁切換作品時可能重用元件，需重新觀察新的影片。
+// 路由切換作品時，重新觀察目前內容的影片。
 watch(() => props.project, setupVideos, { flush: 'post' })
 
 // 視窗既有關閉機制會呼叫此方法；同時停用 Observer，防止排隊中的回呼重播。
@@ -167,16 +160,11 @@ onBeforeUnmount(() => {
 // 子段落包含所屬章節，允許不同章節使用相同的子段落 id。
 function sectionId(id: string, parentId?: string) {
   if (parentId) id = `${parentId}-${id}`
-  return props.mode === 'page' ? id : `${props.project.slug}-modal-${id}`
+  return `${props.project.slug}-modal-${id}`
 }
 
 function videoId(section: ProjectSection, item: ProjectSection) {
   return `${sectionId(item.id, section.items?.length ? section.id : undefined)}-video`
-}
-
-function headingTag(isChild = false) {
-  if (props.mode === 'modal') return isChild ? 'h4' : 'h3'
-  return isChild ? 'h3' : 'h2'
 }
 
 function hasItemContent(item: ProjectSection) {
@@ -195,32 +183,17 @@ function hasItemContent(item: ProjectSection) {
 }
 </script>
 <template>
-  <article
-    ref="detail"
-    class="project-detail page-sections"
-    :class="{
-      'project-detail--modal': mode === 'modal',
-    }"
-  >
-    <header class="stack" :class="{ 'content-section': mode === 'page' }">
-      <RouterLink v-if="mode === 'page'" class="text-link" to="/works"
-        ><ArrowLeft :size="18" aria-hidden="true" />返回主要作品</RouterLink
-      >
+  <article ref="detail" class="project-detail page-sections project-detail--modal">
+    <header class="stack">
       <p class="project-design-year"># {{ project.designYear }}</p>
-      <component
-        :is="mode === 'modal' ? 'h2' : 'h1'"
-        :id="titleId"
-        :tabindex="mode === 'modal' ? -1 : undefined"
-        class="project-detail-title"
-        >{{ project.title }}</component
-      >
+      <h2 :id="titleId" tabindex="-1" class="project-detail-title">{{ project.title }}</h2>
       <p class="project-detail-summary intro muted">
         {{ project.summary ?? '作品簡介尚未提供，將於內容確認後補上。' }}
       </p>
       <ProjectCategories
         v-if="project.categories.length"
         :categories="project.categories"
-        :single-line="mode === 'modal'"
+        single-line
       />
       <p v-else class="muted">作品類型待提供</p>
       <div
@@ -254,16 +227,11 @@ function hasItemContent(item: ProjectSection) {
       v-for="section in project.sections"
       :key="section.id"
       class="project-section stack"
-      :class="{ 'content-section': mode === 'page', 'project-chapter': section.items?.length }"
+      :class="{ 'project-chapter': section.items?.length }"
       :aria-labelledby="section.title ? sectionId(section.id) : undefined"
     >
       <header v-if="section.title" class="project-chapter-heading">
-        <p v-if="mode === 'page' && section.label" class="project-chapter-number">
-          {{ section.label }}
-        </p>
-        <component :is="headingTag()" :id="sectionId(section.id)" class="project-chapter-title">{{
-          section.title
-        }}</component>
+        <h3 :id="sectionId(section.id)" class="project-chapter-title">{{ section.title }}</h3>
         <p v-if="section.subtitle" class="project-chapter-subtitle">{{ section.subtitle }}</p>
       </header>
       <div class="project-section-items">
@@ -293,13 +261,13 @@ function hasItemContent(item: ProjectSection) {
             <p v-if="section.items?.length && item.label" class="project-item-label">
               {{ item.label }}
             </p>
-            <component
-              :is="headingTag(true)"
+            <h4
               v-if="section.items?.length && item.title"
               :id="sectionId(item.id, section.id)"
               class="project-item-title"
-              >{{ item.title }}</component
             >
+              {{ item.title }}
+            </h4>
             <p v-if="item.tagline" class="project-item-tagline">{{ item.tagline }}</p>
             <p v-for="paragraph in item.paragraphs" :key="paragraph" class="project-item-body">
               {{ paragraph }}
@@ -388,12 +356,12 @@ function hasItemContent(item: ProjectSection) {
                 role="group"
                 :aria-labelledby="sectionId(`${item.id}-${group.id}`, section.id)"
               >
-                <component
-                  :is="mode === 'modal' ? 'h5' : 'h4'"
+                <h5
                   :id="sectionId(`${item.id}-${group.id}`, section.id)"
                   class="project-catalog-group-title"
-                  >{{ group.title }}</component
                 >
+                  {{ group.title }}
+                </h5>
                 <ul class="project-catalog-items">
                   <li v-for="product in group.items" :key="product.id" class="project-catalog-item">
                     <img
@@ -405,11 +373,7 @@ function hasItemContent(item: ProjectSection) {
                       loading="lazy"
                     />
                     <div class="project-catalog-text">
-                      <component
-                        :is="mode === 'modal' ? 'h6' : 'h5'"
-                        class="project-catalog-item-title"
-                        >{{ product.title }}</component
-                      >
+                      <h6 class="project-catalog-item-title">{{ product.title }}</h6>
                       <p class="project-item-body">{{ product.description }}</p>
                     </div>
                   </li>
@@ -421,12 +385,7 @@ function hasItemContent(item: ProjectSection) {
             <div v-for="block in item.blocks" :key="block.id" class="project-content-block stack">
               <div class="project-item-text stack">
                 <p class="project-item-label">{{ block.label }}</p>
-                <component
-                  :is="mode === 'modal' ? 'h5' : 'h4'"
-                  v-if="block.title"
-                  class="project-block-title"
-                  >{{ block.title }}</component
-                >
+                <h5 v-if="block.title" class="project-block-title">{{ block.title }}</h5>
                 <p class="project-item-body">{{ block.content }}</p>
               </div>
               <div
@@ -882,12 +841,6 @@ function hasItemContent(item: ProjectSection) {
     display: grid;
     gap: var(--space-2);
     text-align: center;
-  }
-  .project-chapter-number {
-    font-size: var(--font-size-sm);
-  }
-  .project-chapter-subtitle {
-    font-size: var(--font-size-md);
   }
   .project-detail--modal .project-chapter-subtitle {
     font-size: var(--font-size-sm);

@@ -21,7 +21,7 @@ function updateRestoredFocus(event: KeyboardEvent | PointerEvent) {
 }
 
 function openProject(event: MouseEvent) {
-  // 只攔截一般點擊；修飾鍵、滑鼠中鍵與右鍵仍使用原生作品連結。
+  // 只攔截一般點擊以保留背景；其他操作使用相同作品網址另開 Modal。
   if (
     event.defaultPrevented ||
     event.button !== 0 ||
@@ -37,7 +37,7 @@ function openProject(event: MouseEvent) {
 </script>
 
 <template>
-  <RouterLink v-slot="{ href }" :to="`/works/${project.slug}`" custom>
+  <RouterLink v-slot="{ href }" :to="{ name: `work-${project.slug}` }" custom>
     <!-- 整張卡片只有一個連結，支援鍵盤、另開分頁及原生連結操作。 -->
     <BaseCard
       as="a"

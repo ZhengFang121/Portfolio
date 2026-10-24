@@ -142,13 +142,20 @@ try {
     }
     throw new Error(`Timeout: ${expression}`)
   }
-  async function navigate(path) {
+  async function navigate(path, expectedPath = path) {
     await cdp('Page.navigate', { url: address + path })
     await waitFor(
-      `location.pathname === ${JSON.stringify(path)} && document.readyState === 'complete' && document.querySelector('.app-shell')?.dataset.contentReady === 'true' && document.querySelector('main h1')`,
+      `location.pathname === ${JSON.stringify(expectedPath)} && document.readyState === 'complete' && document.querySelector('.app-shell')?.dataset.contentReady === 'true' && document.querySelector('main h1')`,
     )
     await evaluate('document.fonts.ready.then(() => true)')
     await delay(150)
+  }
+  async function reload() {
+    await evaluate('window.pendingReload = true')
+    await cdp('Page.reload', {})
+    await waitFor(
+      `!window.pendingReload && document.readyState==='complete' && !!document.querySelector('.project-modal h2')`,
+    )
   }
   async function key(key, modifiers = 0) {
     const windowsVirtualKeyCode = { Tab: 9, Enter: 13, Escape: 27, PageDown: 34, ' ': 32 }[key]
@@ -568,7 +575,7 @@ try {
       )
       assert.deepEqual(
         detail.chapters[0].items.map((item) => item.label),
-        ['INSIGHT — 設計洞察', 'CONCEPT — 設計概念', 'VISION — 品牌願景'],
+        ['設計洞察 INSIGHT', '設計概念 CONCEPT', '品牌願景 VISION'],
       )
       assert.ok(detail.chapters[0].items.every((item) => item.media.length === 0))
       const expected = [
@@ -576,37 +583,37 @@ try {
           'intro',
           '序章動畫',
           '01 / INTRO ANIMATION',
-          '透過角色插畫與動態視覺，帶領使用者進入跑者菲迪的世界。以輕鬆活潑的方式建立第一印象，傳達「陪你開始，伴你成長」的品牌精神，讓每一段跑步旅程從充滿期待的序章展開。',
+          '使用點擊或滑動滾輪來讓動畫進行，透過角色插畫與動態視覺，帶領使用者進入跑者菲迪的世界。以輕鬆活潑的方式建立第一印象，傳達「陪你開始 伴你成長」的品牌精神，讓每一段跑步旅程從充滿期待的序章展開。',
         ],
         [
           'login',
-          '登入',
-          '02 / LOGIN',
+          '登入註冊',
+          '02 / LOGIN & REGISTER',
           '透過簡潔直覺的登入與註冊介面，降低新手開始使用網站的門檻。建立專屬的跑者帳號，保存個人的跑步紀錄與成長歷程，從這裡展開屬於自己的跑步旅程。',
         ],
         [
           'home',
           '首頁',
           '03 / HOME',
-          '首頁整合跑者階段、成長進度與個人跑步概況，讓使用者快速掌握目前的成果與下一階段目標。搭配菲迪日報的天氣資訊、跑者學院推薦及阿里的貼心提醒，讓每一次回訪都有新的期待與方向。',
+          '首頁整合跑者階段、成長進度與個人跑步概況，讓使用者快速掌握目前的成果與下一階段目標。搭配菲迪日報的資訊內容，讓每一次回訪都有新的期待與方向。',
         ],
         [
           'records',
           '新增跑步紀錄',
           '04 / RUNNING RECORD',
-          '透過直覺化的表單，記錄每一次跑步的時間、距離、地點與心得，並可搭配照片留下當下的回憶。讓原本單純的跑步數據，轉化成看得見的成長足跡，累積屬於自己的跑者旅程。',
+          '透過直覺化的表單，記錄每一次跑步的時間、距離、地點與心得，並可搭配照片留下當時的回憶。讓原本單純的跑步數據，轉化成看得見的成長足跡，累積屬於自己的跑者旅程。',
         ],
         [
           'station',
           '足跡驛站',
           '05 / RUNNING STATION',
-          '以月曆與跑步紀錄呈現個人的運動歷程，方便回顧每一次努力與進步。透過累積紀錄與成長回饋，讓使用者看見自己的堅持，從每一個小小的成就中獲得持續前進的動力。',
+          '以月曆方式呈現個人的跑步歷程，方便回顧每一次努力與進步。同時設計成就徽章系統，透過累積跑步次數、里程與完成不同挑戰來解鎖徽章。透過累積紀錄與成長回饋，讓使用者看見自己的堅持，從每一個小小的成就中獲得持續前進的動力。',
         ],
         [
           'academy',
           '跑者學院',
           '06 / RUNNING ACADEMY',
-          '針對新手跑者的需求，整理學習、裝備、補給與賽事四大類跑步知識。透過容易理解的文章內容，陪伴使用者逐步建立正確觀念，減少入門時的迷惘，讓每一次出發都更有信心。',
+          '針對新手跑者的需求，整理學習、裝備、補給與賽事四大類跑步知識。文章依照跑者階段逐步解鎖，避免一次接收過多資訊造成負擔，讓使用者能依照自己的成長進度循序學習、建立正確觀念，並在每一次出發時更有信心。',
         ],
         [
           'plaza',
@@ -764,7 +771,7 @@ try {
       )
       assert.deepEqual(
         detail.chapters[0].items.map((item) => item.label),
-        ['INSIGHT — 設計洞察', 'CONCEPT — 設計概念', 'GOAL — 設計目標'],
+        ['設計洞察 INSIGHT', '設計概念 CONCEPT', '設計目標 VISION'],
       )
       assert.ok(!detail.text.includes('內容準備中'))
       for (const item of detail.chapters[1].items) {
@@ -896,7 +903,7 @@ try {
       assert.ok(!detail.text.includes('內容準備中'))
       assert.deepEqual(
         detail.chapters[0].items.map((item) => item.label),
-        ['INSIGHT — 設計洞察', 'CONCEPT — 設計概念', 'GOAL — 設計目標'],
+        ['設計洞察 INSIGHT', '設計概念 CONCEPT', '設計目標 VISION'],
       )
       const noodle = await evaluate(`(() => {
         const root=document.querySelector('.project-detail--modal');
@@ -1405,7 +1412,7 @@ try {
         `document.querySelector('${selector}').scrollIntoView({block:'center',behavior:'instant'}); document.querySelector('${selector}').focus({preventScroll:true})`,
       )
       const before = await evaluate(geometry)
-      const url = await evaluate('location.href')
+      const url = await evaluate(`document.querySelector('${selector}').href`)
       await key('Enter')
       await waitFor(`document.querySelector('.project-modal h2')===document.activeElement`)
       await evaluate('document.fonts.ready.then(() => true)')
@@ -1414,7 +1421,7 @@ try {
       )
       await checkDetail(0, width)
       const state = await evaluate(geometry)
-      assert.equal(await evaluate('location.href'), url, '開啟不改網址')
+      assert.equal(await evaluate('location.href'), url, '開啟後網址對應作品')
       for (const edge of ['left', 'right', 'width']) {
         assert.ok(
           Math.abs(state.dialog[edge] - before.content[edge]) < 1,
@@ -1949,13 +1956,33 @@ try {
   let linkedTarget
   for (let attempt = 0; attempt < 100; attempt++) {
     linkedTarget = (await call('Target.getTargets')).targetInfos.find(
-      (target) =>
-        !existingTargets.has(target.targetId) && target.url === address + '/works/project-01',
+      (target) => !existingTargets.has(target.targetId) && target.url === address + '/works/pheidi',
     )
     if (linkedTarget) break
     await delay(50)
   }
-  assert.ok(linkedTarget, '原生滑鼠中鍵可另開作品獨立頁')
+  assert.ok(linkedTarget, '原生滑鼠中鍵可另開作品 Modal 網址')
+  const { sessionId: linkedSession } = await call('Target.attachToTarget', {
+    targetId: linkedTarget.targetId,
+    flatten: true,
+  })
+  let linkedReady = false
+  for (let attempt = 0; attempt < 300; attempt++) {
+    const result = await call(
+      'Runtime.evaluate',
+      {
+        expression: `!!document.querySelector('#works-title') && document.querySelector('.project-modal h2')?.textContent === '跑者菲迪 Pheidi the Runner'`,
+        returnByValue: true,
+      },
+      linkedSession,
+    )
+    if (result.result.value) {
+      linkedReady = true
+      break
+    }
+    await delay(50)
+  }
+  assert.ok(linkedReady, '另開分頁以 Works 為背景並顯示正確 Modal')
   await call('Target.closeTarget', { targetId: linkedTarget.targetId })
   assert.equal(await evaluate('location.pathname'), '/works')
   assert.ok(await evaluate(`!document.querySelector('.project-modal')`))
@@ -2006,17 +2033,153 @@ try {
       `!document.querySelector('.site-content').inert && !document.body.classList.contains('p-overflow-hidden') && getComputedStyle(document.documentElement).overflowY==='auto'`,
     ),
   )
-  for (const path of [
-    '/graphic-works',
-    '/works/project-01',
-    '/works/project-02',
-    '/works/project-03',
-    '/works/project-04',
-    '/works/project-05',
-    '/works/project-06',
-    '/works/unknown-project',
-    '/missing-page',
-  ]) {
+  // 真實路由歷史：Home／Works 背景保留、上一頁／下一頁、X 與跨作品切換。
+  const routerExpression = `document.querySelector('#app').__vue_app__.config.globalProperties.$router`
+  await cdp('Emulation.setTouchEmulationEnabled', { enabled: false })
+  await cdp('Emulation.setEmulatedMedia', {
+    features: [{ name: 'prefers-reduced-motion', value: 'reduce' }],
+  })
+  for (const width of [1440, 768, 390]) {
+    await cdp('Emulation.setDeviceMetricsOverride', {
+      width,
+      height: 900,
+      deviceScaleFactor: 1,
+      mobile: false,
+    })
+    for (const background of ['/', '/works']) {
+      await navigate(background)
+      await evaluate(
+        `document.querySelector('.work-card').scrollIntoView({block:'center',behavior:'instant'});window.backgroundPage=document.querySelector('main > .page-sections')`,
+      )
+      const before = await evaluate(geometry)
+      const originPosition = await evaluate('history.state.position')
+      await click('.work-card')
+      await waitFor(
+        `location.pathname==='/works/pheidi' && !!document.querySelector('.project-modal')`,
+      )
+      assert.ok(
+        await evaluate(`document.querySelector('main > .page-sections')===window.backgroundPage`),
+        '開啟保留同一個背景元件',
+      )
+      assert.equal(await evaluate('scrollY'), before.scroll)
+      assert.equal(await evaluate('history.state.position'), originPosition + 1)
+      await evaluate('history.back()')
+      await waitFor(
+        `location.pathname===${JSON.stringify(background)} && !document.querySelector('.project-modal')`,
+      )
+      await closed('.work-card', before)
+      await evaluate('history.forward()')
+      await waitFor(
+        `location.pathname==='/works/pheidi' && !!document.querySelector('.project-modal')`,
+      )
+      // 透過 Router 切換作品，確認內容、影片清理與網址同步。
+      await evaluate(
+        `window.previousVideo=document.querySelector('.project-modal video');window.previousVideo.scrollIntoView({block:'center',behavior:'instant'})`,
+      )
+      await waitFor(`window.previousVideo.querySelector('source').hasAttribute('src')`)
+      await evaluate(`window.previousVideo.play()`)
+      assert.ok(await evaluate('!window.previousVideo.paused'))
+      await evaluate(
+        `${routerExpression}.push({name:'work-project-02',state:{portfolioModal:history.state.portfolioModal}})`,
+      )
+      await waitFor(
+        `location.pathname==='/works/papago' && document.querySelector('.project-modal h2')?.textContent==='PAPAGO'`,
+      )
+      assert.ok(await evaluate('window.previousVideo.paused'), '切換作品停止舊影片')
+      await waitFor(`document.querySelector('.project-modal h2')===document.activeElement`)
+      assert.equal(await evaluate(`document.querySelector('.project-modal-panel').scrollTop`), 0)
+      await evaluate('history.back()')
+      await waitFor(
+        `location.pathname==='/works/pheidi' && document.querySelector('.project-modal h2')?.textContent==='跑者菲迪 Pheidi the Runner'`,
+      )
+      await evaluate('history.forward()')
+      await waitFor(
+        `location.pathname==='/works/papago' && document.querySelector('.project-modal h2')?.textContent==='PAPAGO'`,
+      )
+      const historyBeforeClose = await evaluate('history.length')
+      await click('.project-modal-close')
+      await waitFor(
+        `location.pathname===${JSON.stringify(background)} && !document.querySelector('.project-modal')`,
+      )
+      assert.equal(
+        await evaluate('history.length'),
+        historyBeforeClose,
+        'X 回到來源紀錄，不新增紀錄',
+      )
+      assert.equal(await evaluate('history.state.position'), originPosition)
+      await closed('.work-card', before)
+      assert.equal(await evaluate('scrollY'), before.scroll, '跨作品後仍還原原背景捲動')
+      await navigate(background)
+      await evaluate(
+        `document.querySelector('.work-card').scrollIntoView({block:'center',behavior:'instant'})`,
+      )
+      await click('.work-card')
+      await waitFor(
+        `location.pathname==='/works/pheidi' && !!document.querySelector('.project-modal')`,
+      )
+      await reload()
+      await waitFor(
+        `document.readyState==='complete' && !!document.querySelector('#works-title') && !!document.querySelector('.project-modal')`,
+      )
+      await click('.project-modal-close')
+      await waitFor(`location.pathname==='/works' && !document.querySelector('.project-modal')`)
+    }
+    console.log(
+      `PASS ${width}px: Home/Works 背景與捲動、上一頁/下一頁、跨作品播放清理、X 歷史還原、重新整理`,
+    )
+  }
+  const workLinks = await evaluate(
+    `Array.from(document.querySelectorAll('.work-card'),card=>({path:new URL(card.href).pathname,title:card.querySelector('h3').textContent}))`,
+  )
+  for (const width of [1440, 390]) {
+    await cdp('Emulation.setDeviceMetricsOverride', {
+      width,
+      height: 900,
+      deviceScaleFactor: 1,
+      mobile: false,
+    })
+    for (const [index, work] of workLinks.entries()) {
+      // 舊網址先轉址；每個新網址直接開啟、重新整理仍維持同一作品。
+      const legacy = [
+        'project-01',
+        'project-02',
+        'project-03',
+        'project-04',
+        'project-06',
+        'project-05',
+      ][index]
+      await navigate(`/works/${legacy}`, work.path)
+      await waitFor(
+        `document.querySelector('.project-modal h2')?.textContent===${JSON.stringify(work.title)}`,
+      )
+      assert.ok(await evaluate(`!!document.querySelector('#works-title')`))
+      const original = await evaluate(`document.querySelector('.project-detail').textContent`)
+      await reload()
+      await waitFor(
+        `document.readyState==='complete' && document.querySelector('.project-modal h2')?.textContent===${JSON.stringify(work.title)}`,
+      )
+      assert.equal(
+        await evaluate(`document.querySelector('.project-detail').textContent`),
+        original,
+      )
+      const length = await evaluate('history.length')
+      const position = await evaluate('history.state.position')
+      await click('.project-modal-close')
+      await waitFor(`location.pathname==='/works' && !document.querySelector('.project-modal')`)
+      assert.equal(
+        await evaluate('history.length'),
+        length,
+        '直接進入後 X 使用 replace，不返回外部頁面',
+      )
+      assert.equal(await evaluate('history.state.position'), position)
+      assert.ok(
+        await evaluate(`document.activeElement===document.querySelector('main')`),
+        '無來源卡片時焦點回到主要內容',
+      )
+    }
+    console.log(`PASS ${width}px: 六作品新舊網址、重新整理、Works 背景與安全關閉`)
+  }
+  for (const path of ['/graphic-works', '/works/unknown-project', '/missing-page']) {
     await navigate(path)
     assert.ok(
       await evaluate(
@@ -2032,7 +2195,7 @@ try {
   await writeFile(join(output, 'report.json'), JSON.stringify(report, null, 2))
   await writeFile(join(output, 'shared-headers.json'), JSON.stringify(headerChecks, null, 2))
   console.log(
-    `PASS 六個作品共用頂部資訊與封面、似顏繪封面加六列單欄展示、修飾鍵、原生中鍵另開頁、觸控捲動、開啟中 resize、卸載清理、直接網址與 404。證據：${output}`,
+    `PASS 六個作品共用內容與視覺、修飾鍵、中鍵另開 Modal、觸控捲動、resize、卸載清理、新舊網址、重新整理、Home/Works 背景、上一頁/下一頁、跨作品與 X 關閉歷史、404。證據：${output}`,
   )
 } finally {
   socket?.close()

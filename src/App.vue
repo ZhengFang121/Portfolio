@@ -3,7 +3,9 @@ import { nextTick, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import AppHeader from './components/AppHeader.vue'
 import AppFooter from './components/AppFooter.vue'
+import ProjectModal from './components/ProjectModal.vue'
 import { useIntro } from './composables/useIntro'
+import { provideProjectModal } from './composables/useProjectModal'
 
 const route = useRoute()
 const shell = ref<HTMLElement | null>(null)
@@ -11,6 +13,17 @@ const viewport = ref<HTMLElement | null>(null)
 const brand = ref<HTMLElement | null>(null)
 const brandAnchor = ref<HTMLElement | null>(null)
 const mainContent = ref<HTMLElement | null>(null)
+const {
+  dialogId,
+  backgroundRoute,
+  displayProject,
+  visible,
+  trigger,
+  initialInput,
+  restoreScroll,
+  closeProject,
+  finishClose,
+} = provideProjectModal()
 const {
   stage,
   contentReady,
@@ -38,7 +51,7 @@ watch(contentReady, async (ready, wasReady) => {
 })
 
 watch(
-  () => route.fullPath,
+  () => backgroundRoute.value.fullPath,
   async () => {
     showContent()
     await nextTick()
@@ -97,10 +110,26 @@ watch(
     </div>
     <div class="site-content shell-reveal" :inert="!contentReady">
       <main id="main-content" ref="mainContent" tabindex="-1">
-        <RouterView />
+        <RouterView :route="backgroundRoute" />
       </main>
       <AppFooter />
     </div>
+    <ProjectModal
+      v-if="displayProject"
+      :id="dialogId"
+      :visible="visible"
+      :project="displayProject"
+      :trigger="trigger"
+      :fallback-focus="mainContent"
+      :initial-input="initialInput"
+      :restore-scroll="restoreScroll"
+      @update:visible="
+        (value) => {
+          if (!value) closeProject()
+        }
+      "
+      @after-hide="finishClose"
+    />
   </div>
 </template>
 

@@ -58,7 +58,9 @@ export interface ProjectSection {
   blocks?: ProjectContentBlock[]
 }
 export interface PortfolioProject {
+  // 既有識別碼用於精選作品、章節 ID 與舊網址；routeSlug 只決定公開網址。
   slug: string
+  routeSlug: string
   title: string
   categories: string[]
   designYear: string
@@ -74,6 +76,7 @@ export interface PortfolioProject {
 export const projects: PortfolioProject[] = [
   {
     slug: 'project-01',
+    routeSlug: 'pheidi',
     title: '跑者菲迪 Pheidi the Runner',
     categories: ['WEB DESIGN', 'ILLUSTRATION'],
     designYear: '2026',
@@ -91,7 +94,6 @@ export const projects: PortfolioProject[] = [
       {
         id: 'design-concept',
         title: '設計理念',
-        label: 'SECTION 01',
         subtitle: 'DESIGN CONCEPT',
         content: null,
         items: [
@@ -127,7 +129,6 @@ export const projects: PortfolioProject[] = [
       },
       {
         id: 'website-overview',
-        label: 'SECTION 02',
         title: '作品介紹',
         subtitle: 'PROJECT OVERVIEW',
         content: null,
@@ -202,6 +203,7 @@ export const projects: PortfolioProject[] = [
   },
   {
     slug: 'project-02',
+    routeSlug: 'papago',
     title: 'PAPAGO',
     categories: ['LINE BOT', 'ILLUSTRATION'],
     designYear: '2026',
@@ -217,7 +219,6 @@ export const projects: PortfolioProject[] = [
     sections: [
       {
         id: 'design-concept',
-        label: 'SECTION 01',
         title: '設計理念',
         subtitle: 'DESIGN CONCEPT',
         content: null,
@@ -252,7 +253,6 @@ export const projects: PortfolioProject[] = [
       },
       {
         id: 'line-bot-overview',
-        label: 'SECTION 02',
         title: '作品介紹',
         subtitle: 'PROJECT OVERVIEW',
         content: null,
@@ -350,6 +350,7 @@ export const projects: PortfolioProject[] = [
   },
   {
     slug: 'project-03',
+    routeSlug: 'apollo',
     title: 'APOLLO',
     categories: ['PACKAGING DESIGN', 'ILLUSTRATION'],
     designYear: '2022 - 2025',
@@ -365,7 +366,6 @@ export const projects: PortfolioProject[] = [
     sections: [
       {
         id: 'apollo-design-concept',
-        label: 'SECTION 01',
         title: '設計理念',
         subtitle: 'DESIGN CONCEPT',
         content: null,
@@ -390,14 +390,12 @@ export const projects: PortfolioProject[] = [
             id: 'apollo-design-goal',
             label: '設計目標 VISION',
             title: '讓產品保有特色，讓品牌保持一致。',
-            content:
-              '透過系列化的視覺設計，讓不同咖啡產品展現各自特色，同時維持一致的品牌形象。',
+            content: '透過系列化的視覺設計，讓不同咖啡產品展現各自特色，同時維持一致的品牌形象。',
           },
         ],
       },
       {
         id: 'apollo-brand-applications',
-        label: 'SECTION 02',
         title: '作品介紹',
         subtitle: 'PROJECT OVERVIEW',
         content: null,
@@ -509,6 +507,7 @@ export const projects: PortfolioProject[] = [
   },
   {
     slug: 'project-04',
+    routeSlug: 'r4d',
     title: 'R4D',
     categories: ['PACKAGING DESIGN', 'ILLUSTRATION'],
     designYear: '2021 - 2024',
@@ -524,7 +523,6 @@ export const projects: PortfolioProject[] = [
     sections: [
       {
         id: 'r4d-design-concept',
-        label: 'SECTION 01',
         title: '設計理念',
         subtitle: 'DESIGN CONCEPT',
         content: null,
@@ -557,7 +555,6 @@ export const projects: PortfolioProject[] = [
       },
       {
         id: 'r4d-brand-applications',
-        label: 'SECTION 02',
         title: '作品介紹',
         subtitle: 'PROJECT OVERVIEW',
         content: null,
@@ -659,6 +656,7 @@ export const projects: PortfolioProject[] = [
   },
   {
     slug: 'project-06',
+    routeSlug: 'custom-portrait',
     title: '似顏繪',
     categories: ['ILLUSTRATION'],
     designYear: '2022 - 2023',
@@ -725,6 +723,7 @@ export const projects: PortfolioProject[] = [
   },
   {
     slug: 'project-05',
+    routeSlug: 'chu-ci-jian-mian',
     title: '初次見麵',
     categories: ['PRODUCT DESIGN', 'PACKAGING DESIGN', 'ILLUSTRATION'],
     designYear: '2017',
@@ -747,7 +746,6 @@ export const projects: PortfolioProject[] = [
     sections: [
       {
         id: 'design-concept',
-        label: 'SECTION 01',
         title: '設計理念',
         subtitle: 'DESIGN CONCEPT',
         items: [
@@ -785,7 +783,6 @@ export const projects: PortfolioProject[] = [
       },
       {
         id: 'project-overview',
-        label: 'SECTION 02',
         title: '作品介紹',
         subtitle: 'PROJECT OVERVIEW',
         items: [

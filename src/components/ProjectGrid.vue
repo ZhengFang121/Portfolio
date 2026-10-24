@@ -1,27 +1,13 @@
 <script setup lang="ts">
-import { ref, shallowRef, useId } from 'vue'
 import WorkCard from './WorkCard.vue'
-import ProjectModal from './ProjectModal.vue'
+import { useProjectModal } from '../composables/useProjectModal'
 import { projects as allProjects, type PortfolioProject } from '../data/projects'
 
 withDefaults(defineProps<{ projects?: readonly PortfolioProject[] }>(), {
   projects: () => allProjects,
 })
 
-const dialogId = `project-modal-${useId()}`
-const selectedProject = shallowRef<PortfolioProject | null>(null)
-const trigger = shallowRef<HTMLElement | null>(null)
-const initialInput = ref<'keyboard' | 'pointer'>('pointer')
-const visible = ref(false)
-
-function openProject(project: PortfolioProject, event: MouseEvent) {
-  if (!(event.currentTarget instanceof HTMLElement)) return
-  trigger.value = event.currentTarget
-  // 鍵盤與輔助技術啟動的 click 沒有點擊次數，不使用瀏覽器的焦點外觀判斷。
-  initialInput.value = event.detail === 0 ? 'keyboard' : 'pointer'
-  selectedProject.value = project
-  visible.value = true
-}
+const { dialogId, selectedProject, visible, openProject } = useProjectModal()
 </script>
 <template>
   <div class="project-grid">
@@ -34,15 +20,6 @@ function openProject(project: PortfolioProject, event: MouseEvent) {
       @open="openProject(project, $event)"
     />
   </div>
-  <ProjectModal
-    v-if="selectedProject"
-    :id="dialogId"
-    v-model:visible="visible"
-    :project="selectedProject"
-    :trigger="trigger"
-    :initial-input="initialInput"
-    @after-hide="selectedProject = null"
-  />
 </template>
 
 <style>

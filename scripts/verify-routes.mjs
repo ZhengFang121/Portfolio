@@ -53,37 +53,37 @@ try {
       'intro',
       '序章動畫',
       '01 / INTRO ANIMATION',
-      '透過角色插畫與動態視覺，帶領使用者進入跑者菲迪的世界。以輕鬆活潑的方式建立第一印象，傳達「陪你開始，伴你成長」的品牌精神，讓每一段跑步旅程從充滿期待的序章展開。',
+      '使用點擊或滑動滾輪來讓動畫進行，透過角色插畫與動態視覺，帶領使用者進入跑者菲迪的世界。以輕鬆活潑的方式建立第一印象，傳達「陪你開始 伴你成長」的品牌精神，讓每一段跑步旅程從充滿期待的序章展開。',
     ],
     [
       'login',
-      '登入',
-      '02 / LOGIN',
+      '登入註冊',
+      '02 / LOGIN & REGISTER',
       '透過簡潔直覺的登入與註冊介面，降低新手開始使用網站的門檻。建立專屬的跑者帳號，保存個人的跑步紀錄與成長歷程，從這裡展開屬於自己的跑步旅程。',
     ],
     [
       'home',
       '首頁',
       '03 / HOME',
-      '首頁整合跑者階段、成長進度與個人跑步概況，讓使用者快速掌握目前的成果與下一階段目標。搭配菲迪日報的天氣資訊、跑者學院推薦及阿里的貼心提醒，讓每一次回訪都有新的期待與方向。',
+      '首頁整合跑者階段、成長進度與個人跑步概況，讓使用者快速掌握目前的成果與下一階段目標。搭配菲迪日報的資訊內容，讓每一次回訪都有新的期待與方向。',
     ],
     [
       'records',
       '新增跑步紀錄',
       '04 / RUNNING RECORD',
-      '透過直覺化的表單，記錄每一次跑步的時間、距離、地點與心得，並可搭配照片留下當下的回憶。讓原本單純的跑步數據，轉化成看得見的成長足跡，累積屬於自己的跑者旅程。',
+      '透過直覺化的表單，記錄每一次跑步的時間、距離、地點與心得，並可搭配照片留下當時的回憶。讓原本單純的跑步數據，轉化成看得見的成長足跡，累積屬於自己的跑者旅程。',
     ],
     [
       'station',
       '足跡驛站',
       '05 / RUNNING STATION',
-      '以月曆與跑步紀錄呈現個人的運動歷程，方便回顧每一次努力與進步。透過累積紀錄與成長回饋，讓使用者看見自己的堅持，從每一個小小的成就中獲得持續前進的動力。',
+      '以月曆方式呈現個人的跑步歷程，方便回顧每一次努力與進步。同時設計成就徽章系統，透過累積跑步次數、里程與完成不同挑戰來解鎖徽章。透過累積紀錄與成長回饋，讓使用者看見自己的堅持，從每一個小小的成就中獲得持續前進的動力。',
     ],
     [
       'academy',
       '跑者學院',
       '06 / RUNNING ACADEMY',
-      '針對新手跑者的需求，整理學習、裝備、補給與賽事四大類跑步知識。透過容易理解的文章內容，陪伴使用者逐步建立正確觀念，減少入門時的迷惘，讓每一次出發都更有信心。',
+      '針對新手跑者的需求，整理學習、裝備、補給與賽事四大類跑步知識。文章依照跑者階段逐步解鎖，避免一次接收過多資訊造成負擔，讓使用者能依照自己的成長進度循序學習、建立正確觀念，並在每一次出發時更有信心。',
     ],
     [
       'plaza',
@@ -111,8 +111,8 @@ try {
   )
   const designConcept = projects[0].sections[0]
   assert.equal(projects[0].sections.length, 2)
-  assert.equal(designConcept.label, 'SECTION 01')
-  assert.equal(projects[0].sections[1].label, 'SECTION 02')
+  assert.equal(designConcept.label, undefined)
+  assert.equal(projects[0].sections[1].label, undefined)
   assert.equal(projects[0].sections[1].title, '作品介紹')
   assert.equal(projects[0].sections[1].subtitle, 'PROJECT OVERVIEW')
   assert.equal(designConcept.id, 'design-concept')
@@ -120,17 +120,15 @@ try {
   assert.equal(designConcept.subtitle, 'DESIGN CONCEPT')
   assert.deepEqual(
     designConcept.items.map((item) => item.label),
-    ['INSIGHT — 設計洞察', 'CONCEPT — 設計概念', 'VISION — 品牌願景'],
+    ['設計洞察 INSIGHT', '設計概念 CONCEPT', '品牌願景 VISION'],
   )
   const expectedConceptParagraphs = [
     '跑步容易開始，卻不容易持續。',
-    '對新手跑者而言，缺乏目標、成就感與持續的動力，往往讓跑步逐漸變得枯燥，甚至中途放棄。',
+    '對新手跑者而言，缺乏目標、成就感與持續的動力，往往讓跑步逐漸變得枯燥，甚至想中途放棄。',
     '用遊戲化的方式，讓跑步成為值得期待的日常。',
-    '因此，以「遊戲化習慣養成」為核心，設計出陪伴新手跑者建立跑步習慣的網站——「跑者菲迪 Pheidi the Runner」。',
-    '透過跑步紀錄、階段成長與成就徽章，讓每一次努力都被看見；結合跑步知識與跑友交流，讓跑步不再只是獨自堅持的過程。',
-    '陪你開始，伴你成長。',
-    '用遊戲化建立期待，用知識建立信心，用陪伴養成習慣。',
-    '希望陪伴每一位新手跑者勇敢踏出第一步，逐漸養成跑步習慣，並在每一次奔跑中持續成長。',
+    '以「遊戲化」為構思核心，設計出陪伴新手跑者建立跑步習慣的網站 - 「跑者菲迪 Pheidi the Runner」。透過跑步紀錄、階段成長與成就徽章，讓每一次努力都被看見；結合跑步知識與跑友交流，讓跑步不再只是獨自堅持的過程。',
+    '陪你開始 伴你成長',
+    '用遊戲化建立期待，用知識培養信心，用陪伴養成習慣。希望陪伴每一位新手跑者勇敢踏出第一步，逐漸養成跑步習慣，並在每一次奔跑中持續成長。',
   ]
   assert.deepEqual(
     designConcept.items.flatMap((item) => [item.title, ...item.paragraphs]),
@@ -141,7 +139,7 @@ try {
     assert.equal(project.sections.length, 2, `${project.slug}: 統一新版兩章架構`)
     assert.deepEqual(
       project.sections.map((section) => section.label),
-      ['SECTION 01', 'SECTION 02'],
+      [undefined, undefined],
     )
     assert.equal(project.sections[0].title, '設計理念')
     assert.equal(project.sections[0].subtitle, 'DESIGN CONCEPT')
@@ -160,7 +158,7 @@ try {
   )
   assert.deepEqual(
     noodle.sections[0].items.map((item) => item.label),
-    ['INSIGHT — 設計洞察', 'CONCEPT — 設計概念', 'GOAL — 設計目標'],
+    ['設計洞察 INSIGHT', '設計概念 CONCEPT', '設計目標 VISION'],
   )
   assert.equal(noodle.sections[0].items[1].paragraphs.length, 2)
   assert.deepEqual(noodle.awards, [
@@ -259,9 +257,9 @@ try {
     )
     assert.deepEqual(
       project.sections[0].items.map((item) => item.label),
-      ['INSIGHT — 設計洞察', 'CONCEPT — 設計概念', 'GOAL — 設計目標'],
+      ['設計洞察 INSIGHT', '設計概念 CONCEPT', '設計目標 VISION'],
     )
-    assert.equal(project.sections[0].items[1].paragraphs.length, 2)
+    assert.equal(project.sections[0].items[1].paragraphs.length, index ? 2 : 1)
     const ids = project.sections.flatMap((section) => [
       section.id,
       ...section.items.map((item) => item.id),
@@ -310,9 +308,7 @@ try {
     assert.ok(project.cover, `${project.slug}: 封面資料完整`)
     await access(new URL(`../public${project.cover.src}`, import.meta.url))
     const titleId = `verify-${project.slug}-title`
-    const modalContent = await renderToString(
-      createSSRApp(ProjectDetail, { project, mode: 'modal', titleId }),
-    )
+    const modalContent = await renderToString(createSSRApp(ProjectDetail, { project, titleId }))
     assert.match(modalContent, new RegExp(`<h2[^>]*id="${titleId}"`))
     assert.ok(!modalContent.includes('<h1'), `${project.slug}: Modal 不重複頁面 H1`)
     assert.ok(!modalContent.includes('content-section'), `${project.slug}: Modal 不套紅黃分區`)
@@ -576,7 +572,6 @@ try {
   // 測試未來圖片與選用 poster 分支，不改動其他作品的正式資料。
   const imageHtml = await renderToString(
     createSSRApp(ProjectDetail, {
-      mode: 'modal',
       project: {
         ...projects[1],
         sections: [
@@ -596,7 +591,6 @@ try {
   assert.ok(!imageHtml.includes('project-section-media--qr-code'))
   const extrasOnlyHtml = await renderToString(
     createSSRApp(ProjectDetail, {
-      mode: 'modal',
       project: {
         ...papago,
         sections: [
@@ -624,7 +618,6 @@ try {
   // 空陣列仍呈現單層內容；只有媒體時不顯示空文字區或待提供訊息。
   const mediaOnlyHtml = await renderToString(
     createSSRApp(ProjectDetail, {
-      mode: 'modal',
       project: {
         ...projects[1],
         sections: [
@@ -646,7 +639,6 @@ try {
   for (const images of [undefined, [], [papago.cover]]) {
     const html = await renderToString(
       createSSRApp(ProjectDetail, {
-        mode: 'modal',
         project: {
           ...papago,
           sections: [{ id: 'gallery', title: '圖片群組', content: null, images }],
@@ -661,7 +653,6 @@ try {
   for (const catalog of [undefined, [], catalogSection.catalog]) {
     const html = await renderToString(
       createSSRApp(ProjectDetail, {
-        mode: 'modal',
         project: {
           ...noodle,
           sections: [{ id: 'catalog', title: '圖鑑', catalog }],
@@ -674,7 +665,6 @@ try {
   }
   const optionalChapterHtml = await renderToString(
     createSSRApp(ProjectDetail, {
-      mode: 'modal',
       project: {
         ...projects[1],
         sections: ['first', 'second'].map((id) => ({
@@ -694,7 +684,6 @@ try {
   }
   const posterHtml = await renderToString(
     createSSRApp(ProjectDetail, {
-      mode: 'modal',
       project: {
         ...projects[0],
         sections: [
@@ -717,48 +706,43 @@ try {
     return renderToString(app)
   }
   for (const project of projects) {
-    for (const mode of ['page', 'modal']) {
-      const baseline = await renderWithRouter(ProjectDetail, {
-        project: { ...project, websiteUrl: undefined },
-        mode,
+    const baseline = await renderWithRouter(ProjectDetail, {
+      project: { ...project, websiteUrl: undefined },
+    })
+    assert.ok(!baseline.includes('project-website-link'), '無網址不渲染外層容器')
+    for (const websiteUrl of [
+      '',
+      '   ',
+      'not-a-url',
+      '/works',
+      'https://',
+      'https:example.com',
+      'javascript:alert(1)',
+      'data:text/html,test',
+    ]) {
+      const html = await renderWithRouter(ProjectDetail, {
+        project: { ...project, websiteUrl },
       })
-      assert.ok(!baseline.includes('project-website-link'), '無網址不渲染外層容器')
-      for (const websiteUrl of [
-        '',
-        '   ',
-        'not-a-url',
-        '/works',
-        'https://',
-        'https:example.com',
-        'javascript:alert(1)',
-        'data:text/html,test',
-      ]) {
-        const html = await renderWithRouter(ProjectDetail, {
-          project: { ...project, websiteUrl },
-          mode,
-        })
-        assert.equal(html, baseline, `${project.slug}/${mode}: 無效網址不增加內容或容器`)
-      }
-      for (const websiteUrl of ['https://example.com/project', 'http://example.com/project']) {
-        const html = await renderWithRouter(ProjectDetail, {
-          project: { ...project, websiteUrl: `  ${websiteUrl}  ` },
-          mode,
-        })
-        const link = html.match(
-          /<a\b[^>]*>\s*<span\b[^>]*>前往網站<\/span>\s*<svg\b[\s\S]*?<\/svg>\s*<\/a>/,
-        )?.[0]
-        assert.ok(link, `${project.slug}/${mode}: 共用網站連結`)
-        assert.ok(link.includes(`href="${websiteUrl}"`))
-        assert.ok(link.includes('target="_blank"') && link.includes('rel="noopener noreferrer"'))
-        assert.ok(link.includes('view-more-button--red'))
-        assert.ok(!/\s(?:to|type)=/.test(link), '外部連結不帶 Router 或 button 屬性')
-        assert.ok(html.indexOf('project-website-link') > html.lastIndexOf('</section>'))
-        assert.match(
-          html.replace(/<!--[\s\S]*?-->/g, ''),
-          /前往網站<\/span>\s*<svg\b[\s\S]*?<\/svg>\s*<\/a><\/div><\/article>$/,
-          '網站按鈕位於整份介紹最後',
-        )
-      }
+      assert.equal(html, baseline, `${project.slug}/modal: 無效網址不增加內容或容器`)
+    }
+    for (const websiteUrl of ['https://example.com/project', 'http://example.com/project']) {
+      const html = await renderWithRouter(ProjectDetail, {
+        project: { ...project, websiteUrl: `  ${websiteUrl}  ` },
+      })
+      const link = html.match(
+        /<a\b[^>]*>\s*<span\b[^>]*>前往網站<\/span>\s*<svg\b[\s\S]*?<\/svg>\s*<\/a>/,
+      )?.[0]
+      assert.ok(link, `${project.slug}/modal: 共用網站連結`)
+      assert.ok(link.includes(`href="${websiteUrl}"`))
+      assert.ok(link.includes('target="_blank"') && link.includes('rel="noopener noreferrer"'))
+      assert.ok(link.includes('view-more-button--red'))
+      assert.ok(!/\s(?:to|type)=/.test(link), '外部連結不帶 Router 或 button 屬性')
+      assert.ok(html.indexOf('project-website-link') > html.lastIndexOf('</section>'))
+      assert.match(
+        html.replace(/<!--[\s\S]*?-->/g, ''),
+        /前往網站<\/span>\s*<svg\b[\s\S]*?<\/svg>\s*<\/a><\/div><\/article>$/,
+        '網站按鈕位於整份介紹最後',
+      )
     }
   }
   const nativeButton = await renderToString(createSSRApp(BaseButton, { type: 'submit' }))
@@ -778,14 +762,28 @@ try {
   assert.equal(conflictingButton, internalButton, 'to 與 href 並存時維持原站內導覽')
   assert.ok(internalButton.includes('href="/about"'))
   assert.ok(!/\s(?:type|target|rel)=/.test(internalButton))
-  console.log('PASS 共用網站連結：六作品、兩種版型、網址驗證、原生按鈕與連結優先規則')
+  console.log('PASS 共用網站連結：六作品、共用 Modal、網址驗證、原生按鈕與連結優先規則')
+
+  for (const project of projects) {
+    const router = createRouter({ history: createMemoryHistory(), routes })
+    await router.push(`/works/${project.slug}?shared=1#detail`)
+    await router.isReady()
+    assert.equal(router.currentRoute.value.fullPath, `/works/${project.routeSlug}?shared=1#detail`)
+    assert.equal(router.currentRoute.value.meta.projectSlug, project.slug)
+    console.log(`PASS 舊網址 ${project.slug} → ${project.routeSlug}`)
+  }
+  assert.equal(new Set(projects.map((project) => project.routeSlug)).size, 6)
 
   const cases = [
     ['/', 'home', '平面設計師 與 前端網頁設計學習者'],
     ['/about', 'about', '正芳 Fang'],
     ['/works', 'works', '主要作品'],
     ['/graphic-works', 'not-found', '找不到這個頁面'],
-    ...projects.map((project) => [`/works/${project.slug}`, `work-${project.slug}`, project.title]),
+    ...projects.map((project) => [
+      `/works/${project.routeSlug}`,
+      `work-${project.slug}`,
+      '主要作品',
+    ]),
     ['/works/unknown-project', 'not-found', '找不到這個頁面'],
     ['/missing-page', 'not-found', '找不到這個頁面'],
     ['/missing/nested/page', 'not-found', '找不到這個頁面'],
@@ -812,14 +810,8 @@ try {
     assert.ok(html.includes('class="intro-viewport"'), `${path}: 獨立固定視窗層`)
     assert.ok(!html.includes('content-scroll'), `${path}: 移除內層捲動容器`)
     assert.ok(html.indexOf('<footer') > html.indexOf('</main>'), `${path}: Footer 接續主內容`)
-    const project = projects.find((item) => path === `/works/${item.slug}`)
-    const expectedSections = project
-      ? 1 + project.sections.length
-      : expectedName === 'home'
-        ? 2
-        : expectedName === 'about'
-          ? 4
-          : 1
+    const project = projects.find((item) => path === `/works/${item.routeSlug}`)
+    const expectedSections = expectedName === 'home' ? 2 : expectedName === 'about' ? 4 : 1
     assert.equal(
       (html.match(/class="[^"]*\bcontent-section\b[^"]*"/g) ?? []).length,
       expectedSections,
@@ -940,7 +932,7 @@ try {
             )
           : projects
       for (const project of visibleProjects) {
-        assert.ok(html.includes(`href="/works/${project.slug}"`))
+        assert.ok(html.includes(`href="/works/${project.routeSlug}"`))
       }
       if (expectedName === 'home') {
         assert.ok(html.includes('href="/about"'), '首頁保留 Profile 導覽')
@@ -956,7 +948,7 @@ try {
         assert.ok(html.includes('view-more-button--cream'))
         assert.ok(html.includes('view-more-button--red'))
         for (const project of projects.filter((project) => !visibleProjects.includes(project))) {
-          assert.ok(!html.includes(`href="/works/${project.slug}"`))
+          assert.ok(!html.includes(`href="/works/${project.routeSlug}"`))
         }
       } else {
         assert.match(html, /<h1\b[^>]*class="sr-only"[^>]*>主要作品<\/h1>/)
@@ -966,7 +958,7 @@ try {
       assert.equal(cards.length, visibleProjects.length, `${path}: 每張作品卡片有一個連結`)
       for (const [index, card] of cards.entries()) {
         const project = visibleProjects[index]
-        assert.ok(card[0].includes(`href="/works/${project.slug}"`), `${path}: 卡片順序正確`)
+        assert.ok(card[0].includes(`href="/works/${project.routeSlug}"`), `${path}: 卡片順序正確`)
         assert.ok(card[0].includes('aria-haspopup="dialog"'), `${path}: 宣告開啟 Dialog`)
         assert.ok(card[0].includes('aria-expanded="false"'), `${path}: 初始 Modal 關閉`)
         assert.ok(card[1].includes(project.title))
@@ -988,30 +980,9 @@ try {
       }
     }
     if (expectedName.startsWith('work-')) {
-      for (const section of project.sections) {
-        if (section.title) assert.ok(html.includes(section.title))
-      }
-      assert.ok(html.includes(`src="${project.cover.src}"`))
-      for (const category of project.categories) assert.ok(html.includes(category))
-      assert.ok(html.includes(`# ${project.designYear}`))
-      assert.equal(
-        html.includes('內容準備中'),
-        project.sections
-          .flatMap((section) => section.items ?? [section])
-          .some(
-            (item) =>
-              !item.content &&
-              !item.paragraphs?.length &&
-              !item.tagline &&
-              !item.media &&
-              !item.images?.length &&
-              !item.catalog?.length &&
-              !item.blocks?.length &&
-              !item.flow &&
-              !item.links?.length &&
-              !item.note,
-          ),
-      )
+      assert.equal(router.currentRoute.value.meta.projectSlug, project.slug)
+      assert.ok(html.includes('id="works-title"'), '直接進入作品網址以 Works 為背景')
+      assert.ok(!html.includes('返回主要作品'))
     }
     if (expectedName === 'not-found') {
       assert.ok(html.includes('href="/"'))

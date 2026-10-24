@@ -1,5 +1,12 @@
 import type { RouteRecordRaw } from 'vue-router'
 import { projects } from '../data/projects'
+import WorksPage from '../views/WorksPage.vue'
+
+declare module 'vue-router' {
+  interface RouteMeta {
+    projectSlug?: string
+  }
+}
 export const routes: RouteRecordRaw[] = [
   {
     path: '/',
@@ -16,15 +23,18 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/works',
     name: 'works',
-    component: () => import('../views/WorksPage.vue'),
+    component: WorksPage,
     meta: { title: 'Works' },
   },
   ...projects.map((project): RouteRecordRaw => ({
-    path: `/works/${project.slug}`,
+    path: `/works/${project.routeSlug}`,
     name: `work-${project.slug}`,
-    component: () => import('../views/ProjectPage.vue'),
-    props: { slug: project.slug },
-    meta: { title: project.title },
+    component: WorksPage,
+    meta: { title: project.title, projectSlug: project.slug },
+  })),
+  ...projects.map((project): RouteRecordRaw => ({
+    path: `/works/${project.slug}`,
+    redirect: (to) => ({ name: `work-${project.slug}`, query: to.query, hash: to.hash }),
   })),
   {
     path: '/:pathMatch(.*)*',

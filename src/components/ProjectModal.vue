@@ -10,10 +10,23 @@ const props = defineProps<{
   project: PortfolioProject
   trigger: HTMLElement | null
   initialInput: 'keyboard' | 'pointer'
+  fallbackFocus: HTMLElement | null
+  restoreScroll: boolean
 }>()
 const visible = defineModel<boolean>('visible', { required: true })
 const emit = defineEmits<{ 'after-hide': [] }>()
 const detail = useTemplateRef<InstanceType<typeof ProjectDetail>>('detail')
+const panel = useTemplateRef<HTMLElement>('panel')
+
+watch(
+  () => props.project.slug,
+  async () => {
+    await nextTick()
+    if (!visible.value) return
+    panel.value?.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    document.getElementById(`${props.id}-title`)?.focus({ preventScroll: true })
+  },
+)
 
 // Escape、遮罩與關閉鈕都會更新 visible；同步暫停，避免隱藏期間繼續發聲。
 watch(
@@ -81,13 +94,15 @@ function restoreBackground() {
   if (previousOverflow)
     root.style.setProperty('overflow', previousOverflow, previousOverflowPriority)
   else root.style.removeProperty('overflow')
-  window.scrollTo({ left: scrollPosition.x, top: scrollPosition.y, behavior: 'instant' })
+  if (props.restoreScroll)
+    window.scrollTo({ left: scrollPosition.x, top: scrollPosition.y, behavior: 'instant' })
   scrollPosition = null
 }
 
 function onAfterHide() {
   markRestoredFocus()
   if (props.trigger?.isConnected) props.trigger.focus({ preventScroll: true })
+  else props.fallbackFocus?.focus({ preventScroll: true })
   emit('after-hide')
 }
 
@@ -135,8 +150,13 @@ onBeforeUnmount(restoreBackground)
           <X :size="28" :stroke-width="2" aria-hidden="true" />
         </button>
       </div>
-      <div class="project-modal-panel" tabindex="0" aria-label="作品介紹內容，可捲動">
-        <ProjectDetail ref="detail" :project="project" mode="modal" :title-id="`${id}-title`" />
+      <div ref="panel" class="project-modal-panel" tabindex="0" aria-label="作品介紹內容，可捲動">
+        <ProjectDetail
+          :key="project.slug"
+          ref="detail"
+          :project="project"
+          :title-id="`${id}-title`"
+        />
       </div>
     </template>
   </Dialog>

@@ -34,29 +34,34 @@ TypeScript 使用相容的 6.0 系列，因目前 typescript-eslint 要求 TypeS
 
 ## 網址與頁面
 
-| 網址                     | 用途                         |
-| ------------------------ | ---------------------------- |
-| `/`                      | 首頁與主要作品入口           |
-| `/about`                 | 個人介紹、經歷與聯絡資訊占位 |
-| `/works`                 | 六個主要作品列表             |
-| `/works/project-01`      | 跑者菲迪 Pheidi the Runner   |
-| `/works/project-02`      | PAPAGO                       |
-| `/works/project-03`      | APOLLO                       |
-| `/works/project-04`      | R4D                          |
-| `/works/project-05`      | 初次見麵                     |
-| `/works/project-06`      | 似顏繪                       |
-| 其他網址（包含未知作品） | 404 與返回首頁連結           |
+| 網址                      | 用途                         |
+| ------------------------- | ---------------------------- |
+| `/`                       | 首頁與主要作品入口           |
+| `/about`                  | 個人介紹、經歷與聯絡資訊占位 |
+| `/works`                  | 六個主要作品列表             |
+| `/works/pheidi`           | 跑者菲迪 Pheidi the Runner   |
+| `/works/papago`           | PAPAGO                       |
+| `/works/apollo`           | APOLLO                       |
+| `/works/r4d`              | R4D                          |
+| `/works/chu-ci-jian-mian` | 初次見麵                     |
+| `/works/custom-portrait`  | 似顏繪                       |
+| 其他網址（包含未知作品）  | 404 與返回首頁連結           |
 
-保留 `project-01`～`project-05` 的既有 slug，避免作品網址失效；`project-06` 為新增的似顏繪作品。
+作品識別碼 `slug` 保留 `project-01`～`project-06`，`routeSlug` 定義語意網址，兩者都由 `src/data/projects.ts` 維護。舊的 `/works/project-01`～`/works/project-06` 依實際作品轉址至新網址，保留 query 與 hash。未知 slug 顯示 404。
 首頁依 slug 固定顯示跑者菲迪與 APOLLO，不受 Works 列表順序影響。
-首頁與 Works 的卡片一般點擊／Enter 會在目前頁面開啟作品介紹 Modal，網址保持不變；右鍵、修飾鍵與滑鼠中鍵保留原生獨立頁連結操作。
+首頁與 Works 的卡片一般點擊／Enter 會更新作品網址並開啟 Modal，保留同一個來源頁元件與捲動位置。右鍵、修飾鍵與滑鼠中鍵維持原生連結操作；新分頁、直接進入及重新整理作品網址都顯示 Works 背景與對應 Modal。
+
+作品路由的 `meta.projectSlug` 選取共用資料；`App.vue` 透過 `<RouterView :route="backgroundRoute">` 保留背景，並在其旁維護唯一的 `ProjectModal.vue`。採用 [Vue Router 官方的背景路由與 history state 方式](https://router.vuejs.org/guide/advanced/router-view-route)。`useProjectModal.ts` 統一管理開關與來源紀錄，不直接操作網址或使用額外狀態管理套件。
+
+瀏覽器上一頁會關閉 Modal，下一頁可重新開啟。X、Esc 與遮罩關閉時，有本次載入建立的來源紀錄才使用 `router.go()` 回到來源；直接進入或重新整理時以 `router.replace()` 回到 `/works`，避免返回外部網站或增加多餘紀錄。重新整理後不沿用舊文件的背景來源。
 
 ## 結構與維護
 
 ```text
 src/
   data/projects.ts          # 六個作品的型別、分類陣列與封面資料
-  router/                  # 路由、頁面標題與捲動恢復
+  router/                  # 新作品網址、舊網址轉址、頁面標題與捲動恢復
+  composables/useProjectModal.ts # 唯一作品 Modal 的路由、背景與歷史狀態
   components/              # 導覽、頁尾、作品列表、共用介紹版型
   views/                   # 首頁、介紹、作品與 404
   styles/tokens.css        # 七個分類內的基礎 → 語意 → 共用元件 Token
@@ -75,10 +80,10 @@ skills-lock.json           # skills CLI 產生的來源與 hash
 封面引用 `public/images/projects/` 的既有檔案，尺寸依實際像素設定。
 六個作品的頂部共用同一組版型，依序顯示設計年份、作品名稱、作品簡介、類型標籤與封面。似顏繪使用 `cover.jpg` 作為封面，展示區透過 `imageLayout: 'stack'` 依序呈現 `01.jpg`～`06.jpg`，維持單欄、完整比例與共用閱讀寬度，總共一張封面加六張展示圖。
 尚未提供的年份、角色與章節內容保持 `null`，畫面以明確占位呈現，不捏造成果。
-共用導覽與頁尾由 `App.vue` 管理；頁面採 lazy import。路由切換更新標題、移動主要內容焦點並恢復捲動位置。
+共用導覽與頁尾由 `App.vue` 管理；Home、Profile 與 404 採 lazy import，Works 同步載入以供作品網址立即呈現背景。一般頁面導覽更新標題、主要內容焦點與捲動；Modal 開關則由原有的焦點與捲動還原機制處理。
 
-作品浮層由 `ProjectGrid.vue` 維護一份選取狀態與單一 `ProjectModal.vue`，共用 `ProjectDetail.vue` 的 `mode="modal"` 白底版型。
-PrimeVue Dialog 掛載在 `.app-shell`，直接繼承窄版 `--shell-*`；維持內容區左右定位，以 `100dvh` 計算高度，上下統一保留 24px 或較大的安全區距離，允許覆蓋導覽列。48px 黃底紅色 X 關閉鈕位於內側右上方控制區，不隨介紹內容捲動。
+作品浮層由 `App.vue` 與 `useProjectModal.ts` 統一管理，`ProjectGrid.vue` 只呈現共用卡片並送出導覽。六個作品只使用 `ProjectDetail.vue` 的白底 Modal 版型，不保留獨立作品頁或 page/modal 模式分支。SECTION 編號已移除，其餘段落標籤與所有作品內容保留。
+PrimeVue Dialog 掛載在 `.app-shell`，直接繼承窄版 `--shell-*`；維持內容區左右定位，以 `100dvh` 計算高度，上下統一保留 24px 或較大的安全區距離，允許覆蓋導覽列。48px 黃底藍色 X 關閉鈕位於內側右上方控制區，不隨介紹內容捲動。
 背景鎖定捲動並設為 `inert`，Modal 內部可獨立捲動；關閉鈕、Esc 或遮罩可關閉，並還原背景、捲動位置與原卡片焦點。
 黑色遮罩依本次互動規格使用 55% 不透明度，只有遮罩背景半透明，介紹面板仍為不透明白底與 6px 藍框。
 
