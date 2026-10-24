@@ -932,7 +932,7 @@ export const projects: PortfolioProject[] = [
                     height: 821,
                   },
                   {
-                    src: '/images/projects/chu-ci-jian-mian/exhibition-03.JPG',
+                    src: '/images/projects/chu-ci-jian-mian/exhibition-03.jpg',
                     alt: '初次見麵實體作品展示與交流紀錄 03',
                     width: 960,
                     height: 720,
