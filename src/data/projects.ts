@@ -353,7 +353,7 @@ export const projects: PortfolioProject[] = [
     routeSlug: 'apollo',
     title: 'APOLLO',
     categories: ['PACKAGING DESIGN', 'ILLUSTRATION'],
-    designYear: '2022 - 2025',
+    designYear: '2021 - 2025',
     year: null,
     role: null,
     summary: '咖啡品牌視覺設計',
@@ -510,7 +510,7 @@ export const projects: PortfolioProject[] = [
     routeSlug: 'r4d',
     title: 'R4D',
     categories: ['PACKAGING DESIGN', 'ILLUSTRATION'],
-    designYear: '2021 - 2024',
+    designYear: '2021 - 2025',
     year: null,
     role: null,
     summary: '甜點品牌視覺設計',
@@ -537,19 +537,18 @@ export const projects: PortfolioProject[] = [
           {
             id: 'r4d-design-approach',
             label: '設計概念 CONCEPT',
-            title: '以插畫與包裝設計，增添甜點的視覺魅力。',
+            title: '以原創插畫將甜點的精緻與優雅，融入每一份包裝。',
             content: null,
             paragraphs: [
-              '延續品牌既有的視覺識別，結合親自繪製的原創插畫，將設計應用於蛋糕盒、甜點禮盒、品牌宣傳物與周邊商品。',
-              '依照不同甜點的包裝形式與產品特色，調整插畫構圖與版面配置，讓各式包裝保有獨特性，也呈現一致的品牌風格。',
+              '從甜點細膩而精緻的特質出發，透過柔和的視覺表現、細節點綴與構圖安排，營造優雅且富有溫度的品牌氛圍。',
             ],
           },
           {
             id: 'r4d-design-goal',
             label: '設計目標 VISION',
-            title: '讓包裝不只是容器，更是品牌體驗的一部分。',
+            title: '讓包裝不只是容器，更是優雅的品牌體驗。',
             content:
-              '透過包裝視覺與周邊設計的整合，讓品牌形象融入產品展示、選購與送禮等不同情境，延續甜點帶來的美好感受。',
+              '針對蛋糕盒、馬卡龍與生巧克力禮盒等不同產品，依照包裝形式呈現各自的視覺特色，讓每一份甜點都像精心準備的禮物，傳遞甜點帶來的美好與期待。',
           },
         ],
       },
@@ -672,6 +671,8 @@ export const projects: PortfolioProject[] = [
     sections: [
       {
         id: 'project-introduction',
+        title: '設計理念',
+        subtitle: 'DESIGN CONCEPT',
         content:
           '依照客戶提供的照片，繪製專屬的人物與寵物似顏繪。以簡約的手繪線條與柔和的色彩，保留每個角色獨特的外型與神情，將照片中的日常回憶轉化為溫暖且富有個人特色的插畫作品。',
       },
