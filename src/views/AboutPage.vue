@@ -84,7 +84,7 @@ const likes = [
           </a>
         </div>
         <p class="about-intro">
-          我是一名平面設計師，過去累積約八年的品牌視覺、包裝與插畫設計經驗，近年開始學習前端網頁設計，透過開發網站專案，將視覺設計延伸至數位介面、互動體驗與功能實作。我特別重視設計系統與互動細節，希望讓設計不只具有鮮明的視覺風格，也能帶來直覺、實用的使用體驗。
+          我是一名平面設計師，過去累積約八年的品牌視覺、包裝與插畫設計經驗，近期開始學習前端網頁設計，透過開發網站專案，將視覺設計延伸至數位介面、互動體驗與功能實作。我特別重視設計系統與互動細節，希望讓設計不只具有鮮明的視覺風格，也能帶來直覺、實用的使用體驗。
         </p>
       </div>
     </header>
@@ -223,9 +223,10 @@ const likes = [
 
   .about-background-content {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    /* 保留原本 48px 欄距下的學歷欄寬，新增間距由證照欄吸收。 */
+    grid-template-columns: calc((100% - var(--space-12)) / 2) minmax(0, 1fr);
     align-items: start;
-    gap: var(--space-12);
+    gap: var(--space-12) var(--space-16);
   }
 
   .about-skills {
@@ -233,7 +234,8 @@ const likes = [
   }
 
   .education-list,
-  .license-list {
+  .license-list,
+  .skill-groups {
     display: grid;
     gap: var(--space-3);
   }
@@ -249,8 +251,8 @@ const likes = [
   }
 
   .skill-groups {
-    display: grid;
     max-width: var(--layout-text-width);
+    padding-block: var(--space-6);
   }
 
   .skill-group {
@@ -258,7 +260,6 @@ const likes = [
     grid-template-columns: var(--skill-label-width, max-content) minmax(0, 1fr);
     align-items: start;
     gap: var(--space-3) var(--space-6);
-    padding-block: var(--space-6);
   }
 
   .skill-group-heading {
