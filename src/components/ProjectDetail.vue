@@ -271,7 +271,10 @@ function hasItemContent(item: ProjectSection) {
           v-for="item in section.items?.length ? section.items : [section]"
           :key="item.id"
           class="project-section-item stack"
-          :class="{ 'project-section-item--card-grid': item.imageLayout === 'card-grid' }"
+          :class="{
+            'project-section-item--card-grid': item.imageLayout === 'card-grid',
+            'project-section-item--qr-phone': item.imageLayout === 'qr-phone',
+          }"
           :role="section.items?.length ? 'group' : undefined"
           :aria-labelledby="
             section.items?.length && item.title ? sectionId(item.id, section.id) : undefined
@@ -363,6 +366,7 @@ function hasItemContent(item: ProjectSection) {
             :class="{
               'project-image-group--cards': item.imageLayout === 'card-grid',
               'project-image-group--stack': item.imageLayout === 'stack',
+              'project-image-group--qr-phone': item.imageLayout === 'qr-phone',
             }"
           >
             <div v-for="image in item.images" :key="image.src" class="project-section-media">
@@ -579,6 +583,19 @@ function hasItemContent(item: ProjectSection) {
     display: flex;
     flex-direction: column;
   }
+  /* QR Code 在前、帳號畫面在後；依實際容器寬度決定並排或堆疊。 */
+  .project-section-item--qr-phone {
+    container: project-qr-phone / inline-size;
+  }
+  .project-image-group--qr-phone {
+    grid-template-columns: minmax(0, 1fr);
+    place-items: center;
+  }
+  @container project-qr-phone (min-width: 36rem) {
+    .project-image-group--qr-phone {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
   /* 窄容器依圖片順序單欄；寬容器以首張直式圖搭配右側上下兩張照片。 */
   .project-image-group--feature {
     grid-template-columns: minmax(0, 1fr);
@@ -607,11 +624,6 @@ function hasItemContent(item: ProjectSection) {
   @container project-card-grid (min-width: 28rem) {
     .project-image-group--cards {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-  @container project-card-grid (min-width: 40rem) {
-    .project-image-group--cards {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
   .project-section-media :is(video, img) {
@@ -699,16 +711,19 @@ function hasItemContent(item: ProjectSection) {
     border: 0;
   }
   /* 特殊變體保留原有尺寸，仍受父容器寬度限制。 */
-  .project-section-media--phone {
+  .project-section-media--phone,
+  .project-image-group--qr-phone > :last-child {
     width: min(100%, 340px);
   }
-  .project-section-media--qr-code {
+  .project-section-media--qr-code,
+  .project-image-group--qr-phone > :first-child {
     width: min(100%, 200px);
   }
   .project-section-media--logo {
     width: min(100%, 200px);
   }
   .project-section-media--qr-code img,
+  .project-image-group--qr-phone > :first-child img,
   .project-section-media--logo img {
     border-radius: 0;
   }

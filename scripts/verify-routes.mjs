@@ -20,14 +20,18 @@ try {
   const { experiences } = await server.ssrLoadModule('/src/data/experiences.ts')
   assert.deepEqual(
     experiences.map(({ year }) => year),
-    [2026, 2025, 2021, 2018, 2017, 2016, 2015, 2014, 2013],
+    [2026, 2021, 2018, 2017, 2016, 2015, 2014, 2013],
   )
   assert.deepEqual(
     experiences.map(({ items }) => items.length),
-    [1, 1, 1, 1, 8, 9, 1, 1, 1],
+    [1, 1, 1, 9, 9, 1, 1, 1],
   )
   assert.equal(
     experiences.find(({ year }) => year === 2021).items[0].text,
+    '擔任 恬品軒企業有限公司 設計 ( 2021 - 2025 )',
+  )
+  assert.equal(
+    experiences.find(({ year }) => year === 2017).items[0].text,
     '擔任 奇軒包裝有限公司 設計 ( 2017 - 2021 )',
   )
   const { default: App } = await server.ssrLoadModule('/src/App.vue')
@@ -230,7 +234,6 @@ try {
       'bean-card-05.webp',
       'bean-card-06.webp',
       'shopping-bag.webp',
-      'voucher.webp',
     ],
     [
       'cake-box-4-inch.webp',
@@ -252,7 +255,7 @@ try {
     }
     assert.deepEqual(
       project.sections.map((section) => section.items.length),
-      [3, index ? 7 : 6],
+      [3, index ? 7 : 5],
     )
     assert.deepEqual(
       project.sections[0].items.map((item) => item.label),
@@ -283,18 +286,25 @@ try {
   assert.equal(papago.sections[1].subtitle, 'PROJECT OVERVIEW')
   assert.deepEqual(
     papago.sections.map((section) => section.items.length),
-    [3, 6],
+    [3, 5],
   )
   assert.deepEqual(
     papago.sections[1].items
       .filter((item) => item.media)
       .map((item) => [item.media.src, item.media.variant]),
-    ['find-parking', 'save-parking', 'navigate-to-car', 'line-profile', 'line-qr-code'].map(
-      (name) => [
-        `/images/projects/papago/${name}.png`,
-        name === 'line-qr-code' ? 'qr-code' : 'phone',
-      ],
-    ),
+    ['find-parking', 'save-parking', 'navigate-to-car'].map((name) => [
+      `/images/projects/papago/${name}.png`,
+      'phone',
+    ]),
+  )
+  const addFriend = papago.sections[1].items.at(-1)
+  assert.equal(addFriend.id, 'add-friend')
+  assert.equal(addFriend.label, '05 / ADD FRIEND')
+  assert.equal(addFriend.title, '加入 PAPAGO 好友')
+  assert.equal(addFriend.imageLayout, 'qr-phone')
+  assert.deepEqual(
+    addFriend.images.map((image) => image.src),
+    ['line-qr-code', 'line-profile'].map((name) => `/images/projects/papago/${name}.png`),
   )
   for (const project of projects) {
     assert.ok(project.cover, `${project.slug}: 封面資料完整`)
@@ -495,14 +505,23 @@ try {
           ),
       )
       if (project === papago) {
-        assert.equal((modalContent.match(/project-section-media--phone/g) ?? []).length, 4)
-        assert.equal((modalContent.match(/project-section-media--qr-code/g) ?? []).length, 1)
+        assert.equal((modalContent.match(/project-section-media--phone/g) ?? []).length, 3)
+        assert.equal((modalContent.match(/project-image-group--qr-phone/g) ?? []).length, 1)
+        assert.ok(modalContent.includes('05 / ADD FRIEND'))
+        assert.ok(!modalContent.includes('05 / LINE ACCOUNT'))
+        assert.ok(!modalContent.includes('06 / ADD FRIEND'))
+        assert.ok(!modalContent.includes('id="project-02-modal-line-bot-overview-line-account"'))
+        assert.ok(
+          modalContent.indexOf('line-qr-code.png') < modalContent.indexOf('line-profile.png'),
+        )
         assert.ok(modalContent.includes('aria-label="停車位查詢流程"'))
         for (const step of papago.sections[1].items[3].flow.steps)
           assert.ok(modalContent.includes(step))
         assert.ok(
-          modalContent.indexOf('line-qr-code.png') < modalContent.indexOf('機器人部署於 Render'),
+          modalContent.indexOf('機器人部署於 Render') < modalContent.indexOf('05 / ADD FRIEND'),
         )
+        assert.ok(papago.sections[1].items[3].note.includes('機器人部署於 Render'))
+        assert.equal(addFriend.note, undefined)
         assert.ok(!modalContent.includes('07 / SOURCE CODE'))
         assert.ok(!modalContent.includes('GitHub 專案程式碼'))
         assert.ok(!modalContent.includes('https://github.com/ZhengFang121/LineBot_PAPAGO'))
@@ -821,7 +840,7 @@ try {
     if (expectedName === 'about') {
       assert.deepEqual(
         [...html.matchAll(/<h2\b[^>]*>(.*?)<\/h2>/gs)].map((match) => match[1]),
-        ['學歷 Education', '證照 License', '技能 Skills', 'Likes'],
+        ['學歷 Education', '證照 License', '技能 Skills', '喜愛 Likes'],
       )
       for (const removed of ['個人介紹', '經歷 Experience', '待提供', '待確認']) {
         assert.ok(!html.includes(removed), `Profile 移除舊內容：${removed}`)
@@ -847,9 +866,9 @@ try {
         '朝陽科技大學工業設計系',
         '2010 - 2013',
         '鶯歌高職陶瓷工程科',
-        '丙級網頁設計技術士',
-        '丙級陶瓷石膏模技術士',
-        '丙級廣告設計技術士',
+        '網頁設計 丙級技術士',
+        '廣告設計 丙級技術士',
+        '陶瓷石膏模 丙級技術士',
         'AutoCAD 國際認證',
       ]) {
         assert.ok(html.includes(text), `Profile 資料完整：${text}`)
@@ -879,10 +898,11 @@ try {
           'CSS',
           'JavaScript',
           'Vue 3',
+          'Git',
+          'GitHub',
           'ChatGPT',
-          'Word',
-          'PowerPoint',
-          'Excel',
+          'Codex',
+          'Microsoft Office',
         ],
       )
       const likeImages = [

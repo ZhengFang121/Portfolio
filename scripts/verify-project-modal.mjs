@@ -673,7 +673,7 @@ try {
       )
       assert.deepEqual(
         detail.chapters.map((chapter) => chapter.items.length),
-        [3, 6],
+        [3, 5],
       )
       assert.ok(!detail.text.includes('內容準備中'))
       const extras = await evaluate(`(() => {
@@ -681,11 +681,16 @@ try {
         const rect=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}};
         return {
           images:[...root.querySelectorAll('.project-section-media img')].map(img=>({
-            rect:rect(img),container:rect(img.closest('.project-section-item')),
+            rect:rect(img),container:rect(img.closest('.project-image-group--qr-phone') ? img.parentElement : img.closest('.project-section-item')),
             natural:[img.naturalWidth,img.naturalHeight],alt:img.alt,loaded:img.complete && img.naturalWidth>0,
             fit:getComputedStyle(img).objectFit,radius:getComputedStyle(img).borderRadius,
-            variant:img.parentElement.classList.contains('project-section-media--phone')?'phone':'qr-code',
+            variant:img.parentElement.classList.contains('project-section-media--phone') || img.parentElement.matches('.project-image-group--qr-phone > :last-child')?'phone':'qr-code',
           })),
+          group:(()=>{const group=root.querySelector('.project-image-group--qr-phone');return {
+            rect:rect(group),container:rect(group.closest('.project-section-item')),
+            text:rect(group.closest('.project-section-item').querySelector('.project-item-text')),
+            columns:getComputedStyle(group).gridTemplateColumns.split(' ').length,
+          }})(),
           flow:{rect:rect(root.querySelector('.project-item-flow')),direction:getComputedStyle(root.querySelector('.project-item-flow')).flexDirection,
             steps:[...root.querySelectorAll('.project-item-flow li')].map(li=>({rect:rect(li),text:li.textContent.trim()}))},
           note:root.querySelector('.project-item-note').textContent.trim(),
@@ -695,7 +700,7 @@ try {
       assert.equal(extras.images.length, 5)
       assert.deepEqual(
         extras.images.map((img) => img.variant),
-        ['phone', 'phone', 'phone', 'phone', 'qr-code'],
+        ['phone', 'phone', 'phone', 'qr-code', 'phone'],
       )
       for (const img of extras.images) {
         assert.ok(img.loaded && img.alt)
@@ -717,6 +722,21 @@ try {
         )
         if (img.variant === 'qr-code') assert.equal(img.radius, '0px', 'QR Code 不裁切圓角')
       }
+      assert.ok(extras.group.rect.width <= extras.group.text.width + 1, '圖片群組不超過內文寬度')
+      const [qr, phone] = extras.images.slice(-2)
+      assert.equal(extras.group.columns, extras.group.container.width >= 576 ? 2 : 1)
+      if (extras.group.columns === 2) {
+        assert.ok(qr.rect.right < phone.rect.left, 'QR Code 在左、帳號畫面在右')
+        assert.ok(
+          Math.abs(qr.rect.top + qr.rect.height / 2 - phone.rect.top - phone.rect.height / 2) < 1,
+          '兩張圖片垂直置中',
+        )
+      } else {
+        assert.ok(qr.rect.bottom < phone.rect.top, '窄容器維持 QR Code 在上')
+      }
+      assert.ok(!detail.text.includes('05 / LINE ACCOUNT'))
+      assert.ok(!detail.text.includes('06 / ADD FRIEND'))
+      assert.ok(detail.text.includes('05 / ADD FRIEND'))
       assert.equal(extras.flow.direction, width <= 899 ? 'column' : 'row')
       assert.equal(extras.flow.steps.length, 4)
       assert.ok(
@@ -740,7 +760,7 @@ try {
       )
       assert.deepEqual(
         detail.chapters.map((chapter) => chapter.items.length),
-        [3, index === 2 ? 6 : 7],
+        [3, index === 2 ? 5 : 7],
       )
       assert.deepEqual(
         detail.chapters[0].items.map((item) => item.label),
@@ -802,7 +822,6 @@ try {
               'bean-card-05.webp',
               'bean-card-06.webp',
               'shopping-bag.webp',
-              'voucher.webp',
             ]
           : [
               'cake-box-4-inch.webp',
@@ -838,11 +857,9 @@ try {
         assert.equal(
           group.columns,
           group.cards
-            ? group.containerWidth >= 640
-              ? 3
-              : group.containerWidth >= 448
-                ? 2
-                : 1
+            ? group.containerWidth >= 448
+              ? 2
+              : 1
             : Math.min(
                 group.children,
                 Math.max(1, Math.floor((group.rect.width + group.gap + 0.1) / (240 + group.gap))),

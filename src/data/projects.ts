@@ -53,7 +53,7 @@ export interface ProjectSection {
         variant?: 'default' | 'phone' | 'qr-code' | 'logo'
       })
   images?: ProjectImage[]
-  imageLayout?: 'card-grid' | 'stack'
+  imageLayout?: 'card-grid' | 'stack' | 'qr-phone'
   catalog?: ProjectCatalogGroup[]
   blocks?: ProjectContentBlock[]
 }
@@ -97,32 +97,30 @@ export const projects: PortfolioProject[] = [
         items: [
           {
             id: 'design-concept-insight',
-            label: 'INSIGHT — 設計洞察',
+            label: '設計洞察 INSIGHT',
             title: '跑步容易開始，卻不容易持續。',
             content: null,
             paragraphs: [
-              '對新手跑者而言，缺乏目標、成就感與持續的動力，往往讓跑步逐漸變得枯燥，甚至中途放棄。',
+              '對新手跑者而言，缺乏目標、成就感與持續的動力，往往讓跑步逐漸變得枯燥，甚至想中途放棄。',
             ],
           },
           {
             id: 'design-concept-concept',
-            label: 'CONCEPT — 設計概念',
+            label: '設計概念 CONCEPT',
             title: '用遊戲化的方式，讓跑步成為值得期待的日常。',
             content: null,
             paragraphs: [
-              '因此，以「遊戲化習慣養成」為核心，設計出陪伴新手跑者建立跑步習慣的網站——「跑者菲迪 Pheidi the Runner」。',
-              '透過跑步紀錄、階段成長與成就徽章，讓每一次努力都被看見；結合跑步知識與跑友交流，讓跑步不再只是獨自堅持的過程。',
+              '以「遊戲化」為構思核心，設計出陪伴新手跑者建立跑步習慣的網站 - 「跑者菲迪 Pheidi the Runner」。透過跑步紀錄、階段成長與成就徽章，讓每一次努力都被看見；結合跑步知識與跑友交流，讓跑步不再只是獨自堅持的過程。',
             ],
           },
           {
             id: 'design-concept-vision',
-            label: 'VISION — 品牌願景',
-            title: '陪你開始，伴你成長。',
+            label: '品牌願景 VISION',
+            title: '陪你開始 伴你成長',
             content: null,
             tagline: 'START・GROW・WITH YOU',
             paragraphs: [
-              '用遊戲化建立期待，用知識建立信心，用陪伴養成習慣。',
-              '希望陪伴每一位新手跑者勇敢踏出第一步，逐漸養成跑步習慣，並在每一次奔跑中持續成長。',
+              '用遊戲化建立期待，用知識培養信心，用陪伴養成習慣。希望陪伴每一位新手跑者勇敢踏出第一步，逐漸養成跑步習慣，並在每一次奔跑中持續成長。',
             ],
           },
         ],
@@ -139,13 +137,13 @@ export const projects: PortfolioProject[] = [
             label: '01 / INTRO ANIMATION',
             title: '序章動畫',
             content:
-              '透過角色插畫與動態視覺，帶領使用者進入跑者菲迪的世界。以輕鬆活潑的方式建立第一印象，傳達「陪你開始，伴你成長」的品牌精神，讓每一段跑步旅程從充滿期待的序章展開。',
+              '使用點擊或滑動滾輪來讓動畫進行，透過角色插畫與動態視覺，帶領使用者進入跑者菲迪的世界。以輕鬆活潑的方式建立第一印象，傳達「陪你開始 伴你成長」的品牌精神，讓每一段跑步旅程從充滿期待的序章展開。',
             media: { type: 'video', src: '/videos/projects/pheidi-the-runner/intro.mp4' },
           },
           {
             id: 'login',
-            label: '02 / LOGIN',
-            title: '登入',
+            label: '02 / LOGIN & REGISTER',
+            title: '登入註冊',
             content:
               '透過簡潔直覺的登入與註冊介面，降低新手開始使用網站的門檻。建立專屬的跑者帳號，保存個人的跑步紀錄與成長歷程，從這裡展開屬於自己的跑步旅程。',
             media: { type: 'video', src: '/videos/projects/pheidi-the-runner/login.mp4' },
@@ -155,7 +153,7 @@ export const projects: PortfolioProject[] = [
             label: '03 / HOME',
             title: '首頁',
             content:
-              '首頁整合跑者階段、成長進度與個人跑步概況，讓使用者快速掌握目前的成果與下一階段目標。搭配菲迪日報的天氣資訊、跑者學院推薦及阿里的貼心提醒，讓每一次回訪都有新的期待與方向。',
+              '首頁整合跑者階段、成長進度與個人跑步概況，讓使用者快速掌握目前的成果與下一階段目標。搭配菲迪日報的資訊內容，讓每一次回訪都有新的期待與方向。',
             media: { type: 'video', src: '/videos/projects/pheidi-the-runner/home.mp4' },
           },
           {
@@ -163,7 +161,7 @@ export const projects: PortfolioProject[] = [
             label: '04 / RUNNING RECORD',
             title: '新增跑步紀錄',
             content:
-              '透過直覺化的表單，記錄每一次跑步的時間、距離、地點與心得，並可搭配照片留下當下的回憶。讓原本單純的跑步數據，轉化成看得見的成長足跡，累積屬於自己的跑者旅程。',
+              '透過直覺化的表單，記錄每一次跑步的時間、距離、地點與心得，並可搭配照片留下當時的回憶。讓原本單純的跑步數據，轉化成看得見的成長足跡，累積屬於自己的跑者旅程。',
             media: { type: 'video', src: '/videos/projects/pheidi-the-runner/records.mp4' },
           },
           {
@@ -171,7 +169,7 @@ export const projects: PortfolioProject[] = [
             label: '05 / RUNNING STATION',
             title: '足跡驛站',
             content:
-              '以月曆與跑步紀錄呈現個人的運動歷程，方便回顧每一次努力與進步。透過累積紀錄與成長回饋，讓使用者看見自己的堅持，從每一個小小的成就中獲得持續前進的動力。',
+              '以月曆方式呈現個人的跑步歷程，方便回顧每一次努力與進步。同時設計成就徽章系統，透過累積跑步次數、里程與完成不同挑戰來解鎖徽章。透過累積紀錄與成長回饋，讓使用者看見自己的堅持，從每一個小小的成就中獲得持續前進的動力。',
             media: { type: 'video', src: '/videos/projects/pheidi-the-runner/station.mp4' },
           },
           {
@@ -179,7 +177,7 @@ export const projects: PortfolioProject[] = [
             label: '06 / RUNNING ACADEMY',
             title: '跑者學院',
             content:
-              '針對新手跑者的需求，整理學習、裝備、補給與賽事四大類跑步知識。透過容易理解的文章內容，陪伴使用者逐步建立正確觀念，減少入門時的迷惘，讓每一次出發都更有信心。',
+              '針對新手跑者的需求，整理學習、裝備、補給與賽事四大類跑步知識。文章依照跑者階段逐步解鎖，避免一次接收過多資訊造成負擔，讓使用者能依照自己的成長進度循序學習、建立正確觀念，並在每一次出發時更有信心。',
             media: { type: 'video', src: '/videos/projects/pheidi-the-runner/academy.mp4' },
           },
           {
@@ -209,7 +207,7 @@ export const projects: PortfolioProject[] = [
     designYear: '2026',
     year: null,
     role: null,
-    summary: '一查即停 尋找路邊停車位機器人',
+    summary: '尋找路邊停車位機器人',
     cover: {
       src: '/images/projects/papago/cover.jpg',
       alt: 'PAPAGO 作品封面',
@@ -226,17 +224,16 @@ export const projects: PortfolioProject[] = [
         items: [
           {
             id: 'insight',
-            label: 'INSIGHT — 設計洞察',
+            label: '設計洞察 INSIGHT',
             title: '找車位不容易，找回愛車也很麻煩。',
             content: null,
             paragraphs: [
-              '在台北市與新北市，開車出門經常需要花費不少時間尋找路邊停車位。即使順利停好車，也可能因為不熟悉周遭環境，而忘記愛車停放的位置。',
-              '如何減少尋找車位的時間，並讓停車與取車的過程更加便利，成為這次專案想解決的問題。',
+              '在台北市與新北市，開車出門經常需要花費不少時間尋找路邊停車位。即使順利停好車，也可能因為不熟悉周遭環境，而忘記愛車停放的位置。如何減少尋找車位的時間，並讓停車與取車的過程更加便利，成為這次專案想解決的問題。',
             ],
           },
           {
             id: 'concept',
-            label: 'CONCEPT — 設計概念',
+            label: '設計概念 CONCEPT',
             title: '透過 LINE，讓停車資訊一查即得。',
             content: null,
             paragraphs: [
@@ -246,7 +243,7 @@ export const projects: PortfolioProject[] = [
           },
           {
             id: 'vision',
-            label: 'VISION — 設計目標',
+            label: '設計目標 VISION',
             title: '一按即查，一查即停。',
             content:
               '希望透過簡單直覺的互動方式，降低查詢停車資訊的操作門檻，減少駕駛尋找車位的負擔，讓每一次停車都能更有效率。',
@@ -323,37 +320,29 @@ export const projects: PortfolioProject[] = [
                 'LINE 回傳最近三個車位',
               ],
             },
-          },
-          {
-            id: 'line-account',
-            label: '05 / LINE ACCOUNT',
-            title: 'LINE 官方帳號',
-            content:
-              'PAPAGO 透過 LINE 提供停車相關功能，使用者可在熟悉的聊天介面中完成停車位查詢、位置記錄及導航操作。',
-            media: {
-              type: 'image',
-              src: '/images/projects/papago/line-profile.png',
-              alt: 'PAPAGO LINE 官方帳號個人檔案與加入好友畫面',
-              variant: 'phone',
-              width: 945,
-              height: 1925,
-            },
+            note: '機器人部署於 Render，若伺服器進入休眠，首次回應可能稍有延遲，請稍候再試。',
           },
           {
             id: 'add-friend',
-            label: '06 / ADD FRIEND',
+            label: '05 / ADD FRIEND',
             title: '加入 PAPAGO 好友',
             content:
               '使用手機掃描下方 QR Code，即可前往 PAPAGO 的 LINE 官方帳號，體驗停車位查詢與愛車位置記錄功能。',
-            media: {
-              type: 'image',
-              src: '/images/projects/papago/line-qr-code.png',
-              alt: '加入 PAPAGO LINE 官方帳號好友的 QR Code',
-              variant: 'qr-code',
-              width: 360,
-              height: 360,
-            },
-            note: '機器人部署於 Render，若伺服器進入休眠，首次回應可能稍有延遲，請稍候再試。',
+            imageLayout: 'qr-phone',
+            images: [
+              {
+                src: '/images/projects/papago/line-qr-code.png',
+                alt: '加入 PAPAGO LINE 官方帳號好友的 QR Code',
+                width: 360,
+                height: 360,
+              },
+              {
+                src: '/images/projects/papago/line-profile.png',
+                alt: 'PAPAGO LINE 官方帳號個人檔案與加入好友畫面',
+                width: 945,
+                height: 1925,
+              },
+            ],
           },
         ],
       },
@@ -383,27 +372,26 @@ export const projects: PortfolioProject[] = [
         items: [
           {
             id: 'apollo-design-insight',
-            label: 'INSIGHT — 設計洞察',
+            label: '設計洞察 INSIGHT',
             title: '讓不同的咖啡風味，擁有清楚而一致的視覺呈現。',
             content:
               '咖啡產品具有不同的烘焙程度與風味特色，如何在維持品牌一致性的同時，清楚呈現各款產品的差異，是包裝設計的重要課題。',
           },
           {
             id: 'apollo-design-approach',
-            label: 'CONCEPT — 設計概念',
+            label: '設計概念 CONCEPT',
             title: '以原創插畫，延伸咖啡品牌的視覺魅力。',
             content: null,
             paragraphs: [
-              '以既有品牌識別為基礎，結合親自繪製的原創插畫、色彩搭配與版面設計，將品牌視覺延伸至濾掛咖啡包裝、咖啡豆介紹卡、禮盒與周邊商品。',
-              '透過系列化的視覺設計，讓不同咖啡產品展現各自特色，同時維持一致的品牌形象。',
+              '以既有品牌識別為基礎，結合原創插畫、色彩搭配與版面設計，將品牌視覺延伸至濾掛咖啡包裝、咖啡豆介紹卡、禮盒與周邊商品。',
             ],
           },
           {
             id: 'apollo-design-goal',
-            label: 'GOAL — 設計目標',
-            title: '讓每款產品保有特色，也讓品牌保持一致。',
+            label: '設計目標 VISION',
+            title: '讓產品保有特色，讓品牌保持一致。',
             content:
-              '透過不同設計媒介的視覺整合，讓咖啡產品、包裝與品牌周邊保有一致的設計語言，建立具有整體辨識度的系列視覺。',
+              '透過系列化的視覺設計，讓不同咖啡產品展現各自特色，同時維持一致的品牌形象。',
           },
         ],
       },
@@ -515,17 +503,6 @@ export const projects: PortfolioProject[] = [
               height: 1086,
             },
           },
-          {
-            id: 'apollo-promotional-design',
-            title: '品牌折價券設計',
-            media: {
-              type: 'image',
-              src: '/images/projects/apollo/voucher.webp',
-              alt: 'APOLLO 品牌折價券圖文編排設計',
-              width: 1024,
-              height: 1536,
-            },
-          },
         ],
       },
     ],
@@ -554,14 +531,14 @@ export const projects: PortfolioProject[] = [
         items: [
           {
             id: 'r4d-design-insight',
-            label: 'INSIGHT — 設計洞察',
+            label: '設計洞察 INSIGHT',
             title: '甜點的美好體驗，從包裝開始。',
             content:
               '甜點具有豐富的產品種類與包裝形式，除了傳達品牌形象，也需要依照不同商品的特色與使用情境，呈現適合的視覺設計。',
           },
           {
             id: 'r4d-design-approach',
-            label: 'CONCEPT — 設計概念',
+            label: '設計概念 CONCEPT',
             title: '以插畫與包裝設計，增添甜點的視覺魅力。',
             content: null,
             paragraphs: [
@@ -571,7 +548,7 @@ export const projects: PortfolioProject[] = [
           },
           {
             id: 'r4d-design-goal',
-            label: 'GOAL — 設計目標',
+            label: '設計目標 VISION',
             title: '讓包裝不只是容器，更是品牌體驗的一部分。',
             content:
               '透過包裝視覺與周邊設計的整合，讓品牌形象融入產品展示、選購與送禮等不同情境，延續甜點帶來的美好感受。',
@@ -776,14 +753,14 @@ export const projects: PortfolioProject[] = [
         items: [
           {
             id: 'insight',
-            label: 'INSIGHT — 設計洞察',
+            label: '設計洞察 INSIGHT',
             title: '熟悉的台灣麵食，承載著生活與文化的記憶。',
             content:
               '台灣麵食不僅是日常飲食的一部分，也蘊含各地的飲食特色與傳統節慶文化。如何透過不同的設計形式，讓人重新認識這些熟悉的文化元素，是本次創作的起點。',
           },
           {
             id: 'concept',
-            label: 'CONCEPT — 設計概念',
+            label: '設計概念 CONCEPT',
             title: '當台灣麵食遇上肥皂，讓文化融入日常。',
             paragraphs: [
               '以台灣麵食文化為靈感，將陽春麵、擔仔麵、水餃、湯圓與麵線轉化為五款造型肥皂，並結合品牌識別與系列包裝設計。',
@@ -799,7 +776,7 @@ export const projects: PortfolioProject[] = [
           },
           {
             id: 'goal',
-            label: 'GOAL — 設計目標',
+            label: '設計目標 VISION',
             title: '讓日常用品，成為傳遞文化與記憶的媒介。',
             content:
               '藉由趣味化的產品設計，讓台灣麵食不再只是餐桌上的食物，而是能被觀看、觸摸與使用的文化創意商品，喚起人們對台灣傳統飲食的熟悉感與美好記憶。',
